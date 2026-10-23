@@ -1,47 +1,41 @@
 import pathlib
+import subprocess
+import sys
 
 from repofixer.context import ContextManager, estimate_tokens
 from repofixer.environment import LocalEnv
 from repofixer.llm import LLMResponse
 from repofixer.loop import run_agent
-from repofixer.repomap import build_graph, build_repo_map, extract_symbols, rank, render_map
 from repofixer.tools import ToolRegistry, summarize_test_output
 
 SAMPLE = pathlib.Path(__file__).resolve().parents[1] / "samples" / "calc_bug"
 
 
-# ---------- repo map ----------
-
-def test_extract_symbols_finds_functions():
-    syms = extract_symbols(SAMPLE)
-    names = {s.name for s in syms}
-    assert {"mul", "add", "sub", "div"} <= names
-    mul = next(s for s in syms if s.name == "mul")
-    assert mul.file.endswith("calc/ops.py")
-    assert mul.kind == "function"
-
-
-def test_render_map_respects_budget():
-    syms = extract_symbols(SAMPLE)
-    graph = build_graph(syms)
-    scores = rank(syms, graph, "fix the mul function")
-    text = render_map(syms, scores, token_budget=1000)
-    assert "mul" in text
-    small = render_map(syms, scores, token_budget=2)
-    assert "more symbols omitted" in small
+def _map(repo: pathlib.Path, task: str, *extra) -> str:
+    """Repo map via the real subprocess path used by eval/run."""
+    p = subprocess.run(
+        [sys.executable, "-m", "repofixer", "map", str(repo), task, *extra],
+        capture_output=True, text=True, timeout=120,
+    )
+    assert p.returncode == 0, p.stderr[-400:]
+    return p.stdout
 
 
-def test_rank_task_relevance():
-    syms = extract_symbols(SAMPLE)
-    graph = build_graph(syms)
-    scores = rank(syms, graph, "the mul function is broken")
-    idx = {s.name: i for i, s in enumerate(syms)}
-    assert scores[idx["mul"]] >= scores[idx["add"]]
+# ---------- repo map (subprocess-isolated) ----------
+
+def test_map_subprocess_contains_symbols():
+    text = _map(SAMPLE, "fix mul")
+    assert "mul" in text and "add" in text
 
 
-def test_build_repo_map_end_to_end():
-    text = build_repo_map(SAMPLE, "fix mul")
-    assert "mul" in text
+def test_map_subprocess_respects_token_budget():
+    text = _map(SAMPLE, "fix mul", "--token-budget", "2")
+    assert "more symbols omitted" in text
+
+
+def test_map_subprocess_task_relevance_ranking():
+    text = _map(SAMPLE, "the mul function is broken")
+    assert text.find("[function] def mul") < text.find("[function] def add")
 
 
 # ---------- test output summarization ----------

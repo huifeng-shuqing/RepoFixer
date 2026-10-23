@@ -43,7 +43,18 @@ def main(argv: list[str] | None = None) -> int:
         default="none",
         help="none=full pipeline; step3=3-step cap; noedit=no edit tools; nomap=no repo map; nocompact=no context budget",
     )
+
+    map_p = sub.add_parser("map", help="print a repo map for a task (used via subprocess by eval/run)")
+    map_p.add_argument("repo")
+    map_p.add_argument("task")
+    map_p.add_argument("--token-budget", type=int, default=1000)
     args = parser.parse_args(argv)
+
+    if args.cmd == "map":
+        from .repomap import build_repo_map
+
+        print(build_repo_map(Path(args.repo), args.task, args.token_budget))
+        return 0
 
     if args.cmd == "eval":
         from .eval import load_dataset, run_eval, summarize
@@ -76,9 +87,15 @@ def main(argv: list[str] | None = None) -> int:
             repo_map = None
             if not args.no_repo_map:
                 try:
-                    from .repomap import build_repo_map
+                    import subprocess as _sp
+                    import sys as _sys
 
-                    repo_map = build_repo_map(Path(args.workspace).resolve(), args.task)
+                    p = _sp.run(
+                        [_sys.executable, "-m", "repofixer", "map", str(Path(args.workspace).resolve()), args.task],
+                        capture_output=True, text=True, timeout=180,
+                    )
+                    if p.returncode == 0 and p.stdout.strip():
+                        repo_map = p.stdout
                 except Exception:
                     repo_map = None
             budget = None if args.no_compact else args.context_budget

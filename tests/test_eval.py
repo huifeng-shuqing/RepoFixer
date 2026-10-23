@@ -60,7 +60,9 @@ def test_eval_pipeline_resolves(ws):
     tasks = _tasks(ws)
     results = run_eval(tasks, FixLLM(), "local", ws, base_dir=ws)
     assert results[0].resolved is True
-    assert results[0].steps == 2
+    # the fix lands on step 1; the verify-based early stop fires before `done`
+    assert results[0].steps == 1
+    assert results[0].stopped_reason == "solved_early"
     assert (ws / "results.jsonl").exists()
     assert (ws / "traces" / "calc_bug-1.jsonl").exists()
     s = summarize(results, "deepseek-chat")

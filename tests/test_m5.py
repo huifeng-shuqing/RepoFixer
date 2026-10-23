@@ -48,6 +48,18 @@ def test_resume_continues_from_state(ws):
     assert not state.exists()  # completed runs clean up their state
 
 
+def test_solved_check_early_stop(ws):
+    llm = ScriptedLLM(
+        [LLMResponse(text="", tool_calls=[_bash_call(f"c{i}", "echo hi")], finish_reason="tool_calls") for i in range(10)]
+    )
+    run = run_agent(
+        "task", llm, ToolRegistry(LocalEnv(ws)), ws / "t.jsonl", max_steps=20,
+        solved_check=lambda: True,
+    )
+    assert run.stopped_reason == "solved_early"
+    assert len(run.steps) == 1
+
+
 def test_safety_policy_denies_dangerous(ws):
     policy = SafetyPolicy("auto")
     blocked = policy.check("bash", {"command": "rm -rf data"})

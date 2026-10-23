@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import sys
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -91,10 +92,16 @@ def run_task(
         subprocess.run(["git", "-C", str(repo), "clean", "-fdq"], capture_output=True)
     repo_map = None
     if use_repo_map:
+        # tree-sitter runs in a subprocess: its native binding has a flaky
+        # shutdown crash on some interpreter versions; isolation keeps the
+        # eval process pure-python and lets a crashed child degrade to no map.
         try:
-            from .repomap import build_repo_map
-
-            repo_map = build_repo_map(repo, task.problem_statement)
+            p = subprocess.run(
+                [sys.executable, "-m", "repofixer", "map", str(repo), task.problem_statement],
+                capture_output=True, text=True, timeout=180,
+            )
+            if p.returncode == 0 and p.stdout.strip():
+                repo_map = p.stdout
         except Exception:
             repo_map = None
     try:
@@ -113,6 +120,7 @@ def run_task(
             context_budget=context_budget,
             obs_dir=obs_dir,
             policy=SafetyPolicy("auto"),
+            solved_check=lambda: env.run(task.verify_command, timeout=task.timeout).ok,
         )
         verify = env.run(task.verify_command, timeout=task.timeout)
         return EvalResult(

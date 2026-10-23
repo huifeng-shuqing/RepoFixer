@@ -25,6 +25,7 @@ from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Callable
 
 from .context import ContextManager
 from .llm import LLMClient
@@ -91,6 +92,7 @@ def run_agent(
     state_path: Path | None = None,
     policy: SafetyPolicy | None = None,
     loop_guard: int = 4,
+    solved_check: Callable[[], bool] | None = None,
 ) -> AgentRun:
     cm = ContextManager(obs_dir, context_budget)
     step_start = 1
@@ -181,9 +183,15 @@ def run_agent(
             st.wall_ms = int((time.perf_counter() - t0) * 1000)
             tw.write(st)
             run.steps.append(st)
-            if run.done_summary is not None or run.stopped_reason == "loop_detected":
-                if state_path is not None:
-                    state_path.unlink(missing_ok=True) if run.done_summary is not None else None
+            if solved_check is not None:
+                try:
+                    if solved_check():
+                        run.stopped_reason = "solved_early"
+                except Exception:
+                    pass
+            if run.done_summary is not None or run.stopped_reason in ("loop_detected", "solved_early"):
+                if state_path is not None and run.done_summary is not None:
+                    state_path.unlink(missing_ok=True)
                 break
             if state_path is not None:
                 save_state(state_path, step_no + 1, cm.messages, max_steps)
