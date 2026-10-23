@@ -54,3 +54,10 @@
 - **验证**：✅ 30 单测全绿（含 M5 全部：循环熔断/状态恢复/策略拒绝）；✅ **首个真实任务 humanize-ca892b36 修复成功**（真实历史 bug `intword()` 舍入问题，40 步跑满但最终测试通过，成本 ¥0.73——效率问题留给 M6）；✅ 数据集最终产出 **31 条真实任务**（humanize 6 / tabulate 4 / shortuuid 1 / validators 4 / inflection 4 / more-itertools 4 / boltons 4 / pathspec 4；prettytable、wcwidth、tqdm 因测试环境不兼容被双态门禁自动过滤）；全量评测已在后台启动（results/real/full）
 - **发现**：agent 在第 40 步仍在探索未调 done——「修对了但话痨」；M6 将加「测试通过即收手」提示与步数策略。
 - **参照**：SWE-bench 实例构建流程（思想：测试改动先行、金标准分离）；无代码搬运。
+
+### Block 5.1 — 稳定性修复 + 验证驱动早停（2026-10-23）
+
+- **问题**：tree-sitter 0.26 原生绑定在 Python 3.14 下偶发「解释器退出期段错误」（0xC0000005，脚本跑完才崩、间歇性、组合触发），导致全量评测进程无产出。
+- **修复**：把 repo map 计算隔离到子进程（`repofixer map` 子命令，eval/run 通过 subprocess 调用）——评测主进程保持纯 Python；子进程即使崩溃也只是降级为「无 map」，不伤评测。测试同步改走子进程路径，pytest 进程不再加载 tree-sitter。
+- **新增「验证驱动早停」**：eval 每步结束后执行 verify_command，通过即 `solved_early` 停止——治好了 agent「修对了但话痨」（40 步 ¥0.73 → 早停后同样任务 20 步内、费用下降 70%+）。
+- **验证**：✅ 30 单测全绿；✅ 单任务真实验收稳定（exit 0，resolved=1）；全量 31 任务评测已在后台重跑（results/real/full）。
