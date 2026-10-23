@@ -1,0 +1,85 @@
+    return lines
+
+
+def _align_cell_veritically(text_lines, num_lines, column_width, row_alignment):
+    delta_lines = num_lines - len(text_lines)
+    blank = [" " * column_width]
+    if row_alignment == "bottom":
+        return blank * delta_lines + text_lines
+    elif row_alignment == "center":
+        top_delta = delta_lines // 2
+        bottom_delta = delta_lines - top_delta
+        return top_delta * blank + text_lines + bottom_delta * blank
+    else:
+        return text_lines + blank * delta_lines
+
+
+def _append_multiline_row(
+    lines, padded_multiline_cells, padded_widths, colaligns, rowfmt, pad, rowalign=None
+):
+    colwidths = [w - 2 * pad for w in padded_widths]
+    cells_lines = [c.splitlines() for c in padded_multiline_cells]
+        linebelow=Line("╘", "═", "╧", "╛"),
+        headerrow=DataRow("│", "│", "│"),
+        datarow=DataRow("│", "│", "│"),
+        padding=1,
+        with_header_hide=None,
+    ),
+    "pipe": TableFormat(
+        lineabove=_pipe_line_with_colons,
+        linebelowheader=_pipe_line_with_colons,
+        linebetweenrows=None,
+        linebelow=None,
+        headerrow=DataRow("|", "|", "|"),
+        datarow=DataRow("|", "|", "|"),
+        padding=1,
+        with_header_hide=["lineabove"],
+    ),
+    "orgtbl": TableFormat(
+        lineabove=None,
+        linebelowheader=Line("|", "-", "+", "|"),
+        linebetweenrows=None,
+        linebelow=None,
+    ),
+    "asciidoc": TableFormat(
+        lineabove=partial(_asciidoc_row, False),
+        linebelowheader=None,
+        linebetweenrows=None,
+        linebelow=Line("|====", "", "", ""),
+        headerrow=partial(_asciidoc_row, True),
+        datarow=partial(_asciidoc_row, False),
+        padding=1,
+        with_header_hide=["lineabove"],
+    ),
+}
+
+# "github" is an alias for "pipe": both produce GitHub-flavored Markdown with
+# alignment colons in the separator row.
+_table_formats["github"] = _table_formats["pipe"]
+
+
+tabulate_formats = sorted(_table_formats.keys())
+
+# The table formats for which multiline cells will be folded into subsequent
+378:    result = tabulate(_test_table_with_sep_line, tablefmt="github")
+487:def test_github():
+488:    "Output: github with headers"
+497:    result = tabulate(_test_table, _test_table_headers, tablefmt="github")
+501:def test_github_multiline():
+502:    "Output: github with multiline cells with headers"
+514:    result = tabulate(table, headers, tablefmt="github")
+518:def test_github_with_colalign():
+519:    "Output: github with explicit column alignment"
+531:        tablefmt="github",
+537:def test_github_no_alignment():
+538:    "Output: github without alignment hints when numalign/stralign are disabled"
+550:        tablefmt="github",
+1993:def test_pipe():
+1994:    "Output: pipe with headers"
+2003:    result = tabulate(_test_table, _test_table_headers, tablefmt="pipe")
+2007:def test_pipe_headerless():
+2008:    "Output: pipe without headers"
+2010:    result = tabulate(_test_table, tablefmt="pipe")
+
+[stderr]
+/usr/bin/bash: line 1: cd: /workspace: No such file or directory

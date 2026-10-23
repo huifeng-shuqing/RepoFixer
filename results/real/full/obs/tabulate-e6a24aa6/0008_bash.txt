@@ -1,0 +1,64 @@
+    cells_lines = [c.splitlines() for c in padded_multiline_cells]
+    nlines = max(map(len, cells_lines))  # number of lines in the row
+    # vertically pad cells where some lines are missing
+    # cells_lines = [
+    #     (cl + [" " * w] * (nlines - len(cl))) for cl, w in zip(cells_lines, colwidths)
+    # ]
+
+    cells_lines = [
+        _align_cell_veritically(cl, nlines, w, rowalign) for cl, w in zip(cells_lines, colwidths)
+    ]
+    lines_cells = [[cl[i] for cl in cells_lines] for i in range(nlines)]
+    for ln in lines_cells:
+        padded_ln = _pad_row(ln, pad)
+        _append_basic_row(lines, padded_ln, colwidths, colaligns, rowfmt)
+    return lines
+
+
+def _build_line(colwidths, colaligns, linefmt):
+    "Return a string which represents a horizontal line."
+    if not linefmt:
+        return None
+    if callable(linefmt):
+        return linefmt(colwidths, colaligns)
+    else:
+        begin, fill, sep, end = linefmt
+        cells = [fill * w for w in colwidths]
+        rowfmt = DataRow(begin, sep, end)
+        return _build_simple_row(cells, rowfmt)
+
+
+def _append_line(lines, colwidths, colaligns, linefmt):
+    lines.append(_build_line(colwidths, colaligns, linefmt))
+    return lines
+
+
+class JupyterHTMLStr(str):
+    """Wrap the string with a _repr_html_ method so that Jupyter
+    displays the HTML table"""
+
+    def _repr_html_(self):
+        return self
+
+    @property
+    def str(self):
+        """add a .str property so that the raw string is still accessible"""
+        return self
+
+
+def _format_table(
+    fmt, headers, headersaligns, rows, colwidths, colaligns, is_multiline, rowaligns
+):
+    """Produce a plain-text representation of the table."""
+    lines = []
+    hidden = fmt.with_header_hide if (headers and fmt.with_header_hide) else []
+    pad = fmt.padding
+    headerrow = fmt.headerrow
+
+    padded_widths = [(w + 2 * pad) for w in colwidths]
+    if is_multiline:
+        pad_row = lambda row, _: row  # noqa: E731 # do it later, in _append_multiline_row
+        append_row = partial(_append_multiline_row, pad=pad)
+
+[stderr]
+/usr/bin/bash: line 1: cd: /workspace: No such file or directory
