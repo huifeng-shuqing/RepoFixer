@@ -113,8 +113,10 @@ def run_agent(
     tw = TraceWriter(trace_path)
     run = AgentRun()
     recent_calls: deque[str] = deque(maxlen=loop_guard)
-    recent_tool_names: deque[str] = deque(maxlen=8)
-    # reading files and grepping IS progress; only pure command probing is not
+    # no_progress: true probe loops show tiny bash outputs repeatedly; real
+    # investigation (sed/pytest) produces large outputs. Track per-step bash
+    # output size; -1 marks a step that used any non-bash tool.
+    recent_bash_sizes: deque[int] = deque(maxlen=8)
     try:
         for step_no in range(step_start, max_steps + 1):
             t0 = time.perf_counter()
@@ -178,10 +180,15 @@ def run_agent(
                 )
                 cm.add_tool(call["id"], call["name"], result.output)
                 recent_calls.append(f"{call['name']}:{json.dumps(call['arguments'], sort_keys=True)}")
-                recent_tool_names.append(call["name"])
                 if call["name"] == "done" and result.ok:
                     run.done_summary = result.output
                     run.stopped_reason = "done"
+
+            step_bash_chars = sum(tc.output_chars for tc in st.tool_calls if tc.name == "bash")
+            if st.tool_calls and all(tc.name == "bash" for tc in st.tool_calls):
+                recent_bash_sizes.append(step_bash_chars)
+            else:
+                recent_bash_sizes.append(-1)
 
             if (
                 len(recent_calls) == recent_calls.maxlen
@@ -190,9 +197,9 @@ def run_agent(
             ):
                 run.stopped_reason = "loop_detected"
             elif (
-                step_no >= 10
-                and len(recent_tool_names) == recent_tool_names.maxlen
-                and set(recent_tool_names) <= {"bash"}
+                step_no >= 12
+                and len(recent_bash_sizes) == recent_bash_sizes.maxlen
+                and all(0 <= x < 400 for x in recent_bash_sizes)
                 and run.done_summary is None
             ):
                 run.stopped_reason = "no_progress"

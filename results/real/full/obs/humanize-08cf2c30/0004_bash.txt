@@ -1,9 +1,3 @@
-/c/Users/wuqiong/Documents/deepseek-harness/default-workspace/repair-agent/dataset/repos/humanize-08cf2c30
-    import math
-
-    try:
-        number = float(value)
-        if not math.isfinite(number):
             return _format_not_finite(number)
     except (TypeError, ValueError):
         return str(value)
@@ -50,23 +44,35 @@ def scientific(value: NumberOrString, precision: int = 2) -> str:
         'foo'
         >>> scientific(None)
         'None'
-
-        ```
-
-    Args:
-        value (int, float, str): Input number.
-        precision (int): Number of decimal for first part of the number.
-
-    Returns:
-        str: Number in scientific notation z.wq x 10ⁿ.
-    """
-    import math
-
-    try:
-        value = float(value)
-        if not math.isfinite(value):
-            return _format_not_finite(value)
-    except (ValueError, TypeError):
-        return str(value)
-    fmt = f"{{:.{int(precision)}e}}"
-    n = fmt.format(value)
+197:def test_fractional(test_input: float | str, expected: str) -> None:
+198:    assert humanize.fractional(test_input) == expected
+199-
+200-
+201-@pytest.mark.parametrize(
+202-    "test_args, expected",
+203-    [
+204-        ([1000], "1.00 x 10³"),
+205-        ([-1000], "-1.00 x 10³"),
+206-        ([5.5], "5.50 x 10⁰"),
+207-        ([5781651000], "5.78 x 10⁹"),
+208-        (["1000"], "1.00 x 10³"),
+209-        (["99"], "9.90 x 10¹"),
+210-        ([0.3], "3.00 x 10⁻¹"),
+211-        (["foo"], "foo"),
+212-        ([None], "None"),
+213-        ([1000, 1], "1.0 x 10³"),
+214-        ([0.3, 1], "3.0 x 10⁻¹"),
+215-        ([1000, 0], "1 x 10³"),
+216-        ([0.3, 0], "3 x 10⁻¹"),
+217-        ([1e20], "1.00 x 10²⁰"),
+218-        ([2e-20], "2.00 x 10⁻²⁰"),
+219-        ([-3e20], "-3.00 x 10²⁰"),
+220-        ([-4e-20], "-4.00 x 10⁻²⁰"),
+221-        ([math.nan], "NaN"),
+222-        ([math.inf], "+Inf"),
+223-        ([-math.inf], "-Inf"),
+224-        (["nan"], "NaN"),
+225-        (["-inf"], "-Inf"),
+226-    ],
+227-)
+228-def test_scientific(test_args: list[typing.Any], expected: str) -> None:

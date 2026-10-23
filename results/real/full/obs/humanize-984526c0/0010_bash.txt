@@ -1,0 +1,30 @@
+    [33m    Args:[39;49;00m
+    [33m        value (int, float, str): Integer or float to convert.[39;49;00m
+    [33m        ndigits (int, None): Digits of precision for rounding after the decimal point.[39;49;00m
+    [33m[39;49;00m
+    [33m    Returns:[39;49;00m
+    [33m        str: String containing commas every three digits.[39;49;00m
+    [33m    """[39;49;00m[90m[39;49;00m
+        [94mimport[39;49;00m[90m [39;49;00m[04m[96mmath[39;49;00m[90m[39;49;00m
+    [90m[39;49;00m
+        thousands_sep = thousands_separator()[90m[39;49;00m
+        decimal_sep = decimal_separator()[90m[39;49;00m
+        [94mtry[39;49;00m:[90m[39;49;00m
+            [94mif[39;49;00m [96misinstance[39;49;00m(value, [96mstr[39;49;00m):[90m[39;49;00m
+                value = value.replace(thousands_sep, [33m"[39;49;00m[33m"[39;49;00m).replace(decimal_sep, [33m"[39;49;00m[33m.[39;49;00m[33m"[39;49;00m)[90m[39;49;00m
+                [94mif[39;49;00m [95mnot[39;49;00m math.isfinite([96mfloat[39;49;00m(value)):[90m[39;49;00m
+                    [94mreturn[39;49;00m _format_not_finite([96mfloat[39;49;00m(value))[90m[39;49;00m
+                [94mif[39;49;00m [33m"[39;49;00m[33m.[39;49;00m[33m"[39;49;00m [95min[39;49;00m value:[90m[39;49;00m
+                    value = [96mfloat[39;49;00m(value)[90m[39;49;00m
+                [94melse[39;49;00m:[90m[39;49;00m
+                    value = [96mint[39;49;00m(value)[90m[39;49;00m
+            [94melse[39;49;00m:[90m[39;49;00m
+>               [94mif[39;49;00m [95mnot[39;49;00m math.isfinite([96mfloat[39;49;00m(value)):[90m[39;49;00m
+                                     ^^^^^^^^^^^^[90m[39;49;00m
+[1m[31mE               OverflowError: int too large to convert to float[0m
+
+[1m[31msrc\humanize\number.py[0m:164: OverflowError
+[36m[1m=========================== short test summary info ===========================[0m
+[31mFAILED[0m tests/test_number.py::[1mtest_intcomma_large_integer[1][0m - OverflowError: int too large to convert to float
+[31mFAILED[0m tests/test_number.py::[1mtest_intcomma_large_integer[-1][0m - OverflowError: int too large to convert to float
+[31m[31m[1m2 failed[0m, [32m316 passed[0m[31m in 0.30s[0m[0m

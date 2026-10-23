@@ -73,7 +73,7 @@ def test_solved_check_early_stop(ws):
 
 
 def test_no_progress_guard_stops_probe_loops(ws):
-    """Model keeps probing with varying commands but never edits/tests."""
+    """Probe loops: tiny varying bash outputs, never edits/tests."""
     llm = ScriptedLLM(
         [
             LLMResponse(
@@ -86,7 +86,7 @@ def test_no_progress_guard_stops_probe_loops(ws):
     )
     run = run_agent("task", llm, ToolRegistry(LocalEnv(ws)), ws / "t.jsonl", max_steps=20)
     assert run.stopped_reason == "no_progress"
-    assert len(run.steps) == 10  # step_no >= 10 + 8 consecutive bash
+    assert len(run.steps) == 12  # step_no >= 12 + last 8 bash outputs all < 400 chars
 
 
 def test_reading_files_is_not_no_progress(ws):
