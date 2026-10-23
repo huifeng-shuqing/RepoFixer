@@ -1,0 +1,26 @@
+diff --git a/src/humanize/filesize.py b/src/humanize/filesize.py
+index 5650d02..30ba135 100644
+--- a/src/humanize/filesize.py
++++ b/src/humanize/filesize.py
+@@ -91,7 +91,7 @@ def naturalsize(
+     abs_bytes = abs(bytes_)
+ 
+     if abs_bytes == 1 and not gnu:
+-        return f"{bytes_} Byte"
++        return f"{int(bytes_)} Byte"
+ 
+     if abs_bytes < base:
+         return f"{int(bytes_)}B" if gnu else f"{int(bytes_)} Bytes"
+diff --git a/tests/test_filesize.py b/tests/test_filesize.py
+index cf4a002..c3e7386 100644
+--- a/tests/test_filesize.py
++++ b/tests/test_filesize.py
+@@ -69,6 +69,8 @@ import humanize
+         ([3000000, False, True], "2.9M"),
+         ([1024, False, True], "1.0K"),
+         ([1, False, False], "1 Byte"),
++        ([1.0, False, False], "1 Byte"),
++        (["1", False, False], "1 Byte"),
+         ([3141592, False, False, "%.2f"], "3.14 MB"),
+         ([3000, False, True, "%.3f"], "2.930K"),
+         ([3000000000, False, True, "%.0f"], "3G"),

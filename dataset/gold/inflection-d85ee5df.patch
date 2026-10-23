@@ -1,0 +1,24 @@
+diff --git a/inflection.py b/inflection.py
+index 5bd23d8..72d6e28 100644
+--- a/inflection.py
++++ b/inflection.py
+@@ -415,6 +415,7 @@ def underscore(word):
+ 
+ _irregular('person', 'people')
+ _irregular('man', 'men')
++_irregular('human', 'humans')
+ _irregular('child', 'children')
+ _irregular('sex', 'sexes')
+ _irregular('move', 'moves')
+diff --git a/test_inflection.py b/test_inflection.py
+index be6b860..3a513bd 100644
+--- a/test_inflection.py
++++ b/test_inflection.py
+@@ -106,6 +106,7 @@ SINGULAR_TO_PLURAL = (
+ 
+     ("cow", "kine"),
+     ("database", "databases"),
++    ("human", "humans")
+ )
+ 
+ CAMEL_TO_UNDERSCORE = (

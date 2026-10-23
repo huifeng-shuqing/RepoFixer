@@ -29,6 +29,8 @@ def main(argv: list[str] | None = None) -> int:
     run_p.add_argument("--no-repo-map", action="store_true", help="disable the repo map injection")
     run_p.add_argument("--context-budget", type=int, default=60_000, help="token budget before eviction starts")
     run_p.add_argument("--no-compact", action="store_true", help="disable context compaction entirely")
+    run_p.add_argument("--state", default=None, help="state file path for resume (continues if it exists)")
+    run_p.add_argument("--approve", action="store_true", help="ask interactively before dangerous commands (default: auto-deny)")
 
     eval_p = sub.add_parser("eval", help="run the agent over a dataset and print metrics")
     eval_p.add_argument("--dataset", required=True, help="JSONL dataset file")
@@ -80,6 +82,12 @@ def main(argv: list[str] | None = None) -> int:
                 except Exception:
                     repo_map = None
             budget = None if args.no_compact else args.context_budget
+            from .safety import SafetyPolicy
+
+            if args.approve:
+                policy = SafetyPolicy("ask", asker=lambda cmd: input(f"approve '{cmd[:80]}'? [y/N] ").strip().lower() == "y")
+            else:
+                policy = SafetyPolicy("auto")
             llm = LLMClient()
             registry = ToolRegistry(env)
             trace_path = Path(args.trace_dir) / f"run_{int(time.time())}.jsonl"
@@ -92,13 +100,15 @@ def main(argv: list[str] | None = None) -> int:
                 repo_map=repo_map,
                 context_budget=budget,
                 obs_dir=Path(args.trace_dir) / "obs",
+                state_path=Path(args.state) if args.state else None,
+                policy=policy,
             )
             print(f"stopped: {run.stopped_reason}")
             print(f"done summary: {run.done_summary}")
             print(
                 f"steps={len(run.steps)} prompt_tokens={run.prompt_tokens} "
                 f"completion_tokens={run.completion_tokens} total={run.total_tokens} "
-                f"evictions={len(run.evictions)}"
+                f"evictions={len(run.evictions)} denials={len(run.policy_denials)}"
             )
             print(f"trace: {trace_path}")
             return 0

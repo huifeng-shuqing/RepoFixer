@@ -1,0 +1,24 @@
+diff --git a/src/validators/slug.py b/src/validators/slug.py
+index 7fdc67e..b15c97c 100644
+--- a/src/validators/slug.py
++++ b/src/validators/slug.py
+@@ -29,4 +29,4 @@ def slug(value: str, /):
+         (Literal[True]): If `value` is a valid slug.
+         (ValidationError): If `value` is an invalid slug.
+     """
+-    return _SLUG_REGEXP.match(value) is not None
++    return _SLUG_REGEXP.fullmatch(value) is not None
+diff --git a/tests/test_slug.py b/tests/test_slug.py
+index 5c62901..45b5981 100644
+--- a/tests/test_slug.py
++++ b/tests/test_slug.py
+@@ -56,6 +56,9 @@ def test_returns_true_on_valid_slug(value: str):
+ @pytest.mark.parametrize(
+     "value",
+     [
++        # trailing newline must not be accepted ($ matches before a final \n)
++        "hello-world\n",
++        "\n",
+         # with empty_string
+         "",
+         # with upper case

@@ -63,6 +63,26 @@ class ContextManager:
         meta = {"age": self._age, "name": name, "size": len(output), "important": is_important(output), "obs": obs, "evicted": False}
         self._tool_index.append((len(self.messages) - 1, meta))
 
+    def load(self, messages: list[dict]) -> None:
+        """Adopt an existing message list (resume path); rebuild eviction metadata."""
+        self.messages = list(messages)
+        self._tool_index = []
+        self._age = 0
+        for idx, m in enumerate(self.messages):
+            if m.get("role") != "tool":
+                continue
+            self._age += 1
+            content = str(m.get("content", ""))
+            meta = {
+                "age": self._age,
+                "name": "tool",
+                "size": len(content),
+                "important": is_important(content),
+                "obs": None,
+                "evicted": False,
+            }
+            self._tool_index.append((idx, meta))
+
     def prepare(self) -> list[dict]:
         if self.token_budget is None:
             return self.messages

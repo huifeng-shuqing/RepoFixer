@@ -14,6 +14,7 @@ Runner properties:
 from __future__ import annotations
 
 import json
+import subprocess
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -52,7 +53,7 @@ class EvalResult:
 
 def load_dataset(path: Path) -> list[Task]:
     tasks: list[Task] = []
-    with path.open(encoding="utf-8") as f:
+    with path.open(encoding="utf-8-sig") as f:
         for line in f:
             line = line.strip()
             if not line or line.startswith("#"):
@@ -84,6 +85,10 @@ def run_task(
                           steps=0, prompt_tokens=0, completion_tokens=0, wall_ms=0, error=str(e))
     trace_path = out_dir / "traces" / f"{task.id}.jsonl"
     obs_dir = out_dir / "obs" / task.id
+    # reset the task repo to its buggy baseline (task repos keep .git for this)
+    if (repo / ".git").exists():
+        subprocess.run(["git", "-C", str(repo), "checkout", "--", "."], capture_output=True)
+        subprocess.run(["git", "-C", str(repo), "clean", "-fdq"], capture_output=True)
     repo_map = None
     if use_repo_map:
         try:
@@ -93,6 +98,8 @@ def run_task(
         except Exception:
             repo_map = None
     try:
+        from .safety import SafetyPolicy
+
         registry = ToolRegistry(env)
         if tool_filter:
             registry.filter(tool_filter)
@@ -105,6 +112,7 @@ def run_task(
             repo_map=repo_map,
             context_budget=context_budget,
             obs_dir=obs_dir,
+            policy=SafetyPolicy("auto"),
         )
         verify = env.run(task.verify_command, timeout=task.timeout)
         return EvalResult(

@@ -1,0 +1,43 @@
+diff --git a/src/validators/country.py b/src/validators/country.py
+index 6cd83ee..f220c77 100644
+--- a/src/validators/country.py
++++ b/src/validators/country.py
+@@ -219,7 +219,7 @@ _currency_iso4217 = {
+ _currency_symbols = {
+     # https://en.wikipedia.org/wiki/Currency_sign_(generic)
+     "؋", "฿", "₵", "₡", "¢", "$", "₫", "֏", "€", "ƒ", "₣", "₲", "₴", "₭", "₾", "£", "₺", "₼", "₦",
+-    "₱", "元", "圆", "圓", "﷼", "៛", "₽", "₹", "रू", "රු", "૱", "௹", "꠸", "Rs", "₪", "⃀" "৳", "₸",
++    "₱", "元", "圆", "圓", "﷼", "៛", "₽", "₹", "रू", "රු", "૱", "௹", "꠸", "Rs", "₪", "⃀", "৳", "₸",
+     "₮", "₩", "¥", "円", "₿", "¤"
+ }
+ # fmt: on
+diff --git a/tests/test_country.py b/tests/test_country.py
+index fbea0ba..1485d26 100644
+--- a/tests/test_country.py
++++ b/tests/test_country.py
+@@ -56,7 +56,8 @@ def test_returns_failed_validation_on_invalid_country_code(value: str, iso_forma
+ 
+ 
+ @pytest.mark.parametrize(
+-    ("value", "skip_symbols", "ignore_case"), [("$", False, False), ("uSd", True, True)]
++    ("value", "skip_symbols", "ignore_case"),
++    [("$", False, False), ("⃀", False, False), ("৳", False, False), ("uSd", True, True)],
+ )
+ def test_returns_true_on_valid_currency(value: str, skip_symbols: bool, ignore_case: bool):
+     """Test returns true on valid currency."""
+@@ -65,7 +66,14 @@ def test_returns_true_on_valid_currency(value: str, skip_symbols: bool, ignore_c
+ 
+ @pytest.mark.parametrize(
+     ("value", "skip_symbols", "ignore_case"),
+-    [("$", True, False), ("uSd", True, False), ("Bucks", True, True)],
++    [
++        ("$", True, False),
++        ("⃀", True, False),
++        ("৳", True, False),
++        ("⃀৳", False, False),
++        ("uSd", True, False),
++        ("Bucks", True, True),
++    ],
+ )
+ def test_returns_failed_validation_invalid_currency(
+     value: str, skip_symbols: bool, ignore_case: bool

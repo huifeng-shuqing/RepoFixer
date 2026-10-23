@@ -1,0 +1,29 @@
+diff --git a/inflection.py b/inflection.py
+index 35ae779..2e08dfb 100644
+--- a/inflection.py
++++ b/inflection.py
+@@ -370,9 +370,9 @@ def titleize(word):
+ 
+     """
+     return re.sub(
+-        r"\b('?[a-z])",
++        r"\b('?\w)",
+         lambda match: match.group(1).capitalize(),
+-        humanize(underscore(word))
++        humanize(underscore(word)).title()
+     )
+ 
+ 
+diff --git a/test_inflection.py b/test_inflection.py
+index 2834747..30db6c2 100644
+--- a/test_inflection.py
++++ b/test_inflection.py
+@@ -191,6 +191,8 @@ MIXTURE_TO_TITLEIZED = (
+     ("david's code",          "David's Code"),
+     ("David's code",          "David's Code"),
+     ("david's Code",          "David's Code"),
++    ("ana índia",             "Ana Índia"),
++    ("Ana Índia",             "Ana Índia"),
+ )
+ 
+ 

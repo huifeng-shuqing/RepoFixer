@@ -1,0 +1,31 @@
+=================================== ERRORS ====================================
+[31m[1m_______________________ ERROR at setup of test_apnumber _______________________[0m
+[31m[1m________________________ ERROR at setup of test_clamp _________________________[0m
+[31m[1m______________________ ERROR at setup of test_fractional ______________________[0m
+[31m[1m_______________________ ERROR at setup of test_intcomma _______________________[0m
+[31m[1m_______________________ ERROR at setup of test_intword ________________________[0m
+[31m[1m________________________ ERROR at setup of test_metric ________________________[0m
+[31m[1m_____________________ ERROR at setup of test_natural_list _____________________[0m
+[31m[1m_____________________ ERROR at setup of test_naturaldate ______________________[0m
+[31m[1m______________________ ERROR at setup of test_naturalday ______________________[0m
+[31m[1m_____________________ ERROR at setup of test_naturaldelta _____________________[0m
+[31m[1m_____________________ ERROR at setup of test_naturalsize ______________________[0m
+[31m[1m_____________________ ERROR at setup of test_naturaltime ______________________[0m
+[31m[1m_______________________ ERROR at setup of test_ordinal ________________________[0m
+[31m[1m_____________________ ERROR at setup of test_precisedelta _____________________[0m
+[31m[1m______________________ ERROR at setup of test_scientific ______________________[0m
+[31mERROR[0m tests/test_benchmarks.py::[1mtest_apnumber[0m
+[31mERROR[0m tests/test_benchmarks.py::[1mtest_clamp[0m
+[31mERROR[0m tests/test_benchmarks.py::[1mtest_fractional[0m
+[31mERROR[0m tests/test_benchmarks.py::[1mtest_intcomma[0m
+[31mERROR[0m tests/test_benchmarks.py::[1mtest_intword[0m
+[31mERROR[0m tests/test_benchmarks.py::[1mtest_metric[0m
+[31mERROR[0m tests/test_benchmarks.py::[1mtest_natural_list[0m
+[31mERROR[0m tests/test_benchmarks.py::[1mtest_naturaldate[0m
+[31mERROR[0m tests/test_benchmarks.py::[1mtest_naturalday[0m
+[31mERROR[0m tests/test_benchmarks.py::[1mtest_naturaldelta[0m
+[31mERROR[0m tests/test_benchmarks.py::[1mtest_naturalsize[0m
+[31mERROR[0m tests/test_benchmarks.py::[1mtest_naturaltime[0m
+[31mERROR[0m tests/test_benchmarks.py::[1mtest_ordinal[0m
+[31mERROR[0m tests/test_benchmarks.py::[1mtest_precisedelta[0m
+[31mERROR[0m tests/test_benchmarks.py::[1mtest_scientific[0m

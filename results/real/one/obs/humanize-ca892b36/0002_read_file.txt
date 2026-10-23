@@ -1,0 +1,121 @@
+   130 |     import math
+   131 | 
+   132 |     try:
+   133 |         if not math.isfinite(float(value)):
+   134 |             return _format_not_finite(float(value))
+   135 |         value = int(value)
+   136 |     except (TypeError, ValueError):
+   137 |         return str(value)
+   138 |     gender = "male" if gender == "male" else "female"
+   139 |     digit = 0 if value % 100 in (11, 12, 13) else value % 10
+   140 |     return f"{value}{P_(*_ORDINAL_SUFFIXES[gender][digit])}"
+   141 | 
+   142 | 
+   143 | def intcomma(value: NumberOrString, ndigits: int | None = None) -> str:
+   144 |     """Converts an integer to a string containing commas every three digits.
+   145 | 
+   146 |     For example, 3000 becomes "3,000" and 45000 becomes "45,000". To maintain some
+   147 |     compatibility with Django's `intcomma`, this function also accepts floats.
+   148 | 
+   149 |     Examples:
+   150 |         ```pycon
+   151 |         >>> intcomma(100)
+   152 |         '100'
+   153 |         >>> intcomma("1000")
+   154 |         '1,000'
+   155 |         >>> intcomma(1_000_000)
+   156 |         '1,000,000'
+   157 |         >>> intcomma(1_234_567.25)
+   158 |         '1,234,567.25'
+   159 |         >>> intcomma(1234.5454545, 2)
+   160 |         '1,234.55'
+   161 |         >>> intcomma(14308.40, 1)
+   162 |         '14,308.4'
+   163 |         >>> intcomma("14308.40", 1)
+   164 |         '14,308.4'
+   165 |         >>> intcomma(None)
+   166 |         'None'
+   167 | 
+   168 |         ```
+   169 | 
+   170 |     Args:
+   171 |         value (int, float, str): Integer or float to convert.
+   172 |         ndigits (int, None): Digits of precision for rounding after the decimal point.
+   173 | 
+   174 |     Returns:
+   175 |         str: String containing commas every three digits.
+   176 |     """
+   177 |     import math
+   178 | 
+   179 |     thousands_sep = thousands_separator()
+   180 |     decimal_sep = decimal_separator()
+   181 |     try:
+   182 |         if isinstance(value, str):
+   183 |             value = value.replace(thousands_sep, "").replace(decimal_sep, ".")
+   184 |             if not math.isfinite(float(value)):
+   185 |                 return _format_not_finite(float(value))
+   186 |             if "." in value:
+   187 |                 value = float(value)
+   188 |             else:
+   189 |                 value = int(value)
+   190 |         elif not isinstance(value, int):
+   191 |             if not math.isfinite(float(value)):
+   192 |                 return _format_not_finite(float(value))
+   193 |             float(value)
+   194 |     except (TypeError, ValueError):
+   195 |         return str(value)
+   196 | 
+   197 |     if ndigits is not None:
+   198 |         result = f"{value:,.{ndigits}f}"
+   199 |     else:
+   200 |         result = f"{value:,}"
+   201 |     if thousands_sep != "," or decimal_sep != ".":
+   202 |         result = result.translate(str.maketrans(",.", thousands_sep + decimal_sep))
+   203 |     return result
+   204 | 
+   205 | 
+   206 | powers = [10**x for x in (3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 100)]
+   207 | human_powers = (
+   208 |     NS_("thousand", "thousand"),
+   209 |     NS_("million", "million"),
+   210 |     NS_("billion", "billion"),
+   211 |     NS_("trillion", "trillion"),
+   212 |     NS_("quadrillion", "quadrillion"),
+   213 |     NS_("quintillion", "quintillion"),
+   214 |     NS_("sextillion", "sextillion"),
+   215 |     NS_("septillion", "septillion"),
+   216 |     NS_("octillion", "octillion"),
+   217 |     NS_("nonillion", "nonillion"),
+   218 |     NS_("decillion", "decillion"),
+   219 |     NS_("googol", "googol"),
+   220 | )
+   221 | 
+   222 | 
+   223 | def intword(value: NumberOrString, format: str = "%.1f") -> str:
+   224 |     """Converts a large integer to a friendly text representation.
+   225 | 
+   226 |     Works best for numbers over 1 million. For example, 1_000_000 becomes "1.0 million",
+   227 |     1_200_000 becomes "1.2 million" and "1_200_000_000" becomes "1.2 billion". Supports
+   228 |     up to decillion (33 digits) and googol (100 digits).
+   229 | 
+   230 |     Examples:
+   231 |         ```pycon
+   232 |         >>> intword("100")
+   233 |         '100'
+   234 |         >>> intword("12400")
+   235 |         '12.4 thousand'
+   236 |         >>> intword("1000000")
+   237 |         '1.0 million'
+   238 |         >>> intword(1_200_000_000)
+   239 |         '1.2 billion'
+   240 |         >>> intword(8100000000000000000000000000000000)
+   241 |         '8.1 decillion'
+   242 |         >>> intword(None)
+   243 |         'None'
+   244 |         >>> intword("1234000", "%0.3f")
+   245 |         '1.234 million'
+   246 | 
+   247 |         ```
+   248 | 
+   249 |     Args:
+... [350 more lines; pass offset=250 for next page]
