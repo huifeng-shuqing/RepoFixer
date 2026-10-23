@@ -43,3 +43,14 @@
 - **验证**：✅ 25 单测全绿（符号提取/相关性排序/预算截断/分级落盘/淘汰保重要）；✅ 真实模型冒烟（7 步修复、最终测试 PASS）；✅ 5 组基线真实跑分（results/calc/COMPARISON.md）。
 - **发现（值得写进面试）**：noedit 第一版仍保留命令执行时，模型借 `run_test` 执行命令写文件绕过工具裁剪；改成纯读工具才形成真正下界。命令执行永远是可写向量，沙箱隔离比工具白名单更根本。
 - **参照**：Aider repo map（Apache-2.0，思想）；learn-claude-code s08 分层压缩（MIT，改写）。
+
+### Block 5 — 可靠性 + 真实 bugfix 数据集（2026-10-23）
+
+- **做了什么**：
+  1. **循环检测**：连续 4 次相同工具调用（名称+参数）→ `loop_detected` 终止
+  2. **断点续跑**：每步持久化 `{step_next, messages, max_steps}` 状态文件，崩溃/中断后从断点继续；完成时自动清理
+  3. **安全策略（HITL 基础）**：危险命令（rm/del/pip install/git push 等）按模式 auto 拒绝 / ask 交互审批，拒绝记录可报告；评测默认 auto
+  4. **数据集构建器** `scripts/build_dataset.py`：真实仓库 → 扫描修复提交（改源码+测试）→ worktree 双态验证（父提交+新测试必失败、修复提交必通过）→ 产出任务（坏版本仓库 + commit message 任务描述 + verify_command + 外部 gold patch）；处理 src 布局（PYTHONPATH）与 setuptools_scm 缺失 `_version.py`（生成存根并提交进任务仓库）
+- **验证**：✅ 30 单测全绿（含 M5 全部：循环熔断/状态恢复/策略拒绝）；✅ **首个真实任务 humanize-ca892b36 修复成功**（真实历史 bug `intword()` 舍入问题，40 步跑满但最终测试通过，成本 ¥0.73——效率问题留给 M6）；✅ 数据集已产出 6+ 任务（humanize 6，boltons/inflection 进行中，后台任务继续）
+- **发现**：agent 在第 40 步仍在探索未调 done——「修对了但话痨」；M6 将加「测试通过即收手」提示与步数策略。
+- **参照**：SWE-bench 实例构建流程（思想：测试改动先行、金标准分离）；无代码搬运。
