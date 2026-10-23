@@ -1,0 +1,161 @@
+# depending on the formatter
+_DEFAULT_ALIGN = "default"
+
+
+# if True, enable wide-character (CJK) support
+WIDE_CHARS_MODE = wcwidth is not None
+
+# Constant that can be used as part of passed rows to generate a separating line
+# It is purposely an unprintable character, very unlikely to be used in a table
+SEPARATING_LINE = "\001"
+
+Line = namedtuple("Line", ["begin", "hline", "sep", "end"])
+
+
+@dataclass
+class DataRow:
+    begin: str
+    sep: str
+    end: str
+    escape_map: dict = None
+
+
+# A table structure is supposed to be:
+#
+#     --- lineabove ---------
+#         headerrow
+#     --- linebelowheader ---
+#         datarow
+#     --- linebetweenrows ---
+#     ... (more datarows) ...
+#     --- linebetweenrows ---
+#         last datarow
+#     --- linebelow ---------
+#
+# TableFormat's line* elements can be
+#
+#   - either None, if the element is not used,
+#   - or a Line tuple,
+#   - or a function: [col_widths], [col_alignments] -> string.
+#
+# TableFormat's *row elements can be
+    If `original` is not a list to begin with (i.e. scalar value) a list of
+    length `num_desired` completely populated with `default will be returned
+    """
+    if isinstance(original, Iterable) and not isinstance(original, str):
+        return original + [default] * (num_desired - len(original))
+    else:
+        return [default] * num_desired
+
+
+def _pad_row(cells, padding):
+    if cells:
+        if cells == SEPARATING_LINE:
+            return SEPARATING_LINE
+        pad = " " * padding
+        padded_cells = [pad + cell + pad for cell in cells]
+        return padded_cells
+    else:
+        return cells
+
+
+def _build_simple_row(padded_cells: list[list], rowfmt: DataRow) -> str:
+    "Format row according to DataRow format without padding."
+    begin = rowfmt.begin
+    sep = rowfmt.sep
+    end = rowfmt.end
+    escape_map: dict = rowfmt.escape_map
+
+    if escape_map:
+        def escape_char(c):
+            return escape_map.get(c, c)
+        escaped_cells = ["".join(map(escape_char, cell)) for cell in padded_cells]
+    else:
+        escaped_cells = padded_cells
+
+    return (begin + sep.join(escaped_cells) + end).rstrip()
+
+
+def _build_row(padded_cells: list[list], colwidths: list[int], colaligns: list[str], rowfmt: Union[DataRow, Callable]) -> str:
+    "Return a string which represents a row of data cells."
+    if not rowfmt:
+        return None
+    if callable(rowfmt):
+        return rowfmt(padded_cells, colwidths, colaligns)
+    else:
+        return _build_simple_row(padded_cells, rowfmt)
+
+
+def _append_basic_row(lines, padded_cells, colwidths, colaligns, rowfmt, rowalign=None):
+    # NOTE: rowalign is ignored and exists for api compatibility with _append_multiline_row
+    lines.append(_build_row(padded_cells, colwidths, colaligns, rowfmt))
+    return lines
+75:class DataRow:
+79:    escape_map: dict = None
+103:#   - or a DataRow tuple,
+333:_latex_row = DataRow("", "&", "\\\\", LATEX_ESCAPE_RULES)
+361:        headerrow=DataRow("", "  ", ""),
+362:        datarow=DataRow("", "  ", ""),
+371:        headerrow=DataRow("", "  ", ""),
+372:        datarow=DataRow("", "  ", ""),
+381:        headerrow=DataRow("|", "|", "|"),
+382:        datarow=DataRow("|", "|", "|"),
+391:        headerrow=DataRow("│", "│", "│"),
+392:        datarow=DataRow("│", "│", "│"),
+401:        headerrow=DataRow("│", "│", "│"),
+402:        datarow=DataRow("│", "│", "│"),
+411:        headerrow=DataRow("┃", "┃", "┃"),
+412:        datarow=DataRow("┃", "┃", "┃"),
+421:        headerrow=DataRow("│", "│", "│"),
+422:        datarow=DataRow("│", "│", "│"),
+431:        headerrow=DataRow("║", "║", "║"),
+432:        datarow=DataRow("║", "║", "║"),
+441:        headerrow=DataRow("│", "│", "│"),
+442:        datarow=DataRow("│", "│", "│"),
+451:        headerrow=DataRow("|", "|", "|"),
+452:        datarow=DataRow("|", "|", "|"),
+461:        headerrow=DataRow("|", "|", "|"),
+462:        datarow=DataRow("|", "|", "|"),
+471:        headerrow=DataRow("│", "│", "│"),
+472:        datarow=DataRow("│", "│", "│"),
+481:        headerrow=DataRow("│", "│", "│"),
+482:        datarow=DataRow("│", "│", "│"),
+491:        headerrow=DataRow("┃", "┃", "┃"),
+492:        datarow=DataRow("┃", "┃", "┃"),
+501:        headerrow=DataRow("│", "│", "│"),
+502:        datarow=DataRow("│", "│", "│"),
+511:        headerrow=DataRow("║", "║", "║"),
+512:        datarow=DataRow("║", "║", "║"),
+521:        headerrow=DataRow("│", "│", "│"),
+522:        datarow=DataRow("│", "│", "│"),
+531:        headerrow=DataRow("|", "|", "|"),
+532:        datarow=DataRow("|", "|", "|"),
+541:        headerrow=DataRow("|", "|", "|"),
+542:        datarow=DataRow("|", "|", "|"),
+551:        headerrow=DataRow("||", "||", "||"),
+552:        datarow=DataRow("|", "|", "|"),
+561:        headerrow=DataRow("", "|", ""),
+562:        datarow=DataRow("", "|", ""),
+571:        headerrow=DataRow("|", "|", "|"),
+572:        datarow=DataRow("|", "|", "|"),
+581:        headerrow=DataRow("|", "|", "|"),
+582:        datarow=DataRow("|", "|", "|"),
+591:        headerrow=DataRow("", "  ", ""),
+592:        datarow=DataRow("", "  ", ""),
+656:        headerrow=DataRow("", "&", "\\\\", {}),
+657:        datarow=DataRow("", "&", "\\\\", {}),
+686:        headerrow=DataRow("", "\t", ""),
+687:        datarow=DataRow("", "\t", ""),
+696:        headerrow=DataRow("|_. ", "|_.", "|"),
+831:        headerrow=DataRow("", separator, ""),
+832:        datarow=DataRow("", separator, ""),
+2510:def _build_simple_row(padded_cells: list[list], rowfmt: DataRow) -> str:
+2511:    "Format row according to DataRow format without padding."
+2515:    escape_map: dict = rowfmt.escape_map
+2517:    if escape_map:
+2519:            return escape_map.get(c, c)
+2527:def _build_row(padded_cells: list[list], colwidths: list[int], colaligns: list[str], rowfmt: Union[DataRow, Callable]) -> str:
+2586:        rowfmt = DataRow(begin, sep, end)
+
+[stderr]
+/usr/bin/bash: line 1: cd: /workspace: No such file or directory

@@ -1,0 +1,72 @@
+tabulate:
+__init__.py
+__pycache__
+_version.py
+
+test:
+__pycache__
+common.py
+test_api.py
+test_cli.py
+test_grapheme_clusters.py
+test_input.py
+test_internal.py
+test_output.py
+test_regression.py
+test_textwrapper.py
+tabulate/__init__.py:23:from html import escape as htmlescape
+tabulate/__init__.py:79:    escape_map: dict = None
+tabulate/__init__.py:140:def _pipe_segment_with_colons(align, colwidth):
+tabulate/__init__.py:142:    indicate column's alignment (as in `pipe` output format)."""
+tabulate/__init__.py:154:def _pipe_line_with_colons(colwidths, colaligns):
+tabulate/__init__.py:156:    alignment (as in `pipe` output format)."""
+tabulate/__init__.py:159:    segments = "|".join(_pipe_segment_with_colons(a, w) for a, w in zip(colaligns, colwidths))
+tabulate/__init__.py:228:            "<{0}{1}>{2}</{0}>".format(celltag, alignment.get(a, ""), htmlescape(c))
+tabulate/__init__.py:336:def _rst_escape_first_column(rows, headers):
+tabulate/__init__.py:337:    def escape_empty(val):
+tabulate/__init__.py:346:        new_headers[0] = escape_empty(headers[0])
+tabulate/__init__.py:350:            new_row[0] = escape_empty(row[0])
+tabulate/__init__.py:526:    "pipe": TableFormat(
+tabulate/__init__.py:527:        lineabove=_pipe_line_with_colons,
+tabulate/__init__.py:528:        linebelowheader=_pipe_line_with_colons,
+tabulate/__init__.py:713:# "github" is an alias for "pipe": both produce GitHub-flavored Markdown with
+tabulate/__init__.py:715:_table_formats["github"] = _table_formats["pipe"]
+tabulate/__init__.py:734:    "pipe": "pipe",
+tabulate/__init__.py:763:# Handle ANSI escape sequences for both control sequence introducer (CSI) and
+tabulate/__init__.py:767:# CSI ANSI escape codes have the following format, defined in section 5.4 of ECMA-48:
+tabulate/__init__.py:791:_ansi_escape_pat = rf"""
+tabulate/__init__.py:809:_ansi_codes = re.compile(_ansi_escape_pat, re.VERBOSE)
+tabulate/__init__.py:810:_ansi_codes_bytes = re.compile(_ansi_escape_pat.encode("utf8"), re.VERBOSE)
+tabulate/__init__.py:1081:    r"""Remove ANSI escape sequences, both CSI (color codes, etc) and OSC hyperlinks.
+tabulate/__init__.py:1326:            val_striped = val.encode("unicode_escape").decode("utf-8")
+tabulate/__init__.py:1334:                        val = val_new.encode("utf-8").decode("unicode_escape")
+tabulate/__init__.py:1825:    'plain', 'simple', 'grid', 'pipe', 'orgtbl', 'rst', 'mediawiki',
+tabulate/__init__.py:2063:    "pipe" is like tables in PHP Markdown Extra extension or Pandoc
+tabulate/__init__.py:2064:    pipe_tables:
+tabulate/__init__.py:2067:    ...                ["strings", "numbers"], "pipe"))
+tabulate/__init__.py:2082:    >>> print(tabulate([["spam", 41.9999], ["eggs", "451.0"]], tablefmt="pipe"))
+tabulate/__init__.py:2088:    are slightly different from "pipe" format by not using colons to
+tabulate/__init__.py:2137:    "html" produces HTML markup as an html.escape'd str
+tabulate/__init__.py:2140:    the unsafehtml table format can be used if an unescaped HTML format is required:
+tabulate/__init__.py:2164:    "latex_raw" is similar to "latex", but doesn't escape special characters,
+tabulate/__init__.py:2287:    # empty values in the first column of RST tables should be escaped (issue #82)
+tabulate/__init__.py:2288:    # "" should be escaped as "\\ " or ".."
+tabulate/__init__.py:2290:        list_of_lists, headers = _rst_escape_first_column(list_of_lists, headers)
+tabulate/__init__.py:2515:    escape_map: dict = rowfmt.escape_map
+tabulate/__init__.py:2517:    if escape_map:
+tabulate/__init__.py:2518:        def escape_char(c):
+tabulate/__init__.py:2519:            return escape_map.get(c, c)
+tabulate/__init__.py:2520:        escaped_cells = ["".join(map(escape_char, cell)) for cell in padded_cells]
+tabulate/__init__.py:2522:        escaped_cells = padded_cells
+tabulate/__init__.py:2524:    return (begin + sep.join(escaped_cells) + end).rstrip()
+tabulate/__init__.py:2763:            # Consider escape codes when breaking words up
+tabulate/__init__.py:2764:            total_escape_len = 0
+tabulate/__init__.py:2768:                    escape_len = len(group)
+tabulate/__init__.py:2769:                    if group in chunk[last_group : i + total_escape_len + escape_len - 1]:
+tabulate/__init__.py:2770:                        total_escape_len += escape_len
+tabulate/__init__.py:2773:            cur_line.append(chunk[: i + total_escape_len - 1])
+tabulate/__init__.py:2774:            reversed_chunks[-1] = chunk[i + total_escape_len - 1 :]
+tabulate/__init__.py:2912:                              plain, simple, grid, fancy_grid, pipe, orgtbl,
+
+[stderr]
+/usr/bin/bash: line 1: cd: /workspace: No such file or directory

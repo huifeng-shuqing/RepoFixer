@@ -29,6 +29,8 @@ def classify(result: dict, trace_path: Path) -> str:
         return "loop_detected"
     if reason == "no_progress":
         return "no_progress"
+    if reason == "done":
+        return "premature_done"  # model declared done while tests still failed
     steps = load_trace(trace_path) if trace_path.exists() else []
     errors = Counter()
     denied = 0
