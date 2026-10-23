@@ -56,3 +56,28 @@ class LLMClient:
             completion_tokens=resp.usage.completion_tokens if resp.usage else 0,
             finish_reason=resp.choices[0].finish_reason or "",
         )
+
+    def summarize(self, messages: list[dict], max_tokens: int = 800) -> str:
+        """Compress a working log into a continuity summary (used when the
+        context budget is exceeded and eviction alone is not enough)."""
+        try:
+            text = json.dumps(messages, ensure_ascii=False)[:60_000]
+            resp = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "Summarize this agent working log for continuity: what was done, "
+                            "current state, key findings. Be concise but preserve file paths, "
+                            "error messages and test names verbatim."
+                        ),
+                    },
+                    {"role": "user", "content": text},
+                ],
+                max_tokens=max_tokens,
+                temperature=0.0,
+            )
+            return resp.choices[0].message.content or ""
+        except Exception:
+            return ""

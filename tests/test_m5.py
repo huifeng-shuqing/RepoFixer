@@ -48,6 +48,18 @@ def test_resume_continues_from_state(ws):
     assert not state.exists()  # completed runs clean up their state
 
 
+def test_context_llm_compaction(ws):
+    cm = ContextManager(obs_dir=ws, token_budget=None)
+    for i in range(6):
+        cm.add_tool(f"c{i}", "bash", f"output number {i} " + "x" * 50)
+    assert cm.compact_with_llm(lambda old: "SUMMARY")
+    contents = [m["content"] for m in cm.messages if m["role"] == "tool"]
+    assert contents[0] == "SUMMARY"
+    assert contents[1] == ""
+    assert contents[-1] != ""  # last keep_recent entries untouched
+    assert cm.compactions and cm.compactions[0]["compacted_tools"] == 3
+
+
 def test_solved_check_early_stop(ws):
     llm = ScriptedLLM(
         [LLMResponse(text="", tool_calls=[_bash_call(f"c{i}", "echo hi")], finish_reason="tool_calls") for i in range(10)]

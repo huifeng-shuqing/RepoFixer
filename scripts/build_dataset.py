@@ -111,7 +111,7 @@ def scan_fix_commits(repo: Path, max_candidates: int) -> list[dict]:
         src = [f for f in files if _is_src(f)]
         tst = [f for f in files if _is_test(f)]
         if src and tst:
-            candidates.append({"sha": sha, "subject": subject.strip(), "test_files": tst})
+            candidates.append({"sha": sha, "subject": subject.strip(), "test_files": tst, "src_files": src})
             if len(candidates) >= max_candidates:
                 break
     return candidates
@@ -191,16 +191,24 @@ def emit_task(repo: Path, name: str, cand: dict, py: Path, out, seen: set[str]) 
     if not dest.exists():
         run(["git", "clone", "--quiet", str(repo), str(dest)], timeout=900)
         run(["git", "-C", str(dest), "checkout", "--quiet", cand["parent"]])
+        # SWE-bench-style test patch: bring in the fix commit's TEST changes so
+        # the bug is actually observable; the source fix stays out (gold patch).
+        for tf in cand["test_files"]:
+            run(["git", "-C", str(dest), "checkout", "--quiet", cand["sha"], "--", tf])
         if patch_scm_version(dest):
-            # commit the stub so eval resets (git checkout -- . / clean -fd) keep it
-            run(["git", "-C", str(dest), "add", "-A"])
-            run(["git", "-C", str(dest), "-c", "user.name=dataset", "-c", "user.email=dataset@local",
-                 "commit", "--quiet", "-m", "build: stub _version for bare checkout"])
+            pass  # stub written; committed together below
+        run(["git", "-C", str(dest), "add", "-A"])
+        run(["git", "-C", str(dest), "-c", "user.name=dataset", "-c", "user.email=dataset@local",
+             "commit", "--quiet", "-m", "build: apply test patch + stub _version (source fix removed)"])
     gold_dir = DATASET / "gold"
     gold_dir.mkdir(parents=True, exist_ok=True)
     gold = gold_dir / f"{tid}.patch"
     patch = run(["git", "-C", str(repo), "diff", f"{cand['sha']}^", cand["sha"], "--"]).stdout
     gold.write_text(patch, encoding="utf-8")
+    test_patch = run(["git", "-C", str(repo), "diff", f"{cand['sha']}^", cand["sha"], "--", *cand["test_files"]]).stdout
+    (gold_dir / f"{tid}.test.patch").write_text(test_patch, encoding="utf-8")
+    src_patch = run(["git", "-C", str(repo), "diff", f"{cand['sha']}^", cand["sha"], "--", *cand["src_files"]]).stdout
+    (gold_dir / f"{tid}.src.patch").write_text(src_patch, encoding="utf-8")
     tfiles = " ".join(cand["test_files"])
     prefix = "set PYTHONPATH=src&& " if (dest / "src").exists() else ""
     entry = {
@@ -210,6 +218,10 @@ def emit_task(repo: Path, name: str, cand: dict, py: Path, out, seen: set[str]) 
         "verify_command": f"{prefix}\"{py}\" -m pytest -q --tb=no {tfiles}",
         "timeout": 600,
         "difficulty": "easy" if len(cand["test_files"]) == 1 else "medium",
+        "base_commit": cand["parent"],
+        "fix_commit": cand["sha"],
+        "test_files": cand["test_files"],
+        "src_files": cand["src_files"],
     }
     out.write(json.dumps(entry, ensure_ascii=False) + "\n")
     out.flush()

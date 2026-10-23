@@ -1,0 +1,12 @@
+diff --git a/test_inflection.py b/test_inflection.py
+index 3a513bd..0865def 100644
+--- a/test_inflection.py
++++ b/test_inflection.py
+@@ -73,6 +73,7 @@ SINGULAR_TO_PLURAL = (
+     ("photo", "photos"),
+     ("buffalo", "buffaloes"),
+     ("tomato", "tomatoes"),
++    ("potato", "potatoes"),
+     ("dwarf", "dwarves"),
+     ("elf", "elves"),
+     ("information", "information"),

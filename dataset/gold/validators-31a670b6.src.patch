@@ -1,0 +1,13 @@
+diff --git a/src/validators/country.py b/src/validators/country.py
+index 6cd83ee..f220c77 100644
+--- a/src/validators/country.py
++++ b/src/validators/country.py
+@@ -219,7 +219,7 @@ _currency_iso4217 = {
+ _currency_symbols = {
+     # https://en.wikipedia.org/wiki/Currency_sign_(generic)
+     "؋", "฿", "₵", "₡", "¢", "$", "₫", "֏", "€", "ƒ", "₣", "₲", "₴", "₭", "₾", "£", "₺", "₼", "₦",
+-    "₱", "元", "圆", "圓", "﷼", "៛", "₽", "₹", "रू", "රු", "૱", "௹", "꠸", "Rs", "₪", "⃀" "৳", "₸",
++    "₱", "元", "圆", "圓", "﷼", "៛", "₽", "₹", "रू", "රු", "૱", "௹", "꠸", "Rs", "₪", "⃀", "৳", "₸",
+     "₮", "₩", "¥", "円", "₿", "¤"
+ }
+ # fmt: on

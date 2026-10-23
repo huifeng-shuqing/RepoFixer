@@ -17,7 +17,7 @@ import json
 import subprocess
 import sys
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from .environment import create_env
@@ -37,6 +37,10 @@ class Task:
     verify_command: str = ""
     timeout: int = 300
     difficulty: str = "easy"
+    base_commit: str = ""
+    fix_commit: str = ""
+    test_files: list = field(default_factory=list)
+    src_files: list = field(default_factory=list)
 
 
 @dataclass

@@ -1,0 +1,16 @@
+diff --git a/tests/test_number.py b/tests/test_number.py
+index 78639c3..cf55ee1 100644
+--- a/tests/test_number.py
++++ b/tests/test_number.py
+@@ -187,6 +187,11 @@ def test_apnumber(test_input: int | str, expected: str) -> None:
+         (-1.3, "-1 3/10"),
+         (-2.5, "-2 1/2"),
+         (-0.5, "-1/2"),
++        (0, "0"),
++        (0.0, "0"),
++        (2.9999999, "3"),
++        (0.9999999, "1"),
++        (-2.9999999, "-3"),
+     ],
+ )
+ def test_fractional(test_input: float | str, expected: str) -> None:

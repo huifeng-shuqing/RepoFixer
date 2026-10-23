@@ -1,0 +1,13 @@
+diff --git a/test_inflection.py b/test_inflection.py
+index 2834747..30db6c2 100644
+--- a/test_inflection.py
++++ b/test_inflection.py
+@@ -191,6 +191,8 @@ MIXTURE_TO_TITLEIZED = (
+     ("david's code",          "David's Code"),
+     ("David's code",          "David's Code"),
+     ("david's Code",          "David's Code"),
++    ("ana índia",             "Ana Índia"),
++    ("Ana Índia",             "Ana Índia"),
+ )
+ 
+ 

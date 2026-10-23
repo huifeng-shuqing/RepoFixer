@@ -27,7 +27,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
 
-from .context import ContextManager
+from .context import ContextManager, estimate_tokens
 from .llm import LLMClient
 from .safety import SafetyPolicy
 from .tools import ToolRegistry
@@ -115,7 +115,13 @@ def run_agent(
     try:
         for step_no in range(step_start, max_steps + 1):
             t0 = time.perf_counter()
-            resp = llm.complete(cm.prepare(), registry.schemas())
+            messages = cm.prepare()
+            # second-chance compaction: if eviction alone is not enough, ask
+            # the model to summarize the oldest history into one block
+            if cm.token_budget and estimate_tokens(messages) > cm.token_budget:
+                if cm.compact_with_llm(lambda old: llm.summarize(old)):
+                    messages = cm.prepare()
+            resp = llm.complete(messages, registry.schemas())
             run.prompt_tokens += resp.prompt_tokens
             run.completion_tokens += resp.completion_tokens
             st = StepTrace(

@@ -37,6 +37,7 @@ class ContextManager:
         self.token_budget = token_budget
         self.keep_recent = keep_recent
         self.evictions: list[dict] = []
+        self.compactions: list[dict] = []
         self._age = 0
         self._tool_index: list[tuple[int, dict]] = []  # (message index, meta)
         if obs_dir is not None:
@@ -114,6 +115,31 @@ class ContextManager:
         self.evictions.append(
             {"age": meta["age"], "name": meta["name"], "size": meta["size"], "important": meta["important"]}
         )
+        return True
+
+    def compact_with_llm(self, summarize) -> bool:
+        """Replace the contents of the oldest tool results with one LLM summary.
+
+        summarize: callable(list[dict]) -> str. The summary is written into the
+        first compacted tool message (structure preserved: tool_call_ids stay
+        paired), the rest are emptied. Returns True if anything was compacted.
+        """
+        idxs = [i for i, m in enumerate(self.messages) if m.get("role") == "tool"]
+        if len(idxs) <= self.keep_recent:
+            return False
+        head = idxs[: len(idxs) - self.keep_recent]
+        old = [m for m in self.messages[: head[-1]] if m.get("role") in ("assistant", "tool") and m.get("content")]
+        if not old:
+            return False
+        try:
+            summary = summarize(old)
+        except Exception:
+            return False
+        if not summary:
+            return False
+        for k, i in enumerate(head):
+            self.messages[i]["content"] = summary if k == 0 else ""
+        self.compactions.append({"compacted_tools": len(head), "summary_chars": len(summary)})
         return True
 
     def write_eviction_log(self) -> None:

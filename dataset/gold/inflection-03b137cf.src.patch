@@ -1,0 +1,13 @@
+diff --git a/inflection.py b/inflection.py
+index 72d6e28..2e4c2b5 100644
+--- a/inflection.py
++++ b/inflection.py
+@@ -29,7 +29,7 @@ PLURALS = [
+     (r"(?i)sis$", 'ses'),
+     (r"(?i)([ti])a$", r'\1a'),
+     (r"(?i)([ti])um$", r'\1a'),
+-    (r"(?i)(buffal|tomat)o$", r'\1oes'),
++    (r"(?i)(buffal|potat|tomat)o$", r'\1oes'),
+     (r"(?i)(bu)s$", r'\1ses'),
+     (r"(?i)(alias|status)$", r'\1es'),
+     (r"(?i)(octop|vir)i$", r'\1i'),
