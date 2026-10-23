@@ -11,7 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from repofixer.eval import summarize  # noqa: E402
+from repofixer.eval import EvalResult, summarize  # noqa: E402
 
 
 def load_results(path: Path) -> list[dict]:
@@ -21,6 +21,7 @@ def load_results(path: Path) -> list[dict]:
 
 
 def main() -> int:
+    sys.stdout.reconfigure(encoding="utf-8")
     ap = argparse.ArgumentParser()
     ap.add_argument("--base", required=True)
     ap.add_argument("--out", default=None)
@@ -38,7 +39,7 @@ def main() -> int:
         if not results:
             rows.append([name, "0", "-", "-", "-", "-", "-", "-"])
             continue
-        s = summarize(results, "deepseek-chat")
+        s = summarize([EvalResult(**r) for r in results], "deepseek-chat")
         rows.append([
             name, str(s["n"]), str(s["resolved"]), f"{s['success_rate']:.1%}",
             str(s["avg_steps"]), str(s["prompt_tokens"]), str(s["completion_tokens"]),
