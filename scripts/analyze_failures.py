@@ -27,6 +27,8 @@ def classify(result: dict, trace_path: Path) -> str:
     reason = result.get("stopped_reason", "")
     if reason == "loop_detected":
         return "loop_detected"
+    if reason == "no_progress":
+        return "no_progress"
     steps = load_trace(trace_path) if trace_path.exists() else []
     errors = Counter()
     denied = 0

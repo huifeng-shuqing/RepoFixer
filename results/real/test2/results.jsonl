@@ -1,0 +1,2 @@
+{"task_id": "humanize-ca892b36", "resolved": true, "stopped_reason": "solved_early", "steps": 14, "prompt_tokens": 63978, "completion_tokens": 1255, "wall_ms": 70660, "trace_path": "results\\real\\test2\\traces\\humanize-ca892b36.jsonl", "error": ""}
+{"task_id": "humanize-e46732ed", "resolved": false, "stopped_reason": "loop_detected", "steps": 38, "prompt_tokens": 357224, "completion_tokens": 6710, "wall_ms": 233782, "trace_path": "results\\real\\test2\\traces\\humanize-e46732ed.jsonl", "error": ""}

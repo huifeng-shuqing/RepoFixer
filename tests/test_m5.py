@@ -72,6 +72,23 @@ def test_solved_check_early_stop(ws):
     assert len(run.steps) == 1
 
 
+def test_no_progress_guard_stops_probe_loops(ws):
+    """Model keeps probing with varying commands but never edits/tests."""
+    llm = ScriptedLLM(
+        [
+            LLMResponse(
+                text="",
+                tool_calls=[_bash_call(f"c{i}", f"python -c \"print({i})\"")],
+                finish_reason="tool_calls",
+            )
+            for i in range(10)
+        ]
+    )
+    run = run_agent("task", llm, ToolRegistry(LocalEnv(ws)), ws / "t.jsonl", max_steps=20)
+    assert run.stopped_reason == "no_progress"
+    assert len(run.steps) == 6
+
+
 def test_safety_policy_denies_dangerous(ws):
     policy = SafetyPolicy("auto")
     blocked = policy.check("bash", {"command": "rm -rf data"})

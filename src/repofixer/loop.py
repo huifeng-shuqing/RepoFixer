@@ -112,6 +112,8 @@ def run_agent(
     tw = TraceWriter(trace_path)
     run = AgentRun()
     recent_calls: deque[str] = deque(maxlen=loop_guard)
+    recent_tool_names: deque[str] = deque(maxlen=6)
+    PRODUCTIVE_TOOLS = {"edit_file", "write_file", "run_test"}
     try:
         for step_no in range(step_start, max_steps + 1):
             t0 = time.perf_counter()
@@ -175,6 +177,7 @@ def run_agent(
                 )
                 cm.add_tool(call["id"], call["name"], result.output)
                 recent_calls.append(f"{call['name']}:{json.dumps(call['arguments'], sort_keys=True)}")
+                recent_tool_names.append(call["name"])
                 if call["name"] == "done" and result.ok:
                     run.done_summary = result.output
                     run.stopped_reason = "done"
@@ -185,6 +188,12 @@ def run_agent(
                 and run.done_summary is None
             ):
                 run.stopped_reason = "loop_detected"
+            elif (
+                len(recent_tool_names) == recent_tool_names.maxlen
+                and not (set(recent_tool_names) & PRODUCTIVE_TOOLS)
+                and run.done_summary is None
+            ):
+                run.stopped_reason = "no_progress"
 
             st.wall_ms = int((time.perf_counter() - t0) * 1000)
             tw.write(st)
@@ -195,7 +204,7 @@ def run_agent(
                         run.stopped_reason = "solved_early"
                 except Exception:
                     pass
-            if run.done_summary is not None or run.stopped_reason in ("loop_detected", "solved_early"):
+            if run.done_summary is not None or run.stopped_reason in ("loop_detected", "solved_early", "no_progress"):
                 if state_path is not None and run.done_summary is not None:
                     state_path.unlink(missing_ok=True)
                 break
