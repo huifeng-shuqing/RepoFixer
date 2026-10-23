@@ -212,6 +212,7 @@ def emit_task(repo: Path, name: str, cand: dict, py: Path, out, seen: set[str]) 
         "difficulty": "easy" if len(cand["test_files"]) == 1 else "medium",
     }
     out.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    out.flush()
     log(f"  task: {tid}  ({cand['subject'][:60]})")
 
 

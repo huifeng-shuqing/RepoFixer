@@ -38,6 +38,7 @@ You are given a task. Explore, locate the bug, edit files, run tests, and iterat
 Rules:
 - Read code before changing it; prefer targeted edits (edit_file) over rewriting whole files.
 - When tests fail, read the failure output and fix the cause, not the symptom.
+- As soon as the tests pass, stop exploring and call `done` immediately.
 - Call `done` with a summary ONLY when the task is finished. Never call done while tests still fail.
 - Be terse: report what you changed and what you verified.
 """

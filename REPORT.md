@@ -51,6 +51,6 @@
   2. **断点续跑**：每步持久化 `{step_next, messages, max_steps}` 状态文件，崩溃/中断后从断点继续；完成时自动清理
   3. **安全策略（HITL 基础）**：危险命令（rm/del/pip install/git push 等）按模式 auto 拒绝 / ask 交互审批，拒绝记录可报告；评测默认 auto
   4. **数据集构建器** `scripts/build_dataset.py`：真实仓库 → 扫描修复提交（改源码+测试）→ worktree 双态验证（父提交+新测试必失败、修复提交必通过）→ 产出任务（坏版本仓库 + commit message 任务描述 + verify_command + 外部 gold patch）；处理 src 布局（PYTHONPATH）与 setuptools_scm 缺失 `_version.py`（生成存根并提交进任务仓库）
-- **验证**：✅ 30 单测全绿（含 M5 全部：循环熔断/状态恢复/策略拒绝）；✅ **首个真实任务 humanize-ca892b36 修复成功**（真实历史 bug `intword()` 舍入问题，40 步跑满但最终测试通过，成本 ¥0.73——效率问题留给 M6）；✅ 数据集已产出 6+ 任务（humanize 6，boltons/inflection 进行中，后台任务继续）
+- **验证**：✅ 30 单测全绿（含 M5 全部：循环熔断/状态恢复/策略拒绝）；✅ **首个真实任务 humanize-ca892b36 修复成功**（真实历史 bug `intword()` 舍入问题，40 步跑满但最终测试通过，成本 ¥0.73——效率问题留给 M6）；✅ 数据集最终产出 **31 条真实任务**（humanize 6 / tabulate 4 / shortuuid 1 / validators 4 / inflection 4 / more-itertools 4 / boltons 4 / pathspec 4；prettytable、wcwidth、tqdm 因测试环境不兼容被双态门禁自动过滤）；全量评测已在后台启动（results/real/full）
 - **发现**：agent 在第 40 步仍在探索未调 done——「修对了但话痨」；M6 将加「测试通过即收手」提示与步数策略。
 - **参照**：SWE-bench 实例构建流程（思想：测试改动先行、金标准分离）；无代码搬运。
