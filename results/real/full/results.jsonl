@@ -1,0 +1,1 @@
+{"task_id": "humanize-ca892b36", "resolved": false, "stopped_reason": "no_progress", "steps": 5, "prompt_tokens": 9291, "completion_tokens": 373, "wall_ms": 30772, "trace_path": "results\\real\\full\\traces\\humanize-ca892b36.jsonl", "error": ""}

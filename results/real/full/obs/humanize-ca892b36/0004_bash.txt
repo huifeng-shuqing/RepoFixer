@@ -1,0 +1,69 @@
+
+    ordinal = bisect.bisect_right(powers, value)
+    largest_ordinal = ordinal == len(powers)
+
+    # Consider the biggest power of 10 that is smaller than value
+    ordinal -= 1
+    power = powers[ordinal]
+    chopped = value / power
+    rounded_value = float(format % chopped)
+
+    if not largest_ordinal and rounded_value * power == powers[ordinal + 1]:
+        # After rounding, we end up just at the next power
+        ordinal += 1
+        rounded_value = 1.0
+
+    singular, plural = human_powers[ordinal]
+    unit = _ngettext(singular, plural, math.ceil(rounded_value))
+    decimal_sep = decimal_separator()
+    number = (format % rounded_value).replace(".", decimal_sep)
+    return f"{negative_prefix}{number} {unit}"
+
+
+def apnumber(value: NumberOrString) -> str:
+    """Converts an integer to Associated Press style.
+
+    Examples:
+      ```pycon
+      >>> apnumber(0)
+      'zero'
+      >>> apnumber(5)
+      'five'
+      >>> apnumber(10)
+      '10'
+      >>> apnumber("7")
+      'seven'
+      >>> apnumber("foo")
+      'foo'
+      >>> apnumber(None)
+      'None'
+
+      ```
+
+    Args:
+        value (int, float, str): Integer to convert.
+
+    Returns:
+tests/test_benchmarks.py:40:def test_intword(benchmark: BenchmarkFixture) -> None:
+tests/test_benchmarks.py:41:    benchmark(humanize.intword, 1_234_567_890)
+tests/test_i18n.py:226:def test_intword_i18n(locale: str, number: int, expected_result: str) -> None:
+tests/test_i18n.py:232:        assert humanize.intword(number) == expected_result
+tests/test_i18n.py:397:def test_intword_unit_has_no_format_placeholder(locale: str) -> None:
+tests/test_i18n.py:401:            assert "%" not in humanize.intword(value)
+tests/test_number.py:93:def test_intword_powers() -> None:
+tests/test_number.py:147:def test_intword(test_args: list[str], expected: str) -> None:
+tests/test_number.py:148:    assert humanize.intword(*test_args) == expected
+tests/test_number.py:151:def test_intword_rounding_rollover() -> None:
+tests/test_number.py:176:        assert humanize.intword(value) == f"1.0 {units[i]}"
+tests/test_number.py:177:        assert humanize.intword(value, "%.0f") == f"1 {units[i]}"
+tests/test_number.py:183:        rendered = humanize.intword(10**exponent - 1)
+tests/test_number.py:188:    assert humanize.intword(10**36) == "1000.0 decillion"
+tests/test_number.py:189:    assert humanize.intword(2 * 10**100) == "2.0 googol"
+tests/test_number.py:290:        ([1, humanize.intword, 1e6, None, "under "], "under 1.0 million"),
+Binary file tests/__pycache__/test_benchmarks.cpython-314-pytest-9.1.1.pyc matches
+Binary file tests/__pycache__/test_i18n.cpython-314-pytest-9.1.1.pyc matches
+Binary file tests/__pycache__/test_number.cpython-314-pytest-8.4.2.pyc matches
+Binary file tests/__pycache__/test_number.cpython-314-pytest-9.1.1.pyc matches
+
+[stderr]
+/usr/bin/bash: line 1: cd: /repo: No such file or directory

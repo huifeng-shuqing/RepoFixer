@@ -1,0 +1,112 @@
+    singular, plural = human_powers[ordinal]
+    unit = _ngettext(singular, plural, math.ceil(rounded_value))
+    decimal_sep = decimal_separator()
+    number = (format % rounded_value).replace(".", decimal_sep)
+    return f"{negative_prefix}{number} {unit}"
+
+
+def apnumber(value: NumberOrString) -> str:
+    """Converts an integer to Associated Press style.
+
+    Examples:
+      ```pycon
+      >>> apnumber(0)
+      'zero'
+      >>> apnumber(5)
+      'five'
+      >>> apnumber(10)
+      '10'
+      >>> apnumber("7")
+      'seven'
+      >>> apnumber("foo")
+      'foo'
+      >>> apnumber(None)
+      'None'
+
+      ```
+
+    Args:
+        value (int, float, str): Integer to convert.
+
+    Returns:
+        str: For numbers 0-9, the number spelled out. Otherwise, the number. This always
+            returns a string unless the value was not `int`-able, then `str(value)`
+            is returned.
+    """
+    import math
+
+    try:
+        if not math.isfinite(float(value)):
+            return _format_not_finite(float(value))
+        value = int(value)
+    except (TypeError, ValueError):
+        return str(value)
+    if not 0 <= value < 10:
+        return str(value)
+    return _(_APNUMBER_WORDS[value])
+
+
+def fractional(value: NumberOrString) -> str:
+    """Convert to fractional number.
+
+        (["1234567", "%.1f"], "1.2 million"),
+        (["1234567", "%.2f"], "1.23 million"),
+        (["1234567", "%.3f"], "1.235 million"),
+        (["999500", "%.0f"], "1 million"),
+        (["999499", "%.0f"], "999 thousand"),
+    ],
+)
+def test_intword(test_args: list[str], expected: str) -> None:
+    assert humanize.intword(*test_args) == expected
+
+
+def test_intword_rounding_rollover() -> None:
+    """Values that round up to the next power must carry to the next unit.
+
+    Regression: for magnitudes above ~10**22 the carry was checked in floating
+    point (``rounded_value * power == powers[ordinal + 1]``) and no longer
+    matched the exact integer power, so e.g. ``10**24 - 1`` was rendered as
+    "1000.0 sextillion" instead of "1.0 septillion".
+    """
+    units = [
+        "thousand",
+        "million",
+        "billion",
+        "trillion",
+        "quadrillion",
+        "quintillion",
+        "sextillion",
+        "septillion",
+        "octillion",
+        "nonillion",
+        "decillion",
+    ]
+    # value = 10**e - 1 rounds up to 10**e with "%.1f"/"%.0f", i.e. exactly 1.0
+    # of the unit sitting at 10**e (units[i] where 10**e == powers[i]).
+    for i, exponent in enumerate(range(6, 34, 3), start=1):
+        value = 10**exponent - 1
+        assert humanize.intword(value) == f"1.0 {units[i]}"
+        assert humanize.intword(value, "%.0f") == f"1 {units[i]}"
+
+    # The mantissa must never render at or above 1000 for values below a
+    # decillion; a bare "1000.0" is only expected in the sparse gap between
+    # decillion and googol, which has no dedicated unit.
+    for exponent in range(6, 34, 3):
+        rendered = humanize.intword(10**exponent - 1)
+        mantissa = float(rendered.split(" ", 1)[0])
+        assert mantissa < 1000
+
+    # The documented decillion..googol gap must be left untouched.
+    assert humanize.intword(10**36) == "1000.0 decillion"
+    assert humanize.intword(2 * 10**100) == "2.0 googol"
+
+
+@pytest.mark.parametrize(
+    "test_input, expected",
+    [
+        (0, "zero"),
+        (1, "one"),
+        (2, "two"),
+        (4, "four"),
+        (5, "five"),
+        (9, "nine"),

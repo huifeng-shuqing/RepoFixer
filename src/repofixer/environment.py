@@ -35,6 +35,47 @@ def find_bash() -> str | None:
     return None
 
 
+def _run_with_timeout(
+    cmd: list[str] | str,
+    *,
+    cwd: str,
+    timeout: int,
+    env: dict | None,
+    shell: bool = False,
+) -> ExecResult:
+    """Run a command with a REAL timeout: on expiry the whole process tree is
+    killed (subprocess.run's timeout only kills the direct child, and
+    grandchildren holding the stdout pipe make communicate() hang forever)."""
+    kwargs: dict = dict(
+        cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.DEVNULL,
+        text=True, encoding="utf-8", errors="replace", env=env,
+        creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
+    )
+    proc = subprocess.Popen(cmd, shell=shell, **kwargs)
+    try:
+        out, err = proc.communicate(timeout=timeout)
+        return ExecResult(
+            ok=proc.returncode == 0, stdout=out or "", stderr=err or "", exit_code=proc.returncode or 0
+        )
+    except subprocess.TimeoutExpired:
+        subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)], capture_output=True)
+        try:
+            out, err = proc.communicate(timeout=10)
+        except Exception:
+            out, err = "", ""
+            try:
+                proc.kill()
+            except Exception:
+                pass
+        return ExecResult(
+            ok=False,
+            stdout=out or "",
+            stderr=(err or "") + f"\n[timeout after {timeout}s: process tree killed]",
+            exit_code=124,
+            timed_out=True,
+        )
+
+
 @dataclass
 class ExecResult:
     ok: bool
@@ -89,40 +130,22 @@ class LocalEnv(Environment):
                     stderr=f"blocked: command contains blacklisted pattern '{bad}'",
                     exit_code=1,
                 )
-        try:
-            if self.bash:
-                proc = subprocess.run(
-                    [self.bash, "-lc", command],
-                    cwd=str(self.resolve(cwd)),
-                    capture_output=True,
-                    text=True,
-                    encoding="utf-8",
-                    errors="replace",
-                    timeout=timeout,
-                    env={**os.environ, **(env or {})},
-                )
-            else:
-                proc = subprocess.run(
-                    command,
-                    shell=True,
-                    cwd=str(self.resolve(cwd)),
-                    capture_output=True,
-                    text=True,
-                    encoding="utf-8",
-                    errors="replace",
-                    timeout=timeout,
-                    env={**os.environ, **(env or {})},
-                )
-            return ExecResult(
-                ok=proc.returncode == 0,
-                stdout=proc.stdout,
-                stderr=proc.stderr,
-                exit_code=proc.returncode,
+        full_env = {**os.environ, **(env or {})}
+        if self.bash:
+            full_env.setdefault("MSYS_NO_PATHCONV", "1")  # keep C:\... args verbatim for native exes
+            return _run_with_timeout(
+                [self.bash, "-lc", command],
+                cwd=str(self.resolve(cwd)),
+                timeout=timeout,
+                env=full_env,
             )
-        except subprocess.TimeoutExpired:
-            return ExecResult(
-                ok=False, stdout="", stderr=f"timeout after {timeout}s", exit_code=124, timed_out=True
-            )
+        return _run_with_timeout(
+            command,
+            cwd=str(self.resolve(cwd)),
+            timeout=timeout,
+            env=full_env,
+            shell=True,
+        )
 
 
 def docker_available() -> bool:

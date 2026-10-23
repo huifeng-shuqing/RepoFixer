@@ -35,6 +35,20 @@ def test_run_posix_syntax(ws):
     assert r2.ok and "x" in r2.stdout
 
 
+def test_run_timeout_kills_process_tree(ws):
+    """Grandchild holding the stdout pipe must not hang communicate()."""
+    import time
+
+    env = LocalEnv(ws)
+    t0 = time.time()
+    r = env.run(
+        'python -c "import subprocess; subprocess.Popen([\'ping\',\' -n\',\'30\',\'127.0.0.1\']); import time; time.sleep(30)"',
+        timeout=3,
+    )
+    assert r.timed_out
+    assert time.time() - t0 < 20  # tree killed promptly, no hang
+
+
 def test_run_timeout(ws):
     env = LocalEnv(ws)
     t0 = time.time()
