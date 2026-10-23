@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+traces/
+work/
+.pytest_cache/
+.tmp/
+.idea/
+.vscode/
+vendor/
