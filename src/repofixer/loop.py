@@ -113,7 +113,7 @@ def run_agent(
     run = AgentRun()
     recent_calls: deque[str] = deque(maxlen=loop_guard)
     recent_tool_names: deque[str] = deque(maxlen=6)
-    PRODUCTIVE_TOOLS = {"edit_file", "write_file", "run_test"}
+    # reading files and grepping IS progress; only pure command probing is not
     try:
         for step_no in range(step_start, max_steps + 1):
             t0 = time.perf_counter()
@@ -190,7 +190,7 @@ def run_agent(
                 run.stopped_reason = "loop_detected"
             elif (
                 len(recent_tool_names) == recent_tool_names.maxlen
-                and not (set(recent_tool_names) & PRODUCTIVE_TOOLS)
+                and set(recent_tool_names) <= {"bash"}
                 and run.done_summary is None
             ):
                 run.stopped_reason = "no_progress"

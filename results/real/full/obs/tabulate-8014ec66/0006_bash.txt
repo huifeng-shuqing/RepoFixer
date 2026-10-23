@@ -1,0 +1,69 @@
+
+def _is_separating_line_value(value):
+    return type(value) is str and value.strip() == SEPARATING_LINE
+
+
+def _is_separating_line(row):
+    row_type = type(row)
+    return (row_type is list or row_type is str) and (
+        (len(row) >= 1 and _is_separating_line_value(row[0]))
+        or (len(row) >= 2 and _is_separating_line_value(row[1]))
+    )
+
+
+def _pipe_segment_with_colons(align, colwidth):
+    """Return a segment of a horizontal line with optional colons which
+    indicate column's alignment (as in `pipe` output format)."""
+    w = colwidth
+    if align in ["right", "decimal"]:
+        return ("-" * (w - 1)) + ":"
+    elif align == "center":
+        return ":" + ("-" * (w - 2)) + ":"
+    elif align == "left":
+        return ":" + ("-" * (w - 1))
+    else:
+        return "-" * w
+
+
+def _pipe_line_with_colons(colwidths, colaligns):
+    """Return a horizontal line with optional colons to indicate column's
+    alignment (as in `pipe` output format)."""
+    if not colaligns:  # e.g. printing an empty data frame (github issue #15)
+        colaligns = [""] * len(colwidths)
+    segments = "|".join(_pipe_segment_with_colons(a, w) for a, w in zip(colaligns, colwidths))
+    return f"|{segments}|"
+
+
+def _grid_segment_with_colons(colwidth, align):
+    """Return a segment of a horizontal line with optional colons which indicate
+    column's alignment in a grid table."""
+    width = colwidth
+    if align == "right":
+        return ("=" * (width - 1)) + ":"
+    elif align == "center":
+        return ":" + ("=" * (width - 2)) + ":"
+    elif align == "left":
+        return ":" + ("=" * (width - 1))
+    else:
+        return "=" * width
+
+
+def _grid_line_with_colons(colwidths, colaligns):
+    """Return a horizontal line with optional colons to indicate column's alignment
+    in a grid table."""
+    if not colaligns:
+        colaligns = [""] * len(colwidths)
+    segments = "+".join(_grid_segment_with_colons(w, a) for a, w in zip(colaligns, colwidths))
+378:    result = tabulate(_test_table_with_sep_line, tablefmt="github")
+487:def test_github():
+488:    "Output: github with headers"
+497:    result = tabulate(_test_table, _test_table_headers, tablefmt="github")
+501:def test_github_multiline():
+502:    "Output: github with multiline cells with headers"
+514:    result = tabulate(table, headers, tablefmt="github")
+518:def test_github_with_colalign():
+519:    "Output: github with explicit column alignment"
+531:        tablefmt="github",
+537:def test_github_no_alignment():
+538:    "Output: github without alignment hints when numalign/stralign are disabled"
+550:        tablefmt="github",

@@ -1,0 +1,113 @@
+311:def fractional(value: NumberOrString) -> str:
+312:    """Convert to fractional number.
+313-
+314-    There will be some cases where one might not want to show ugly decimal places for
+315-    floats and decimals.
+316-
+317:    This function returns a human-readable fractional number in form of fractions and
+318-    mixed fractions.
+319-
+320-    Pass in a string, or a number or a float, and this function returns:
+321-
+322-    * a string representation of a fraction
+323-    * or a whole number
+324-    * or a mixed fraction
+325-    * or the str output of the value, if it could not be converted
+326-
+327-    Examples:
+328-        ```pycon
+329:        >>> fractional(0.3)
+330-        '3/10'
+331:        >>> fractional(1.3)
+332-        '1 3/10'
+333:        >>> fractional(float(1/3))
+334-        '1/3'
+335:        >>> fractional(1)
+336-        '1'
+337:        >>> fractional("ten")
+338-        'ten'
+339:        >>> fractional(None)
+340-        'None'
+341-
+342-        ```
+343-
+344-    Args:
+345-        value (int, float, str): Integer to convert.
+346-
+347-    Returns:
+348-        str: Fractional number as a string.
+349-    """
+350-    import math
+351-
+352-    try:
+353-        number = float(value)
+354-        if not math.isfinite(number):
+355-            return _format_not_finite(number)
+356-    except (TypeError, ValueError):
+357-        return str(value)
+358-    from fractions import Fraction
+359-
+360-    whole_number = int(number)
+361-    frac = Fraction(number - whole_number).limit_denominator(1000)
+362-    numerator = frac.numerator
+363-    denominator = frac.denominator
+364-    if whole_number and not numerator and denominator == 1:
+365-        # this means that an integer was passed in
+366-        # (or variants of that integer like 1.0000)
+367-        return f"{whole_number:.0f}"
+368-
+369-    if not whole_number:
+370-        return f"{numerator:.0f}/{denominator:.0f}"
+371-
+372-    # int() truncates toward zero, so for a negative number both
+373-    # whole_number and numerator carry the minus sign, which prints as
+374-    # "-1 -3/10". The sign already rides on the whole part; absorb it
+375:    # from the fractional part so the result reads as a normal mixed
+376-    # fraction.
+377-    return f"{whole_number:.0f} {abs(numerator):.0f}/{denominator:.0f}"
+378-
+379-
+380-def scientific(value: NumberOrString, precision: int = 2) -> str:
+381-    """Return number in string scientific notation z.wq x 10ⁿ.
+382-
+383-    Examples:
+384-        ```pycon
+385-        >>> scientific(float(0.3))
+386-        '3.00 x 10⁻¹'
+387-        >>> scientific(int(500))
+388-        '5.00 x 10²'
+389-        >>> scientific(-1000)
+390-        '-1.00 x 10³'
+194-        (-2.9999999, "-3"),
+195-    ],
+196-)
+197:def test_fractional(test_input: float | str, expected: str) -> None:
+198:    assert humanize.fractional(test_input) == expected
+199-
+200-
+201-@pytest.mark.parametrize(
+202-    "test_args, expected",
+203-    [
+204-        ([1000], "1.00 x 10³"),
+205-        ([-1000], "-1.00 x 10³"),
+206-        ([5.5], "5.50 x 10⁰"),
+207-        ([5781651000], "5.78 x 10⁹"),
+208-        (["1000"], "1.00 x 10³"),
+209-        (["99"], "9.90 x 10¹"),
+210-        ([0.3], "3.00 x 10⁻¹"),
+211-        (["foo"], "foo"),
+212-        ([None], "None"),
+213-        ([1000, 1], "1.0 x 10³"),
+214-        ([0.3, 1], "3.0 x 10⁻¹"),
+215-        ([1000, 0], "1 x 10³"),
+216-        ([0.3, 0], "3 x 10⁻¹"),
+217-        ([1e20], "1.00 x 10²⁰"),
+218-        ([2e-20], "2.00 x 10⁻²⁰"),
+219-        ([-3e20], "-3.00 x 10²⁰"),
+220-        ([-4e-20], "-4.00 x 10⁻²⁰"),
+221-        ([math.nan], "NaN"),
+222-        ([math.inf], "+Inf"),
+223-        ([-math.inf], "-Inf"),
+
+[stderr]
+/usr/bin/bash: line 1: cd: /repo: No such file or directory

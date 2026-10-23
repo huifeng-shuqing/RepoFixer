@@ -1,0 +1,71 @@
+147:def _pipe_line_with_colons(colwidths, colaligns):
+148-    """Return a horizontal line with optional colons to indicate column's
+149-    alignment (as in `pipe` output format)."""
+150-    if not colaligns:  # e.g. printing an empty data frame (github issue #15)
+151-        colaligns = [""] * len(colwidths)
+152-    segments = "|".join(_pipe_segment_with_colons(a, w) for a, w in zip(colaligns, colwidths))
+153-    return f"|{segments}|"
+154-
+155-
+156-def _grid_segment_with_colons(colwidth, align):
+157-    """Return a segment of a horizontal line with optional colons which indicate
+158-    column's alignment in a grid table."""
+159-    width = colwidth
+160-    if align == "right":
+161-        return ("=" * (width - 1)) + ":"
+162-    elif align == "center":
+--
+536:        lineabove=_pipe_line_with_colons,
+537:        linebelowheader=_pipe_line_with_colons,
+538-        linebetweenrows=None,
+539-        linebelow=None,
+540-        headerrow=DataRow("|", "|", "|"),
+541-        datarow=DataRow("|", "|", "|"),
+542-        padding=1,
+543-        with_header_hide=["lineabove"],
+544-    ),
+545-    "orgtbl": TableFormat(
+546-        lineabove=None,
+547-        linebelowheader=Line("|", "-", "+", "|"),
+548-        linebetweenrows=None,
+2571:def _build_line(colwidths, colaligns, linefmt):
+2572-    "Return a string which represents a horizontal line."
+2573-    if not linefmt:
+2574-        return None
+2575-    if callable(linefmt):
+2576-        return linefmt(colwidths, colaligns)
+2577-    else:
+2578-        begin, fill, sep, end = linefmt
+2579-        cells = [fill * w for w in colwidths]
+2580-        return _build_simple_row(cells, (begin, sep, end))
+2581-
+2582-
+2583-def _append_line(lines, colwidths, colaligns, linefmt):
+2584-    lines.append(_build_line(colwidths, colaligns, linefmt))
+2585-    return lines
+2586-
+2587-
+2588-class JupyterHTMLStr(str):
+2589-    """Wrap the string with a _repr_html_ method so that Jupyter
+2590-    displays the HTML table"""
+2591-
+2592-    def _repr_html_(self):
+2593-        return self
+2594-
+2595-    @property
+2596-    def str(self):
+2597-        """add a .str property so that the raw string is still accessible"""
+2598-        return self
+2599-
+2600-
+2601-def _format_table(
+2602-    fmt, headers, headersaligns, rows, colwidths, colaligns, is_multiline, rowaligns
+2603-):
+2604-    """Produce a plain-text representation of the table."""
+2605-    lines = []
+2606-    hidden = fmt.with_header_hide if (headers and fmt.with_header_hide) else []
+2607-    pad = fmt.padding
+2608-    headerrow = fmt.headerrow
+2609-
+2610-    padded_widths = [(w + 2 * pad) for w in colwidths]
+2611-    if is_multiline:

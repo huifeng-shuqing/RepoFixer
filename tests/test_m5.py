@@ -89,6 +89,30 @@ def test_no_progress_guard_stops_probe_loops(ws):
     assert len(run.steps) == 6
 
 
+def test_reading_files_is_not_no_progress(ws):
+    """A careful agent that reads before editing must not be killed."""
+    (ws / "f.txt").write_text("hello", encoding="utf-8")
+    llm = ScriptedLLM(
+        [
+            LLMResponse(
+                text="",
+                tool_calls=[{"id": f"c{i}", "name": "read_file", "arguments": {"path": "f.txt", "offset": i + 1}}],
+                finish_reason="tool_calls",
+            )
+            for i in range(7)
+        ]
+        + [
+            LLMResponse(
+                text="",
+                tool_calls=[{"id": "cX", "name": "done", "arguments": {"summary": "done"}}],
+                finish_reason="tool_calls",
+            )
+        ]
+    )
+    run = run_agent("task", llm, ToolRegistry(LocalEnv(ws)), ws / "t.jsonl", max_steps=20)
+    assert run.stopped_reason == "done"  # read-only steps do not trigger no_progress
+
+
 def test_safety_policy_denies_dangerous(ws):
     policy = SafetyPolicy("auto")
     blocked = policy.check("bash", {"command": "rm -rf data"})
