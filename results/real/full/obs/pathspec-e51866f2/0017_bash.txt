@@ -1,0 +1,60 @@
+SUBFAILED[p='[!a-z]'] tests\test_03_gitignore_basic.py::GitIgnoreBasicPatternIssue93Test::test_c_1_valid
+SUBFAILED[p='[^a-z]'] tests\test_03_gitignore_basic.py::GitIgnoreBasicPatternIssue93Test::test_c_1_valid
+SUBFAILED[p='a[!a-z]'] tests\test_03_gitignore_basic.py::GitIgnoreBasicPatternIssue93Test::test_c_1_valid
+SUBFAILED[p='a[^a-z]'] tests\test_03_gitignore_basic.py::GitIgnoreBasicPatternIssue93Test::test_c_1_valid
+SUBFAILED[p='[[:graph:]]'] tests\test_04_gitignore_spec.py::GitIgnoreSpecPatternTest::test_12_posix_class_a_regex
+SUBFAILED[p='[[:print:]]'] tests\test_04_gitignore_spec.py::GitIgnoreSpecPatternTest::test_12_posix_class_a_regex
+SUBFAILED[p='[[:punct:]]'] tests\test_04_gitignore_spec.py::GitIgnoreSpecPatternTest::test_12_posix_class_a_regex
+SUBFAILED[p='[!a-z]'] tests\test_04_gitignore_spec.py::GitIgnoreSpecPatternIssue93Test::test_c_1_valid
+SUBFAILED[p='[^a-z]'] tests\test_04_gitignore_spec.py::GitIgnoreSpecPatternIssue93Test::test_c_1_valid
+SUBFAILED[p='a[!a-z]'] tests\test_04_gitignore_spec.py::GitIgnoreSpecPatternIssue93Test::test_c_1_valid
+SUBFAILED[p='a[^a-z]'] tests\test_04_gitignore_spec.py::GitIgnoreSpecPatternIssue93Test::test_c_1_valid
+SUBFAILED(line='a[!x]b', backend='simple') tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_negated_rule
+SUBFAILED(line='a[.-0]b', backend='simple') tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_negated_rule
+SUBFAILED(line='a[[:punct:]]b', backend='simple') tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_negated_rule
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[!x]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[!x]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[^x]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[^x]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[!]-]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[!]-]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[!-x]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[!-x]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[.-0]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[.-0]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[\\.-\\0]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[\\.-\\0]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[!0-9]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[!0-9]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[[:punct:]]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[[:punct:]]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[[:graph:]]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[[:graph:]]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[[:print:]]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[[:print:]]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.spec.GitIgnoreSpecPattern'>, bracket='[!x]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.spec.GitIgnoreSpecPattern'>, bracket='[!x]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.spec.GitIgnoreSpecPattern'>, bracket='[^x]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.spec.GitIgnoreSpecPattern'>, bracket='[^x]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.spec.GitIgnoreSpecPattern'>, bracket='[!]-]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.spec.GitIgnoreSpecPattern'>, bracket='[!]-]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.spec.GitIgnoreSpecPattern'>, bracket='[!-x]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.spec.GitIgnoreSpecPattern'>, bracket='[!-x]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.spec.GitIgnoreSpecPattern'>, bracket='[.-0]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.spec.GitIgnoreSpecPattern'>, bracket='[.-0]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.spec.GitIgnoreSpecPattern'>, bracket='[\\.-\\0]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.spec.GitIgnoreSpecPattern'>, bracket='[\\.-\\0]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.spec.GitIgnoreSpecPattern'>, bracket='[!0-9]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.spec.GitIgnoreSpecPattern'>, bracket='[!0-9]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.spec.GitIgnoreSpecPattern'>, bracket='[[:punct:]]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.spec.GitIgnoreSpecPattern'>, bracket='[[:punct:]]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.spec.GitIgnoreSpecPattern'>, bracket='[[:graph:]]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.spec.GitIgnoreSpecPattern'>, bracket='[[:graph:]]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.spec.GitIgnoreSpecPattern'>, bracket='[[:print:]]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.spec.GitIgnoreSpecPattern'>, bracket='[[:print:]]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitwildmatch.GitWildMatchPattern'>, bracket='[!x]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitwildmatch.GitWildMatchPattern'>, bracket='[!x]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitwildmatch.GitWildMatchPattern'>, bracket='[^x]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitwildmatch.GitWildMatchPattern'>, bracket='[^x]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitwildmatch.GitWildMatchPattern'>, bracket='[!]-]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitwildmatch.GitWildMatchPattern'>, bracket='[!]-]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator

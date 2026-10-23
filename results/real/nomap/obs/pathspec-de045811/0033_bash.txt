@@ -1,0 +1,61 @@
+
+		if pattern_str.startswith('#'):
+			# A pattern starting with a hash ('#') serves as a comment (neither
+			# includes nor excludes files). Escape the hash with a backslash to match
+			# a literal hash (i.e., '\#').
+			return (None, None)
+
+		elif pattern_str == '/':
+			# EDGE CASE: According to `git check-ignore` (v2.4.1), a single '/' does
+			# not match any file.
+			return (None, None)
+
+		if pattern_str.startswith('!'):
+			# A pattern starting with an exclamation mark ('!') negates the pattern
+			# (exclude instead of include). Escape the exclamation mark with a
+			# backslash to match a literal exclamation mark (i.e., '\!').
+			include = False
+			# Remove leading exclamation mark.
+			pattern_str = pattern_str[1:]
+		else:
+			include = True
+
+		if not pattern_str:
+			# A blank pattern is a null-operation (neither includes nor excludes
+			# files).
+			return (None, None)
+
+		# Split pattern into segments.
+		orig_segs = pattern_str.split('/')
+
+		# Check whether the pattern is specifically a directory pattern before
+		# normalization.
+		is_dir_pattern = not orig_segs[-1]
+		# A terminal directory globstar with a concrete prefix must consume a
+		# descendant segment before the directory marker. Keep this semantic bit
+		# separate from normalized segments, which collapse adjacent ``**``.
+		requires_dir_descendant = (
+			is_dir_pattern
+			and len(orig_segs) > 2
+			and orig_segs[-2] == '**'
+			and any(seg not in ('', '**') for seg in orig_segs[:-2])
+		)
+
+		# Normalize pattern to make processing easier.
+		try:
+			pattern_segs, override_regex = cls.__normalize_segments(
+				is_dir_pattern, orig_segs, requires_dir_descendant,
+			)
+		except ValueError as e:
+			raise GitIgnorePatternError((
+				f"Invalid git pattern: {original_pattern!r}"
+			)) from e  # GitIgnorePatternError
+
+		if override_regex is not None:
+			# Use regex override.
+			regex = override_regex
+
+		elif pattern_segs is not None:
+			# Build regular expression from pattern.
+			try:
+				regex_parts = cls.__translate_segments(

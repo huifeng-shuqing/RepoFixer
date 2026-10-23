@@ -1,0 +1,61 @@
+     1 | """Concise UUID generation."""
+     2 | 
+     3 | import math
+     4 | import secrets
+     5 | import uuid as _uu
+     6 | from typing import Dict
+     7 | from typing import List
+     8 | from typing import Optional
+     9 | 
+    10 | 
+    11 | def int_to_string(
+    12 |     number: int, alphabet: List[str], padding: Optional[int] = None
+    13 | ) -> str:
+    14 |     """
+    15 |     Convert a number to a string, using the given alphabet.
+    16 | 
+    17 |     The output has the most significant digit first.
+    18 |     """
+    19 |     output = ""
+    20 |     alpha_len = len(alphabet)
+    21 |     while number:
+    22 |         number, digit = divmod(number, alpha_len)
+    23 |         output += alphabet[digit]
+    24 |     if padding:
+    25 |         remainder = max(padding - len(output), 0)
+    26 |         output = output + alphabet[0] * remainder
+    27 |     return output[::-1]
+    28 | 
+    29 | 
+    30 | def string_to_int(
+    31 |     string: str,
+    32 |     alphabet: List[str],
+    33 |     alphabet_index: Optional[Dict[str, int]] = None,
+    34 | ) -> int:
+    35 |     """
+    36 |     Convert a string to a number, using the given alphabet.
+    37 | 
+    38 |     The input is assumed to have the most significant digit first.
+    39 | 
+    40 |     The alphabet_index, if provided, should map each character to its index:
+    41 |     ``{char: idx for idx, char in enumerate(alphabet)}``. This avoids rebuilding
+    42 |     the index on each call when decoding multiple strings with the same alphabet.
+    43 |     If this is passed, `alphabet` is ignored.
+    44 |     """
+    45 |     if alphabet_index is None:
+    46 |         alphabet_index = {char: idx for idx, char in enumerate(alphabet)}
+    47 |     number = 0
+    48 |     alpha_len = len(alphabet)
+    49 |     for char in string:
+    50 |         try:
+    51 |             number = number * alpha_len + alphabet_index[char]
+    52 |         except KeyError:
+    53 |             raise ValueError("'{}' is not in alphabet".format(char))
+    54 |     return number
+    55 | 
+    56 | 
+    57 | class ShortUUID(object):
+    58 |     def __init__(
+    59 |         self, alphabet: Optional[str] = None, dont_sort_alphabet: bool = False
+    60 |     ) -> None:
+... [103 more lines; pass offset=61 for next page]

@@ -1,0 +1,65 @@
+7:from validators import ValidationError, calling_code, country_code, currency
+8-
+9-
+10-@pytest.mark.parametrize(("value"), ["+1", "+371"])
+11-def test_returns_true_on_valid_calling_code(value: str):
+12-    """Test returns true on valid calling code."""
+13-    assert calling_code(value)
+14-
+15-
+16-@pytest.mark.parametrize(("value"), ["+19", "+37", "-9"])
+17-def test_returns_failed_validation_invalid_calling_code(value: str):
+18-    """Test returns failed validation invalid calling code."""
+19-    assert isinstance(calling_code(value), ValidationError)
+20-
+21-
+22-@pytest.mark.parametrize(
+23-    ("value", "iso_format"),
+24-    [
+25-        ("ISR", "auto"),
+26-        ("US", "alpha2"),
+27-        ("USA", "alpha3"),
+28-        ("840", "numeric"),
+29-    ],
+30-)
+31-def test_returns_true_on_valid_country_code(value: str, iso_format: str):
+32-    """Test returns true on valid country code."""
+33-    assert country_code(value, iso_format=iso_format)
+34-
+35-
+36-@pytest.mark.parametrize(
+37-    ("value", "iso_format"),
+38-    [
+39-        (None, "auto"),
+40-        ("", "auto"),
+41-        ("123456", "auto"),
+42-        ("XY", "alpha2"),
+43-        ("PPP", "alpha3"),
+44-        ("123", "numeric"),
+45-        ("us", "auto"),
+46-        ("uSa", "auto"),
+47-        ("US ", "auto"),
+--
+62:def test_returns_true_on_valid_currency(value: str, skip_symbols: bool, ignore_case: bool):
+63:    """Test returns true on valid currency."""
+64:    assert currency(value, skip_symbols=skip_symbols, ignore_case=ignore_case)
+65-
+66-
+67-@pytest.mark.parametrize(
+68-    ("value", "skip_symbols", "ignore_case"),
+69-    [
+70-        ("$", True, False),
+71-        ("⃀", True, False),
+72-        ("৳", True, False),
+73-        ("⃀৳", False, False),
+74-        ("uSd", True, False),
+75-        ("Bucks", True, True),
+76-    ],
+77-)
+78:def test_returns_failed_validation_invalid_currency(
+79-    value: str, skip_symbols: bool, ignore_case: bool
+80-):
+81:    """Test returns failed validation invalid currency."""
+82-    assert isinstance(
+83:        currency(value, skip_symbols=skip_symbols, ignore_case=ignore_case), ValidationError
+84-    )

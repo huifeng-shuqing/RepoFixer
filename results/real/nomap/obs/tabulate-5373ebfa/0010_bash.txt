@@ -1,0 +1,45 @@
+969:def _type(string, has_invisible=True, numparse=True):
+975:    >>> _type(None) is type(None)
+977:    >>> _type("") is type(None)
+979:    >>> _type("foo") is type("")
+981:    >>> _type("1") is type(1)
+983:    >>> _type('\x1b[31m42\x1b[0m') is type(42)
+985:    >>> _type('\x1b[31m42\x1b[0m') is type(42)
+1019:def _afterpoint(string):
+1022:    >>> _afterpoint("123.45")
+1024:    >>> _afterpoint("1001")
+1026:    >>> _afterpoint("eggs")
+1028:    >>> _afterpoint("123e45")
+1030:    >>> _afterpoint("123,456.78")
+1169:            decimals = [_afterpoint(_strip_ansi(s)) for s in strings]
+1171:            decimals = [_afterpoint(s) for s in strings]
+1284:def _column_type(strings, has_invisible=True, numparse=True):
+1287:    >>> _column_type([True, False]) is bool
+1289:    >>> _column_type(["1", "2"]) is int
+1291:    >>> _column_type(["1", "2.3"]) is float
+1293:    >>> _column_type(["1", "2.3", "four"]) is str
+1295:    >>> _column_type(["four", '\u043f\u044f\u0442\u044c']) is str
+1297:    >>> _column_type([None, "brux"]) is str
+1299:    >>> _column_type([1, 2, None]) is int
+1302:    >>> _column_type([dt.datetime(1991,2,19), dt.time(17,35)]) is str
+1306:    types = [_type(s, has_invisible, numparse) for s in strings]
+1310:def _format(val, valtype, floatfmt, intfmt, missingval="", has_invisible=True):
+1352:                formatted_val = format(float(raw_val), floatfmt)
+1360:                return format(float(val), floatfmt)
+1654:                # custom floatfmt/intfmt, nor with any missing/blank cells.
+1661:                        else str(_type(cell, numparse)(cell))
+1706:    floatfmt=_DEFAULT_FLOATFMT,
+1810:    `floatfmt` is a format specification used for columns which
+1815:    `floatfmt`, this can also be a list of values for different
+2348:    coltypes = [_column_type(col, numparse=np) for col, np in zip(cols, numparses)]
+2349:    if isinstance(floatfmt, str):  # old version
+2350:        float_formats = len(cols) * [floatfmt]  # just duplicate the string to use in each column
+2351:    else:  # if floatfmt is list, tuple etc we have one per column
+2352:        float_formats = list(floatfmt)
+2599:def _format_table(
+2931:    floatfmt = _DEFAULT_FLOATFMT
+2943:            floatfmt = value
+2970:                    floatfmt=floatfmt,
+2982:                        floatfmt=floatfmt,
+2989:def _pprint_file(fobject, headers, tablefmt, sep, floatfmt, intfmt, file, colalign):
+2997:            floatfmt=floatfmt,

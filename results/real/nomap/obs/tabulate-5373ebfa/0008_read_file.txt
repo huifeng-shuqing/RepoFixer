@@ -1,0 +1,121 @@
+   985 |     >>> _type('\x1b[31m42\x1b[0m') is type(42)
+   986 |     True
+   987 | 
+   988 |     """
+   989 | 
+   990 |     if has_invisible and isinstance(string, (str, bytes)):
+   991 |         string = _strip_ansi(string)
+   992 | 
+   993 |     if string is None or (isinstance(string, (bytes, str)) and not string):
+   994 |         return type(None)
+   995 |     elif hasattr(string, "isoformat"):  # datetime.datetime, date, and time
+   996 |         return str
+   997 |     elif _isbool(string):
+   998 |         return bool
+   999 |     elif numparse and (
+  1000 |         _isint(string)
+  1001 |         or (
+  1002 |             isinstance(string, str)
+  1003 |             and _isnumber_with_thousands_separator(string)
+  1004 |             and "." not in string
+  1005 |         )
+  1006 |     ):
+  1007 |         return int
+  1008 |     elif numparse and (
+  1009 |         _isnumber(string)
+  1010 |         or (isinstance(string, str) and _isnumber_with_thousands_separator(string))
+  1011 |     ):
+  1012 |         return float
+  1013 |     elif isinstance(string, bytes):
+  1014 |         return bytes
+  1015 |     else:
+  1016 |         return str
+  1017 | 
+  1018 | 
+  1019 | def _afterpoint(string):
+  1020 |     """Symbols after a decimal point, -1 if the string lacks the decimal point.
+  1021 | 
+  1022 |     >>> _afterpoint("123.45")
+  1023 |     2
+  1024 |     >>> _afterpoint("1001")
+  1025 |     -1
+  1026 |     >>> _afterpoint("eggs")
+  1027 |     -1
+  1028 |     >>> _afterpoint("123e45")
+  1029 |     2
+  1030 |     >>> _afterpoint("123,456.78")
+  1031 |     2
+  1032 | 
+  1033 |     """
+  1034 |     if _isnumber(string) or _isnumber_with_thousands_separator(string):
+  1035 |         if _isint(string):
+  1036 |             return -1
+  1037 |         else:
+  1038 |             pos = string.rfind(".")
+  1039 |             pos = string.lower().rfind("e") if pos < 0 else pos
+  1040 |             if pos >= 0:
+  1041 |                 return len(string) - pos - 1
+  1042 |             else:
+  1043 |                 return -1  # no point
+  1044 |     else:
+  1045 |         return -1  # not a number
+  1046 | 
+  1047 | 
+  1048 | def _padleft(width, s):
+  1049 |     """Flush right.
+  1050 | 
+  1051 |     >>> _padleft(6, '\u044f\u0439\u0446\u0430') == '  \u044f\u0439\u0446\u0430'
+  1052 |     True
+  1053 | 
+  1054 |     """
+  1055 |     fmt = "{0:>%ds}" % width
+  1056 |     return fmt.format(s)
+  1057 | 
+  1058 | 
+  1059 | def _padright(width, s):
+  1060 |     """Flush left.
+  1061 | 
+  1062 |     >>> _padright(6, '\u044f\u0439\u0446\u0430') == '\u044f\u0439\u0446\u0430  '
+  1063 |     True
+  1064 | 
+  1065 |     """
+  1066 |     fmt = "{0:<%ds}" % width
+  1067 |     return fmt.format(s)
+  1068 | 
+  1069 | 
+  1070 | def _padboth(width, s):
+  1071 |     """Center string.
+  1072 | 
+  1073 |     >>> _padboth(6, '\u044f\u0439\u0446\u0430') == ' \u044f\u0439\u0446\u0430 '
+  1074 |     True
+  1075 | 
+  1076 |     """
+  1077 |     fmt = "{0:^%ds}" % width
+  1078 |     return fmt.format(s)
+  1079 | 
+  1080 | 
+  1081 | def _padnone(ignore_width, s):
+  1082 |     return s
+  1083 | 
+  1084 | 
+  1085 | def _strip_ansi(s):
+  1086 |     r"""Remove ANSI escape sequences, both CSI (color codes, etc) and OSC hyperlinks.
+  1087 | 
+  1088 |     CSI sequences are simply removed from the output, while OSC hyperlinks are replaced
+  1089 |     with the link text. Note: it may be desirable to show the URI instead but this is not
+  1090 |     supported.
+  1091 | 
+  1092 |     >>> repr(_strip_ansi('\x1B]8;;https://example.com\x1B\\This is a link\x1B]8;;\x1B\\'))
+  1093 |     "'This is a link'"
+  1094 | 
+  1095 |     >>> repr(_strip_ansi('\x1b[31mred\x1b[0m text'))
+  1096 |     "'red text'"
+  1097 | 
+  1098 |     """
+  1099 |     if isinstance(s, str):
+  1100 |         return _ansi_codes.sub(r"\4", s)
+  1101 |     else:  # a bytestring
+  1102 |         return _ansi_codes_bytes.sub(r"\4", s)
+  1103 | 
+  1104 | 
+... [1902 more lines; pass offset=1105 for next page]

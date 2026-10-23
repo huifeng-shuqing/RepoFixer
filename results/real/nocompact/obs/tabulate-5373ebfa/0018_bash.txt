@@ -1,0 +1,61 @@
+
+
+def _wrap_text_to_colwidths(
+    list_of_lists,
+    colwidths,
+    numparses=True,
+    missingval=_DEFAULT_MISSINGVAL,
+    break_long_words=_BREAK_LONG_WORDS,
+    break_on_hyphens=_BREAK_ON_HYPHENS,
+):
+    if len(list_of_lists):
+        num_cols = len(list_of_lists[0])
+    else:
+        num_cols = 0
+    numparses = _expand_iterable(numparses, num_cols, True)
+
+    result = []
+
+    for row in list_of_lists:
+        new_row = []
+        for cell, width, numparse in zip(row, colwidths, numparses):
+            if _isnumber(cell) and numparse:
+                new_row.append(cell)
+                continue
+
+            if width is not None:
+                wrapper = _CustomTextWrap(
+                    width=width,
+                    break_long_words=break_long_words,
+                    break_on_hyphens=break_on_hyphens,
+                )
+                # Cast based on our internal type handling. Any future custom
+                # formatting of types (such as datetimes) may need to be more
+                # explicit than just `str` of the object. Also doesn't work for
+                # custom floatfmt/intfmt, nor with any missing/blank cells.
+                casted_cell = (
+                    missingval
+                    if cell is None
+                    else (
+                        str(cell)
+                        if cell == "" or _isnumber(cell)
+                        else str(_type(cell, numparse)(cell))
+                    )
+                )
+                wrapped = [
+                    "\n".join(wrapper.wrap(line))
+                    for line in casted_cell.splitlines()
+                    if line.strip() != ""
+                ]
+                new_row.append("\n".join(wrapped))
+            else:
+                new_row.append(cell)
+        result.append(new_row)
+
+    return result
+
+
+def _to_str(s, encoding="utf8", errors="ignore"):
+    """
+    A type safe wrapper for converting a bytestring to str. This is essentially just
+    a wrapper around .decode() intended for use with things like map(), but with some

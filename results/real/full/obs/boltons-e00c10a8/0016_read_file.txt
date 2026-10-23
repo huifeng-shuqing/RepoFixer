@@ -1,0 +1,301 @@
+   184 |     def _add_dead(self, start, stop=None):
+   185 |         # TODO: does not handle when the new interval subsumes
+   186 |         # multiple existing intervals
+   187 |         dints = self.dead_indices
+   188 |         if stop is None:
+   189 |             stop = start + 1
+   190 |         cand_int = [start, stop]
+   191 |         if not dints:
+   192 |             dints.append(cand_int)
+   193 |             return
+   194 |         int_idx = bisect_left(dints, cand_int)
+   195 |         dint = dints[int_idx - 1]
+   196 |         d_start, d_stop = dint
+   197 |         if start <= d_start <= stop:
+   198 |             dint[0] = start
+   199 |         elif start <= d_stop <= stop:
+   200 |             dint[1] = stop
+   201 |         else:
+   202 |             dints.insert(int_idx, cand_int)
+   203 |         return
+   204 | 
+   205 |     # common operations (shared by set and list)
+   206 |     def __len__(self):
+   207 |         return len(self.item_index_map)
+   208 | 
+   209 |     def __contains__(self, item):
+   210 |         return item in self.item_index_map
+   211 | 
+   212 |     def __iter__(self):
+   213 |         return (item for item in self.item_list if item is not _MISSING)
+   214 | 
+   215 |     def __reversed__(self):
+   216 |         item_list = self.item_list
+   217 |         return (item for item in reversed(item_list) if item is not _MISSING)
+   218 | 
+   219 |     def __repr__(self):
+   220 |         return f'{self.__class__.__name__}({list(self)!r})'
+   221 | 
+   222 |     def __eq__(self, other):
+   223 |         if isinstance(other, IndexedSet):
+   224 |             return len(self) == len(other) and list(self) == list(other)
+   225 |         try:
+   226 |             return set(self) == set(other)
+   227 |         except TypeError:
+   228 |             return False
+   229 | 
+   230 |     @classmethod
+   231 |     def from_iterable(cls, it):
+   232 |         "from_iterable(it) -> create a set from an iterable"
+   233 |         return cls(it)
+   234 | 
+   235 |     # set operations
+   236 |     def add(self, item):
+   237 |         "add(item) -> add item to the set"
+   238 |         if item not in self.item_index_map:
+   239 |             self.item_index_map[item] = len(self.item_list)
+   240 |             self.item_list.append(item)
+   241 | 
+   242 |     def remove(self, item):
+   243 |         "remove(item) -> remove item from the set, raises if not present"
+   244 |         try:
+   245 |             didx = self.item_index_map.pop(item)
+   246 |         except KeyError:
+   247 |             raise KeyError(item)
+   248 |         self.item_list[didx] = _MISSING
+   249 |         self._add_dead(didx)
+   250 |         self._cull()
+   251 | 
+   252 |     def discard(self, item):
+   253 |         "discard(item) -> discard item from the set (does not raise)"
+   254 |         try:
+   255 |             self.remove(item)
+   256 |         except KeyError:
+   257 |             pass
+   258 | 
+   259 |     def clear(self):
+   260 |         "clear() -> empty the set"
+   261 |         del self.item_list[:]
+   262 |         del self.dead_indices[:]
+   263 |         self.item_index_map.clear()
+   264 | 
+   265 |     def isdisjoint(self, other):
+   266 |         "isdisjoint(other) -> return True if no overlap with other"
+   267 |         iim = self.item_index_map
+   268 |         for k in other:
+   269 |             if k in iim:
+   270 |                 return False
+   271 |         return True
+   272 | 
+   273 |     def issubset(self, other):
+   274 |         "issubset(other) -> return True if other contains this set"
+   275 |         if len(other) < len(self):
+   276 |             return False
+   277 |         for k in self.item_index_map:
+   278 |             if k not in other:
+   279 |                 return False
+   280 |         return True
+   281 | 
+   282 |     def issuperset(self, other):
+   283 |         "issuperset(other) -> return True if set contains other"
+   284 |         if len(other) > len(self):
+   285 |             return False
+   286 |         iim = self.item_index_map
+   287 |         for k in other:
+   288 |             if k not in iim:
+   289 |                 return False
+   290 |         return True
+   291 | 
+   292 |     def union(self, *others):
+   293 |         "union(*others) -> return a new set containing this set and others"
+   294 |         return self.from_iterable(chain(self, *others))
+   295 | 
+   296 |     def iter_intersection(self, *others):
+   297 |         "iter_intersection(*others) -> iterate over elements also in others"
+   298 |         for k in self:
+   299 |             for other in others:
+   300 |                 if k not in other:
+   301 |                     break
+   302 |             else:
+   303 |                 yield k
+   304 |         return
+   305 | 
+   306 |     def intersection(self, *others):
+   307 |         "intersection(*others) -> get a set with overlap of this and others"
+   308 |         if len(others) == 1:
+   309 |             other = others[0]
+   310 |             return self.from_iterable(k for k in self if k in other)
+   311 |         return self.from_iterable(self.iter_intersection(*others))
+   312 | 
+   313 |     def iter_difference(self, *others):
+   314 |         "iter_difference(*others) -> iterate over elements not in others"
+   315 |         for k in self:
+   316 |             for other in others:
+   317 |                 if k in other:
+   318 |                     break
+   319 |             else:
+   320 |                 yield k
+   321 |         return
+   322 | 
+   323 |     def difference(self, *others):
+   324 |         "difference(*others) -> get a new set with elements not in others"
+   325 |         if len(others) == 1:
+   326 |             other = others[0]
+   327 |             return self.from_iterable(k for k in self if k not in other)
+   328 |         return self.from_iterable(self.iter_difference(*others))
+   329 | 
+   330 |     def symmetric_difference(self, *others):
+   331 |         "symmetric_difference(*others) -> XOR set of this and others"
+   332 |         ret = self.union(*others)
+   333 |         return ret.difference(self.intersection(*others))
+   334 | 
+   335 |     __or__  = __ror__  = union
+   336 |     __and__ = __rand__ = intersection
+   337 |     __sub__ = difference
+   338 |     __xor__ = __rxor__ = symmetric_difference
+   339 | 
+   340 |     def __rsub__(self, other):
+   341 |         vals = [x for x in other if x not in self]
+   342 |         return type(other)(vals)
+   343 | 
+   344 |     # in-place set operations
+   345 |     def update(self, *others):
+   346 |         "update(*others) -> add values from one or more iterables"
+   347 |         if not others:
+   348 |             return  # raise?
+   349 |         elif len(others) == 1:
+   350 |             other = others[0]
+   351 |         else:
+   352 |             other = chain(others)
+   353 |         for o in other:
+   354 |             self.add(o)
+   355 | 
+   356 |     def intersection_update(self, *others):
+   357 |         "intersection_update(*others) -> discard self.difference(*others)"
+   358 |         for val in self.difference(*others):
+   359 |             self.discard(val)
+   360 | 
+   361 |     def difference_update(self, *others):
+   362 |         "difference_update(*others) -> discard self.intersection(*others)"
+   363 |         if self in others:
+   364 |             self.clear()
+   365 |         for val in self.intersection(*others):
+   366 |             self.discard(val)
+   367 | 
+   368 |     def symmetric_difference_update(self, other):  # note singular 'other'
+   369 |         "symmetric_difference_update(other) -> in-place XOR with other"
+   370 |         if self is other:
+   371 |             self.clear()
+   372 |         for val in other:
+   373 |             if val in self:
+   374 |                 self.discard(val)
+   375 |             else:
+   376 |                 self.add(val)
+   377 | 
+   378 |     def __ior__(self, *others):
+   379 |         self.update(*others)
+   380 |         return self
+   381 | 
+   382 |     def __iand__(self, *others):
+   383 |         self.intersection_update(*others)
+   384 |         return self
+   385 | 
+   386 |     def __isub__(self, *others):
+   387 |         self.difference_update(*others)
+   388 |         return self
+   389 | 
+   390 |     def __ixor__(self, *others):
+   391 |         self.symmetric_difference_update(*others)
+   392 |         return self
+   393 | 
+   394 |     def iter_slice(self, start, stop, step=None):
+   395 |         "iterate over a slice of the set"
+   396 |         iterable = self
+   397 |         # start/stop are apparent (dead-slot-free) indices, the same space
+   398 |         # islice consumes; mapping them through _get_real_index() (item_list
+   399 |         # space) over-counted by the dead slots before each bound. Only
+   400 |         # negatives need normalizing, as islice rejects them.
+   401 |         # NB: a negative step slices the reversed stream with forward bounds
+   402 |         # (x[2:4:-1] == reversed(x)[2:4]), behavior since 2013.
+   403 |         if start is not None and start < 0:
+   404 |             start = max(len(self) + start, 0)
+   405 |         if stop is not None and stop < 0:
+   406 |             stop = max(len(self) + stop, 0)
+   407 |         if step is not None and step < 0:
+   408 |             step = -step
+   409 |             iterable = reversed(self)
+   410 |         return islice(iterable, start, stop, step)
+   411 | 
+   412 |     # list operations
+   413 |     def __getitem__(self, index):
+   414 |         try:
+   415 |             start, stop, step = index.start, index.stop, index.step
+   416 |         except AttributeError:
+   417 |             index = operator.index(index)
+   418 |         else:
+   419 |             iter_slice = self.iter_slice(start, stop, step)
+   420 |             return self.from_iterable(iter_slice)
+   421 |         real_index = self._get_real_index(index)
+   422 |         return self.item_list[real_index]
+   423 | 
+   424 |     def pop(self, index=None):
+   425 |         "pop(index) -> remove the item at a given index (-1 by default)"
+   426 |         item_index_map = self.item_index_map
+   427 |         len_self = len(item_index_map)
+   428 |         if index is None or index == -1 or index == len_self - 1:
+   429 |             ret = self.item_list.pop()
+   430 |             del item_index_map[ret]
+   431 |         else:
+   432 |             real_index = self._get_real_index(index)
+   433 |             ret = self.item_list[real_index]
+   434 |             self.item_list[real_index] = _MISSING
+   435 |             del item_index_map[ret]
+   436 |             self._add_dead(real_index)
+   437 |         self._cull()
+   438 |         return ret
+   439 | 
+   440 |     def count(self, val):
+   441 |         "count(val) -> count number of instances of value (0 or 1)"
+   442 |         if val in self.item_index_map:
+   443 |             return 1
+   444 |         return 0
+   445 | 
+   446 |     def reverse(self):
+   447 |         "reverse() -> reverse the contents of the set in-place"
+   448 |         reversed_list = list(reversed(self))
+   449 |         self.item_list[:] = reversed_list
+   450 |         for i, item in enumerate(self.item_list):
+   451 |             self.item_index_map[item] = i
+   452 |         del self.dead_indices[:]
+   453 | 
+   454 |     def sort(self, **kwargs):
+   455 |         "sort() -> sort the contents of the set in-place"
+   456 |         sorted_list = sorted(self, **kwargs)
+   457 |         if sorted_list == self.item_list:
+   458 |             return
+   459 |         self.item_list[:] = sorted_list
+   460 |         for i, item in enumerate(self.item_list):
+   461 |             self.item_index_map[item] = i
+   462 |         del self.dead_indices[:]
+   463 | 
+   464 |     def index(self, val):
+   465 |         "index(val) -> get the index of a value, raises if not present"
+   466 |         try:
+   467 |             return self._get_apparent_index(self.item_index_map[val])
+   468 |         except KeyError:
+   469 |             cn = self.__class__.__name__
+   470 |             raise ValueError(f'{val!r} is not in {cn}')
+   471 | 
+   472 | 
+   473 | def complement(wrapped):
+   474 |     """Given a :class:`set`, convert it to a **complement set**.
+   475 | 
+   476 |     Whereas a :class:`set` keeps track of what it contains, a
+   477 |     `complement set
+   478 |     <https://en.wikipedia.org/wiki/Complement_(set_theory)>`_ keeps
+   479 |     track of what it does *not* contain. For example, look what
+   480 |     happens when we intersect a normal set with a complement set::
+   481 | 
+   482 |     >>> list(set(range(5)) & complement(set([2, 3])))
+   483 |     [0, 1, 4]
+... [484 more lines; pass offset=484 for next page]

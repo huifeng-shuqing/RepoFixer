@@ -1,0 +1,88 @@
+def _is_separating_line(row):
+    row_type = type(row)
+    return (row_type is list or row_type is str) and (
+        (len(row) >= 1 and _is_separating_line_value(row[0]))
+        or (len(row) >= 2 and _is_separating_line_value(row[1]))
+    )
+
+
+def _pipe_segment_with_colons(align, colwidth):
+    """Return a segment of a horizontal line with optional colons which
+    indicate column's alignment (as in `pipe` output format)."""
+    w = colwidth
+    if align in ["right", "decimal"]:
+        return ("-" * (w - 1)) + ":"
+    elif align == "center":
+        return ":" + ("-" * (w - 2)) + ":"
+    elif align == "left":
+        return ":" + ("-" * (w - 1))
+    else:
+        return "-" * w
+
+
+def _pipe_line_with_colons(colwidths, colaligns):
+    """Return a horizontal line with optional colons to indicate column's
+    alignment (as in `pipe` output format)."""
+    if not colaligns:  # e.g. printing an empty data frame (github issue #15)
+        colaligns = [""] * len(colwidths)
+    segments = "|".join(_pipe_segment_with_colons(a, w) for a, w in zip(colaligns, colwidths))
+    return f"|{segments}|"
+
+
+def _grid_segment_with_colons(colwidth, align):
+    """Return a segment of a horizontal line with optional colons which indicate
+    column's alignment in a grid table."""
+    width = colwidth
+    if align == "right":
+        return ("=" * (width - 1)) + ":"
+    elif align == "center":
+        return ":" + ("=" * (width - 2)) + ":"
+    elif align == "left":
+        return ":" + ("=" * (width - 1))
+    else:
+        return "=" * width
+
+
+def _grid_line_with_colons(colwidths, colaligns):
+    """Return a horizontal line with optional colons to indicate column's alignment
+    in a grid table."""
+    if not colaligns:
+        colaligns = [""] * len(colwidths)
+    segments = "+".join(_grid_segment_with_colons(w, a) for a, w in zip(colaligns, colwidths))
+    return f"+{segments}+"
+
+
+def _mediawiki_row_with_attrs(separator, cell_values, colwidths, colaligns):
+    alignment = {
+        "left": "",
+        "right": 'style="text-align: right;"| ',
+        "center": 'style="text-align: center;"| ',
+        "decimal": 'style="text-align: right;"| ',
+    }
+525:    "github": TableFormat(
+526-        lineabove=Line("|", "-", "|", "|"),
+527-        linebelowheader=Line("|", "-", "|", "|"),
+528-        linebetweenrows=None,
+529-        linebelow=None,
+530-        headerrow=DataRow("|", "|", "|"),
+531-        datarow=DataRow("|", "|", "|"),
+532-        padding=1,
+533-        with_header_hide=["lineabove"],
+534-    ),
+535-    "pipe": TableFormat(
+536-        lineabove=_pipe_line_with_colons,
+537-        linebelowheader=_pipe_line_with_colons,
+--
+746:    "github": "github",
+747-    "outline": "outline",
+748-    "simple_outline": "simple_outline",
+749-    "rounded_outline": "rounded_outline",
+750-    "heavy_outline": "heavy_outline",
+751-    "mixed_outline": "mixed_outline",
+752-    "double_outline": "double_outline",
+753-    "fancy_outline": "fancy_outline",
+754-}
+755-
+756-# TODO: Add multiline support for the remaining table formats:
+757-#       - mediawiki: Replace \n with <br>
+758-#       - moinmoin: TBD

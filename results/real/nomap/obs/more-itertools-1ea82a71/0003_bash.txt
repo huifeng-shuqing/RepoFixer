@@ -1,0 +1,120 @@
+102:    'ichunked',
+103-    'idft',
+104-    'iequals',
+105-    'ilen',
+106-    'interleave',
+107-    'interleave_evenly',
+108-    'interleave_longest',
+109-    'interleave_randomly',
+110-    'intersperse',
+111-    'is_sorted',
+112-    'islice_extended',
+113-    'iter_suppress',
+114-    'iterate',
+115-    'join_mappings',
+116-    'last',
+117-    'locate',
+118-    'longest_common_prefix',
+119-    'lstrip',
+120-    'make_decorator',
+121-    'map_except',
+122-    'map_if',
+123-    'map_reduce',
+124-    'mark_ends',
+125-    'minmax',
+126-    'nth_combination_with_replacement',
+127-    'nth_or_last',
+128-    'nth_permutation',
+129-    'nth_prime',
+130-    'nth_product',
+131-    'numeric_range',
+132-    'one',
+133-    'only',
+134-    'outer_product',
+135-    'padded',
+136-    'partial_product',
+137-    'partitions',
+138-    'peekable',
+139-    'permutation_index',
+140-    'powerset_of_sets',
+141-    'product_index',
+142-    'raise_',
+143-    'random_ordered_range',
+144-    'repeat_each',
+145-    'repeat_last',
+146-    'replace',
+147-    'rlocate',
+148-    'rstrip',
+149-    'run_length',
+150-    'sample',
+151-    'seekable',
+152-    'serialize',
+153-    'set_partitions',
+154-    'side_effect',
+155-    'sized_iterator',
+156-    'sliced',
+157-    'sort_together',
+158-    'split_after',
+159-    'split_at',
+160-    'split_before',
+161-    'split_into',
+162-    'split_when',
+--
+3700:def ichunked(iterable, n):
+3701-    """Break *iterable* into sub-iterables with *n* elements each.
+3702:    :func:`ichunked` is like :func:`chunked`, but it yields iterables
+3703-    instead of lists.
+3704-
+3705-    If the sub-iterables are read in order, the elements of *iterable*
+3706-    won't be stored in memory.
+3707-    If they are read out of order, :func:`itertools.tee` is used to cache
+3708-    elements as necessary.
+3709-
+3710-    >>> from itertools import count
+3711:    >>> all_chunks = ichunked(count(), 4)
+3712-    >>> c_1, c_2, c_3 = next(all_chunks), next(all_chunks), next(all_chunks)
+3713-    >>> list(c_2)  # c_1's elements have been cached; c_3's haven't been
+3714-    [4, 5, 6, 7]
+3715-    >>> list(c_1)
+3716-    [0, 1, 2, 3]
+3717-    >>> list(c_3)
+3718-    [8, 9, 10, 11]
+3719-
+3720-    """
+3721-    iterator = iter(iterable)
+3722-    for first in iterator:
+3723-        rest = islice(iterator, n - 1)
+3724-        cache, cacher = tee(rest)
+3725-        yield chain([first], rest, cache)
+3726-        consume(cacher)
+3727-
+3728-
+3729-def iequals(*iterables):
+3730-    """Return ``True`` if all given *iterables* are equal to each other,
+3731-    which means that they contain the same elements in the same order.
+3732-
+3733-    The function is useful for comparing iterables of different data types
+3734-    or iterables that do not support equality checks.
+3735-
+3736-    >>> iequals("abc", ['a', 'b', 'c'], ('a', 'b', 'c'), iter("abc"))
+3737-    True
+3738-
+3739-    >>> iequals("abc", "acb")
+3740-    False
+3741-
+3742-    Not to be confused with :func:`all_equal`, which checks whether all
+3743-    elements of iterable are equal to each other.
+3744-
+3745-    """
+3746-    try:
+3747-        return all(map(all_equal, zip(*iterables, strict=True)))
+3748-    except ValueError:
+3749-        return False
+3750-
+3751-
+3752-def distinct_combinations(iterable, r):
+3753-    """Yield the distinct combinations of *r* items taken from *iterable*.
+3754-
+3755-        >>> list(distinct_combinations([0, 0, 1], 2))
+3756-        [(0, 0), (0, 1)]
+3757-

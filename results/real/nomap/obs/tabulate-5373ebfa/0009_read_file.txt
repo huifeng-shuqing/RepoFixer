@@ -1,0 +1,121 @@
+  1041 |                 return len(string) - pos - 1
+  1042 |             else:
+  1043 |                 return -1  # no point
+  1044 |     else:
+  1045 |         return -1  # not a number
+  1046 | 
+  1047 | 
+  1048 | def _padleft(width, s):
+  1049 |     """Flush right.
+  1050 | 
+  1051 |     >>> _padleft(6, '\u044f\u0439\u0446\u0430') == '  \u044f\u0439\u0446\u0430'
+  1052 |     True
+  1053 | 
+  1054 |     """
+  1055 |     fmt = "{0:>%ds}" % width
+  1056 |     return fmt.format(s)
+  1057 | 
+  1058 | 
+  1059 | def _padright(width, s):
+  1060 |     """Flush left.
+  1061 | 
+  1062 |     >>> _padright(6, '\u044f\u0439\u0446\u0430') == '\u044f\u0439\u0446\u0430  '
+  1063 |     True
+  1064 | 
+  1065 |     """
+  1066 |     fmt = "{0:<%ds}" % width
+  1067 |     return fmt.format(s)
+  1068 | 
+  1069 | 
+  1070 | def _padboth(width, s):
+  1071 |     """Center string.
+  1072 | 
+  1073 |     >>> _padboth(6, '\u044f\u0439\u0446\u0430') == ' \u044f\u0439\u0446\u0430 '
+  1074 |     True
+  1075 | 
+  1076 |     """
+  1077 |     fmt = "{0:^%ds}" % width
+  1078 |     return fmt.format(s)
+  1079 | 
+  1080 | 
+  1081 | def _padnone(ignore_width, s):
+  1082 |     return s
+  1083 | 
+  1084 | 
+  1085 | def _strip_ansi(s):
+  1086 |     r"""Remove ANSI escape sequences, both CSI (color codes, etc) and OSC hyperlinks.
+  1087 | 
+  1088 |     CSI sequences are simply removed from the output, while OSC hyperlinks are replaced
+  1089 |     with the link text. Note: it may be desirable to show the URI instead but this is not
+  1090 |     supported.
+  1091 | 
+  1092 |     >>> repr(_strip_ansi('\x1B]8;;https://example.com\x1B\\This is a link\x1B]8;;\x1B\\'))
+  1093 |     "'This is a link'"
+  1094 | 
+  1095 |     >>> repr(_strip_ansi('\x1b[31mred\x1b[0m text'))
+  1096 |     "'red text'"
+  1097 | 
+  1098 |     """
+  1099 |     if isinstance(s, str):
+  1100 |         return _ansi_codes.sub(r"\4", s)
+  1101 |     else:  # a bytestring
+  1102 |         return _ansi_codes_bytes.sub(r"\4", s)
+  1103 | 
+  1104 | 
+  1105 | def _visible_width(s):
+  1106 |     """Visible width of a printed string. ANSI color codes are removed.
+  1107 | 
+  1108 |     >>> _visible_width('\x1b[31mhello\x1b[0m'), _visible_width("world")
+  1109 |     (5, 5)
+  1110 | 
+  1111 |     """
+  1112 |     # optional wide-character support
+  1113 |     if wcwidth is not None and WIDE_CHARS_MODE:
+  1114 |         # when already a string, it could contain terminal sequences,
+  1115 |         # wcwidth >= 0.3.0 handles ANSI codes internally,
+  1116 |         if hasattr(wcwidth, "width"):
+  1117 |             return wcwidth.width(str(s))
+  1118 |         # while previous versions need them stripped first.
+  1119 |         if isinstance(s, (str, bytes)):
+  1120 |             return wcwidth.wcswidth(_strip_ansi(str(s)))
+  1121 | 
+  1122 |         # Otherwise, coerce to string, guaranteed to be without any control codes,
+  1123 |         # we can use wcswidth() directly.
+  1124 |         return wcwidth.wcswidth(str(s))
+  1125 |     if isinstance(s, (str, bytes)):
+  1126 |         return len(_strip_ansi(s))
+  1127 |     else:
+  1128 |         return len(str(s))
+  1129 | 
+  1130 | 
+  1131 | def _is_multiline(s):
+  1132 |     if isinstance(s, str):
+  1133 |         return bool(re.search(_multiline_codes, s))
+  1134 |     else:  # a bytestring
+  1135 |         return bool(re.search(_multiline_codes_bytes, s))
+  1136 | 
+  1137 | 
+  1138 | def _multiline_width(multiline_s, line_width_fn=len):
+  1139 |     """Visible width of a potentially multiline content."""
+  1140 |     return max(map(line_width_fn, re.split("[\r\n]", multiline_s)))
+  1141 | 
+  1142 | 
+  1143 | def _choose_width_fn(has_invisible, enable_widechars, is_multiline):
+  1144 |     """Return a function to calculate visible cell width."""
+  1145 |     if has_invisible:
+  1146 |         line_width_fn = _visible_width
+  1147 |     elif enable_widechars:  # optional wide-character support if available
+  1148 |         line_width_fn = wcwidth.wcswidth
+  1149 |     else:
+  1150 |         line_width_fn = len
+  1151 |     if is_multiline:
+  1152 |         width_fn = lambda s: _multiline_width(s, line_width_fn)  # noqa: E731
+  1153 |     else:
+  1154 |         width_fn = line_width_fn
+  1155 |     return width_fn
+  1156 | 
+  1157 | 
+  1158 | def _align_column_choose_padfn(strings, alignment, has_invisible, preserve_whitespace):
+  1159 |     if alignment == "right":
+  1160 |         if not preserve_whitespace:
+... [1846 more lines; pass offset=1161 for next page]

@@ -1,0 +1,131 @@
+  3690 |             if too_long is not None:
+  3691 |                 raise too_long
+  3692 |             raise ValueError(
+  3693 |                 f'Expected exactly one item in iterable, but got {first!r}, '
+  3694 |                 f'{second!r}, and perhaps more.'
+  3695 |             )
+  3696 |         return first
+  3697 |     return default
+  3698 | 
+  3699 | 
+  3700 | def ichunked(iterable, n):
+  3701 |     """Break *iterable* into sub-iterables with *n* elements each.
+  3702 |     :func:`ichunked` is like :func:`chunked`, but it yields iterables
+  3703 |     instead of lists.
+  3704 | 
+  3705 |     If the sub-iterables are read in order, the elements of *iterable*
+  3706 |     won't be stored in memory.
+  3707 |     If they are read out of order, :func:`itertools.tee` is used to cache
+  3708 |     elements as necessary.
+  3709 | 
+  3710 |     >>> from itertools import count
+  3711 |     >>> all_chunks = ichunked(count(), 4)
+  3712 |     >>> c_1, c_2, c_3 = next(all_chunks), next(all_chunks), next(all_chunks)
+  3713 |     >>> list(c_2)  # c_1's elements have been cached; c_3's haven't been
+  3714 |     [4, 5, 6, 7]
+  3715 |     >>> list(c_1)
+  3716 |     [0, 1, 2, 3]
+  3717 |     >>> list(c_3)
+  3718 |     [8, 9, 10, 11]
+  3719 | 
+  3720 |     """
+  3721 |     iterator = iter(iterable)
+  3722 |     for first in iterator:
+  3723 |         rest = islice(iterator, n - 1)
+  3724 |         cache, cacher = tee(rest)
+  3725 |         yield chain([first], rest, cache)
+  3726 |         consume(cacher)
+  3727 | 
+  3728 | 
+  3729 | def iequals(*iterables):
+  3730 |     """Return ``True`` if all given *iterables* are equal to each other,
+  3731 |     which means that they contain the same elements in the same order.
+  3732 | 
+  3733 |     The function is useful for comparing iterables of different data types
+  3734 |     or iterables that do not support equality checks.
+  3735 | 
+  3736 |     >>> iequals("abc", ['a', 'b', 'c'], ('a', 'b', 'c'), iter("abc"))
+  3737 |     True
+  3738 | 
+  3739 |     >>> iequals("abc", "acb")
+  3740 |     False
+  3741 | 
+  3742 |     Not to be confused with :func:`all_equal`, which checks whether all
+  3743 |     elements of iterable are equal to each other.
+  3744 | 
+  3745 |     """
+  3746 |     try:
+  3747 |         return all(map(all_equal, zip(*iterables, strict=True)))
+  3748 |     except ValueError:
+  3749 |         return False
+  3750 | 
+  3751 | 
+  3752 | def distinct_combinations(iterable, r):
+  3753 |     """Yield the distinct combinations of *r* items taken from *iterable*.
+  3754 | 
+  3755 |         >>> list(distinct_combinations([0, 0, 1], 2))
+  3756 |         [(0, 0), (0, 1)]
+  3757 | 
+  3758 |     Equivalent to ``set(combinations(iterable))``, except duplicates are not
+  3759 |     generated and thrown away. For larger input sequences this is much more
+  3760 |     efficient.
+  3761 | 
+  3762 |     """
+  3763 |     if r < 0:
+  3764 |         raise ValueError('r must be non-negative')
+  3765 |     elif r == 0:
+  3766 |         yield ()
+  3767 |         return
+  3768 |     pool = tuple(iterable)
+  3769 |     generators = [unique_everseen(enumerate(pool), key=itemgetter(1))]
+  3770 |     current_combo = [None] * r
+  3771 |     level = 0
+  3772 |     while generators:
+  3773 |         try:
+  3774 |             cur_idx, p = next(generators[-1])
+  3775 |         except StopIteration:
+  3776 |             generators.pop()
+  3777 |             level -= 1
+  3778 |             continue
+  3779 |         current_combo[level] = p
+  3780 |         if level + 1 == r:
+  3781 |             yield tuple(current_combo)
+  3782 |         else:
+  3783 |             generators.append(
+  3784 |                 unique_everseen(
+  3785 |                     enumerate(pool[cur_idx + 1 :], cur_idx + 1),
+  3786 |                     key=itemgetter(1),
+  3787 |                 )
+  3788 |             )
+  3789 |             level += 1
+  3790 | 
+  3791 | 
+  3792 | def filter_except(validator, iterable, *exceptions):
+  3793 |     """Yield the items from *iterable* for which the *validator* function does
+  3794 |     not raise one of the specified *exceptions*.
+  3795 | 
+  3796 |     *validator* is called for each item in *iterable*.
+  3797 |     It should be a function that accepts one argument and raises an exception
+  3798 |     if that item is not valid.
+  3799 | 
+  3800 |     >>> iterable = ['1', '2', 'three', '4', None]
+  3801 |     >>> list(filter_except(int, iterable, ValueError, TypeError))
+  3802 |     ['1', '2', '4']
+  3803 | 
+  3804 |     If an exception other than one given by *exceptions* is raised by
+  3805 |     *validator*, it is raised like normal.
+  3806 |     """
+  3807 |     for item in iterable:
+  3808 |         try:
+  3809 |             validator(item)
+  3810 |         except exceptions:
+  3811 |             pass
+  3812 |         else:
+  3813 |             yield item
+  3814 | 
+  3815 | 
+  3816 | def map_except(function, iterable, *exceptions):
+  3817 |     """Transform each item from *iterable* with *function* and yield the
+  3818 |     result, unless *function* raises one of the specified *exceptions*.
+  3819 | 
+... [1817 more lines; pass offset=3820 for next page]

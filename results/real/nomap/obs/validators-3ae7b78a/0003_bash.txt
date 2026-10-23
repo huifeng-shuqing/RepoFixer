@@ -1,0 +1,27 @@
+commit 29bb90ebfac6c55273a41af4841d0030b6646bc0
+Author: dataset <dataset@local>
+Date:   Fri Oct 23 15:58:10 2026 +0800
+
+    build: apply test patch + stub _version (source fix removed)
+
+ src/validators/_version.py       |  2 ++
+ tests/test_validation_failure.py | 40 +++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 41 insertions(+), 1 deletion(-)
+src/validators/between.py:75:            raise ValueError("`min_val` cannot be greater than `max_val`")
+src/validators/between.py:77:        raise TypeError("Comparison type mismatch") from err
+src/validators/cron.py:61:        raise ValueError("Badly formatted cron string") from err
+src/validators/crypto_addresses/eth_address.py:55:        raise ImportError(
+src/validators/domain.py:107:        raise UnicodeError(f"Unable to encode/decode {value}") from err
+src/validators/ip_address.py:78:            address, this function raises a validation error. ref [IPv4Network][2].
+src/validators/ip_address.py:90:                raise ValueError("IPv4 address was expected in CIDR notation")
+src/validators/ip_address.py:123:            address, this function raises a validation error. ref [IPv6Network][2].
+src/validators/ip_address.py:135:                raise ValueError("IPv6 address was expected in CIDR notation")
+src/validators/length.py:41:        raise ValueError("Length cannot be negative. `min_val` is less than zero.")
+src/validators/length.py:43:        raise ValueError("Length cannot be negative. `max_val` is less than zero.")
+src/validators/utils.py:75:        raise_validation_error = False
+src/validators/utils.py:77:            raise_validation_error = True
+src/validators/utils.py:80:            raise_validation_error = True
+src/validators/utils.py:83:            if raise_validation_error:
+src/validators/utils.py:87:                    raise ValidationError(func, _func_args_as_dict(func, *args, **kwargs))
+src/validators/utils.py:95:            if raise_validation_error:
+src/validators/utils.py:96:                raise ValidationError(

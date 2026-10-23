@@ -1,0 +1,104 @@
+def test_github_no_alignment():
+    "Output: github without alignment hints when numalign/stralign are disabled"
+    expected = "\n".join(
+        [
+            "| strings | numbers |",
+            "|-----------|-----------|",
+            "| spam | 41.9999 |",
+            "| eggs | 451 |",
+        ]
+    )
+    result = tabulate(
+        _test_table,
+        _test_table_headers,
+        tablefmt="github",
+        numalign=None,
+        stralign=None,
+    )
+    assert_equal(expected, result)
+
+
+def test_grid():
+    "Output: grid with headers"
+    expected = "\n".join(
+        [
+            "+-----------+-----------+",
+            "| strings   |   numbers |",
+            "+===========+===========+",
+            "| spam      |   41.9999 |",
+            "+-----------+-----------+",
+            "| eggs      |  451      |",
+            "+-----------+-----------+",
+        ]
+    )
+    result = tabulate(_test_table, _test_table_headers, tablefmt="grid")
+    assert_equal(expected, result)
+
+
+def test_grid_wide_characters():
+    "Output: grid with wide characters in headers"
+    try:
+        import wcwidth  # noqa: F401
+    except ImportError:
+        skip("test_grid_wide_characters is skipped")
+    headers = list(_test_table_headers)
+    headers[1] = "配列"
+    expected = "\n".join(
+        [
+            "+-----------+----------+",
+            "| strings   |     配列 |",
+            "+===========+==========+",
+            "| spam      |  41.9999 |",
+            "+-----------+----------+",
+            "| eggs      | 451      |",
+            "+-----------+----------+",
+        ]
+    )
+    result = tabulate(_test_table, headers, tablefmt="grid")
+    assert_equal(expected, result)
+
+
+def test_grid_headerless():
+    "Output: grid without headers"
+    expected = "\n".join(
+        [
+________ test_simple_headerless_with_sep_line_with_padding_in_tablefmt ________
+
+    def test_simple_headerless_with_sep_line_with_padding_in_tablefmt():
+        "Output: simple without headers with sep line with padding in tablefmt"
+        expected = "\n".join(
+            [
+                "|:-----|---------:|",
+                "| spam |  41.9999 |",
+                "|:-----|---------:|",
+                "| eggs | 451      |",
+            ]
+        )
+        result = tabulate(_test_table_with_sep_line, tablefmt="github")
+>       assert_equal(expected, result)
+
+test\test_output.py:379: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+expected = '|:-----|---------:|\n| spam |  41.9999 |\n|:-----|---------:|\n| eggs | 451      |'
+result = '|------|----------|\n| spam |  41.9999 |\n|------|----------|\n| eggs | 451      |'
+
+    def assert_equal(expected, result):
+        print("Expected:\n%r\n" % expected)
+        print("Got:\n%r\n" % result)
+>       assert expected == result
+               ^^^^^^^^^^^^^^^^^^
+E       AssertionError
+
+test\common.py:10: AssertionError
+---------------------------- Captured stdout call -----------------------------
+Expected:
+'|:-----|---------:|\n| spam |  41.9999 |\n|:-----|---------:|\n| eggs | 451      |'
+
+Got:
+'|------|----------|\n| spam |  41.9999 |\n|------|----------|\n| eggs | 451      |'
+
+=========================== short test summary info ===========================
+FAILED test\test_output.py::test_simple_headerless_with_sep_line_with_padding_in_tablefmt
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 76 passed, 29 skipped in 1.69s

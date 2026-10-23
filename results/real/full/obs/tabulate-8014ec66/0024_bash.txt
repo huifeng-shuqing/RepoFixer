@@ -1,0 +1,61 @@
+1158:def _align_column_choose_padfn(strings, alignment, has_invisible, preserve_whitespace):
+1159-    if alignment == "right":
+1160-        if not preserve_whitespace:
+1161-            strings = [s.strip() for s in strings]
+1162-        padfn = _padleft
+1163-    elif alignment == "center":
+1164-        if not preserve_whitespace:
+1165-            strings = [s.strip() for s in strings]
+1166-        padfn = _padboth
+1167-    elif alignment == "decimal":
+1168-        if has_invisible:
+1169-            decimals = [_afterpoint(_strip_ansi(s)) for s in strings]
+1170-        else:
+1171-            decimals = [_afterpoint(s) for s in strings]
+1172-        maxdecimals = max(decimals)
+1173-        strings = [s + (maxdecimals - decs) * " " for s, decs in zip(strings, decimals)]
+1174-        padfn = _padleft
+1175-    elif not alignment:
+1176-        padfn = _padnone
+1177-    else:
+1178-        if not preserve_whitespace:
+1179-            strings = [s.strip() for s in strings]
+1180-        padfn = _padright
+1181-    return strings, padfn
+1182-
+1183-
+1184-def _align_column_choose_width_fn(has_invisible, enable_widechars, is_multiline):
+1185-    if has_invisible:
+1186-        line_width_fn = _visible_width
+1187-    elif enable_widechars:  # optional wide-character support if available
+1188-        line_width_fn = wcwidth.wcswidth
+1189-    else:
+1190-        line_width_fn = len
+1191-    if is_multiline:
+1192-        width_fn = lambda s: _align_column_multiline_width(  # noqa: E731
+1193-            s, line_width_fn
+1194-        )
+1195-    else:
+1196-        width_fn = line_width_fn
+1197-    return width_fn
+1198-
+1199-
+1200-def _align_column_multiline_width(multiline_s, line_width_fn=len):
+1201-    """Visible width of a potentially multiline content."""
+1202-    return list(map(line_width_fn, re.split("[\r\n]", multiline_s)))
+1203-
+1204-
+1205-def _flat_list(nested_list):
+1206-    ret = []
+1207-    for item in nested_list:
+1208-        if isinstance(item, list):
+1209-            ret.extend(item)
+1210-        else:
+1211-            ret.append(item)
+1212-    return ret
+1213-
+1214-
+1215-def _align_column(
+1216-    strings,
+1217-    alignment,
+1218-    minwidth=0,

@@ -1,0 +1,91 @@
+    .. _splay tree: https://en.wikipedia.org/wiki/Splay_tree
+    """
+
+    def shift(self, item_index, dest_index=0):
+        if item_index == dest_index:
+            return
+        item = self.pop(item_index)
+        self.insert(dest_index, item)
+
+    def swap(self, item_index, dest_index):
+        self[dest_index], self[item_index] = self[item_index], self[dest_index]
+68:class IndexedSet(MutableSet):
+111:    def __init__(self, other=None):
+122:    def _dead_index_count(self):
+125:    def _compact(self):
+138:    def _cull(self):
+158:    def _get_real_index(self, index):
+172:    def _get_apparent_index(self, index):
+184:    def _add_dead(self, start, stop=None):
+206:    def __len__(self):
+209:    def __contains__(self, item):
+212:    def __iter__(self):
+215:    def __reversed__(self):
+219:    def __repr__(self):
+222:    def __eq__(self, other):
+231:    def from_iterable(cls, it):
+236:    def add(self, item):
+242:    def remove(self, item):
+252:    def discard(self, item):
+259:    def clear(self):
+265:    def isdisjoint(self, other):
+273:    def issubset(self, other):
+282:    def issuperset(self, other):
+292:    def union(self, *others):
+296:    def iter_intersection(self, *others):
+306:    def intersection(self, *others):
+313:    def iter_difference(self, *others):
+323:    def difference(self, *others):
+330:    def symmetric_difference(self, *others):
+340:    def __rsub__(self, other):
+345:    def update(self, *others):
+356:    def intersection_update(self, *others):
+361:    def difference_update(self, *others):
+368:    def symmetric_difference_update(self, other):  # note singular 'other'
+378:    def __ior__(self, *others):
+382:    def __iand__(self, *others):
+386:    def __isub__(self, *others):
+390:    def __ixor__(self, *others):
+394:    def iter_slice(self, start, stop, step=None):
+413:    def __getitem__(self, index):
+424:    def pop(self, index=None):
+440:    def count(self, val):
+446:    def reverse(self):
+454:    def sort(self, **kwargs):
+464:    def index(self, val):
+473:def complement(wrapped):
+522:        ...    def __init__(self, allowed):
+525:        ...    def filter(self, names):
+560:def _norm_args_typeerror(other):
+571:def _norm_args_notimplemented(other):
+582:class _ComplementSet:
+588:    def __init__(self, included=None, excluded=None):
+597:    def __repr__(self):
+602:    def complemented(self):
+612:    def complement(self):
+616:    def __contains__(self, item):
+621:    def add(self, item):
+628:    def remove(self, item):
+634:    def pop(self):
+639:    def intersection(self, other):
+645:    def __and__(self, other):
+662:    def __iand__(self, other):
+679:    def union(self, other):
+685:    def __or__(self, other):
+702:    def __ior__(self, other):
+718:    def update(self, items):
+737:    def discard(self, items):
+755:    def symmetric_difference(self, other):
+761:    def __xor__(self, other):
+780:    def symmetric_difference_update(self, other):
+795:    def isdisjoint(self, other):
+810:    def issubset(self, other):
+817:    def __le__(self, other):
+832:    def __lt__(self, other):
+847:    def issuperset(self, other):
+854:    def __ge__(self, other):
+869:    def __gt__(self, other):
+884:    def difference(self, other):
+890:    def __sub__(self, other):
+905:    def __rsub__(self, other):
+921:    def difference_update(self, other):

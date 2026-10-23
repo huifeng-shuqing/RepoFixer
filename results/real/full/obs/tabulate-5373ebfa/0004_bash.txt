@@ -1,0 +1,101 @@
+            "+--------+-------------+-------------+",
+            "| test   |        \x1b[34mtest\x1b[0m |        test |",
+            "+========+=============+=============+",
+            "| \x1b[33mabc\x1b[0m    |          42 |          \x1b[31m42\x1b[0m |",
+            "+--------+-------------+-------------+",
+            "| \x1b[35mdef\x1b[0m    | 987,654,321 | \x1b[32m987,654,321\x1b[0m |",
+            "+--------+-------------+-------------+",
+        ]
+    )
+    print(f"expected: {expected!r}\n\ngot:      {formatted!r}\n")
+    assert_equal(expected, formatted)
+
+
+def test_empty_data_with_headers():
+    "Output: table with empty data and headers as firstrow"
+    expected = ""
+    result = tabulate([], headers="firstrow")
+    assert_equal(expected, result)
+
+
+def test_floatfmt():
+    "Output: floating point format"
+    result = tabulate([["1.23456789"], [1.0]], floatfmt=".3f", tablefmt="plain")
+    expected = "1.235\n1.000"
+    assert_equal(expected, result)
+
+
+def test_floatfmt_thousands():
+    "Output: floating point format"
+    result = tabulate([["1.23456789"], [1.0], ["1,234.56"]], floatfmt=".3f", tablefmt="plain")
+    expected = "   1.235\n   1.000\n1234.560"
+    assert_equal(expected, result)
+
+
+def test_floatfmt_multi():
+    "Output: floating point format different for each column"
+    result = tabulate([[0.12345, 0.12345, 0.12345]], floatfmt=(".1f", ".3f"), tablefmt="plain")
+    expected = "0.1  0.123  0.12345"
+    assert_equal(expected, result)
+
+
+def test_floatfmt_decimal():
+    result = tabulate(
+        [[Decimal("99999998999.999980"), 1234.5, 1.2345678, "inf"]],
+        floatfmt=".6f",
+        tablefmt="plain",
+    )
+    expected = "99999998999.999980  1234.500000  1.234568  inf"
+    assert_equal(expected, result)
+
+
+def test_colalign_multi():
+    "Output: string columns with custom colalign"
+    result = tabulate([["one", "two"], ["three", "four"]], colalign=("right",), tablefmt="plain")
+    expected = "  one  two\nthree  four"
+    assert_equal(expected, result)
+
+
+def test_colalign_multi_with_sep_line():
+    "Output: string columns with custom colalign"
+    result = tabulate(
+        [["one", "two"], SEPARATING_LINE, ["three", "four"]],
+        colalign=("right",),
+        tablefmt="plain",
+    )
+    expected = "  one  two\n\nthree  four"
+    assert_equal(expected, result)
+
+
+def test_column_global_and_specific_alignment():
+    """Test `colglobalalign` and `"global"` parameter for `colalign`."""
+    table = [[1, 2, 3, 4], [111, 222, 333, 444]]
+    colglobalalign = "center"
+    colalign = ("global", "left", "right")
+    result = tabulate(table, colglobalalign=colglobalalign, colalign=colalign)
+    expected = "\n".join(
+        [
+            "---  ---  ---  ---",
+            " 1   2      3   4",
+            "111  222  333  444",
+            "---  ---  ---  ---",
+        ]
+    )
+    assert_equal(expected, result)
+
+
+def test_headers_global_and_specific_alignment():
+    """Test `headersglobalalign` and `headersalign`."""
+    table = [[1, 2, 3, 4, 5, 6], [111, 222, 333, 444, 555, 666]]
+    colglobalalign = "center"
+    colalign = ("left",)
+    headers = ["h", "e", "a", "d", "e", "r"]
+    headersglobalalign = "right"
+    headersalign = ("same", "same", "left", "global", "center")
+    result = tabulate(
+        table,
+        headers=headers,
+        colglobalalign=colglobalalign,
+        colalign=colalign,
+        headersglobalalign=headersglobalalign,
+        headersalign=headersalign,

@@ -39,6 +39,88 @@ class DataRow:
 #   - or a function: [col_widths], [col_alignments] -> string.
 #
 # TableFormat's *row elements can be
+        linebelow=Line("┕", "━", "┷", "┙"),
+        headerrow=DataRow("│", "│", "│"),
+        datarow=DataRow("│", "│", "│"),
+        padding=1,
+        with_header_hide=None,
+    ),
+    "double_outline": TableFormat(
+        lineabove=Line("╔", "═", "╦", "╗"),
+        linebelowheader=Line("╠", "═", "╬", "╣"),
+        linebetweenrows=None,
+        linebelow=Line("╚", "═", "╩", "╝"),
+        headerrow=DataRow("║", "║", "║"),
+        datarow=DataRow("║", "║", "║"),
+        padding=1,
+        with_header_hide=None,
+    ),
+    "fancy_outline": TableFormat(
+        lineabove=Line("╒", "═", "╤", "╕"),
+        linebelowheader=Line("╞", "═", "╪", "╡"),
+        linebetweenrows=None,
+        linebelow=Line("╘", "═", "╧", "╛"),
+        headerrow=DataRow("│", "│", "│"),
+        datarow=DataRow("│", "│", "│"),
+        padding=1,
+        with_header_hide=None,
+    ),
+    "pipe": TableFormat(
+        lineabove=_pipe_line_with_colons,
+        linebelowheader=_pipe_line_with_colons,
+        linebetweenrows=None,
+        linebelow=None,
+        headerrow=DataRow("|", "|", "|"),
+        datarow=DataRow("|", "|", "|"),
+        padding=1,
+        with_header_hide=["lineabove"],
+    ),
+    "orgtbl": TableFormat(
+        lineabove=None,
+        linebelowheader=Line("|", "-", "+", "|"),
+        linebetweenrows=None,
+        linebelow=None,
+        headerrow=DataRow("|", "|", "|"),
+        datarow=DataRow("|", "|", "|"),
+        padding=1,
+        with_header_hide=None,
+    ),
+    "jira": TableFormat(
+        lineabove=None,
+        linebelowheader=None,
+        linebetweenrows=None,
+        linebelow=None,
+        headerrow=DataRow("||", "||", "||"),
+        datarow=DataRow("|", "|", "|"),
+        padding=1,
+        with_header_hide=None,
+    ),
+    "presto": TableFormat(
+        lineabove=None,
+        linebelowheader=Line("", "-", "+", ""),
+        linebetweenrows=None,
+        linebelow=None,
+    ),
+    "asciidoc": TableFormat(
+        lineabove=partial(_asciidoc_row, False),
+        linebelowheader=None,
+        linebetweenrows=None,
+        linebelow=Line("|====", "", "", ""),
+        headerrow=partial(_asciidoc_row, True),
+        datarow=partial(_asciidoc_row, False),
+        padding=1,
+        with_header_hide=["lineabove"],
+    ),
+}
+
+# "github" is an alias for "pipe": both produce GitHub-flavored Markdown with
+# alignment colons in the separator row.
+_table_formats["github"] = _table_formats["pipe"]
+
+
+tabulate_formats = sorted(_table_formats.keys())
+
+# The table formats for which multiline cells will be folded into subsequent
     If `original` is not a list to begin with (i.e. scalar value) a list of
     length `num_desired` completely populated with `default will be returned
     """
@@ -90,72 +172,23 @@ def _append_basic_row(lines, padded_cells, colwidths, colaligns, rowfmt, rowalig
     # NOTE: rowalign is ignored and exists for api compatibility with _append_multiline_row
     lines.append(_build_row(padded_cells, colwidths, colaligns, rowfmt))
     return lines
-75:class DataRow:
-79:    escape_map: dict = None
-103:#   - or a DataRow tuple,
-333:_latex_row = DataRow("", "&", "\\\\", LATEX_ESCAPE_RULES)
-361:        headerrow=DataRow("", "  ", ""),
-362:        datarow=DataRow("", "  ", ""),
-371:        headerrow=DataRow("", "  ", ""),
-372:        datarow=DataRow("", "  ", ""),
-381:        headerrow=DataRow("|", "|", "|"),
-382:        datarow=DataRow("|", "|", "|"),
-391:        headerrow=DataRow("│", "│", "│"),
-392:        datarow=DataRow("│", "│", "│"),
-401:        headerrow=DataRow("│", "│", "│"),
-402:        datarow=DataRow("│", "│", "│"),
-411:        headerrow=DataRow("┃", "┃", "┃"),
-412:        datarow=DataRow("┃", "┃", "┃"),
-421:        headerrow=DataRow("│", "│", "│"),
-422:        datarow=DataRow("│", "│", "│"),
-431:        headerrow=DataRow("║", "║", "║"),
-432:        datarow=DataRow("║", "║", "║"),
-441:        headerrow=DataRow("│", "│", "│"),
-442:        datarow=DataRow("│", "│", "│"),
-451:        headerrow=DataRow("|", "|", "|"),
-452:        datarow=DataRow("|", "|", "|"),
-461:        headerrow=DataRow("|", "|", "|"),
-462:        datarow=DataRow("|", "|", "|"),
-471:        headerrow=DataRow("│", "│", "│"),
-472:        datarow=DataRow("│", "│", "│"),
-481:        headerrow=DataRow("│", "│", "│"),
-482:        datarow=DataRow("│", "│", "│"),
-491:        headerrow=DataRow("┃", "┃", "┃"),
-492:        datarow=DataRow("┃", "┃", "┃"),
-501:        headerrow=DataRow("│", "│", "│"),
-502:        datarow=DataRow("│", "│", "│"),
-511:        headerrow=DataRow("║", "║", "║"),
-512:        datarow=DataRow("║", "║", "║"),
-521:        headerrow=DataRow("│", "│", "│"),
-522:        datarow=DataRow("│", "│", "│"),
-531:        headerrow=DataRow("|", "|", "|"),
-532:        datarow=DataRow("|", "|", "|"),
-541:        headerrow=DataRow("|", "|", "|"),
-542:        datarow=DataRow("|", "|", "|"),
-551:        headerrow=DataRow("||", "||", "||"),
-552:        datarow=DataRow("|", "|", "|"),
-561:        headerrow=DataRow("", "|", ""),
-562:        datarow=DataRow("", "|", ""),
-571:        headerrow=DataRow("|", "|", "|"),
-572:        datarow=DataRow("|", "|", "|"),
-581:        headerrow=DataRow("|", "|", "|"),
-582:        datarow=DataRow("|", "|", "|"),
-591:        headerrow=DataRow("", "  ", ""),
-592:        datarow=DataRow("", "  ", ""),
-656:        headerrow=DataRow("", "&", "\\\\", {}),
-657:        datarow=DataRow("", "&", "\\\\", {}),
-686:        headerrow=DataRow("", "\t", ""),
-687:        datarow=DataRow("", "\t", ""),
-696:        headerrow=DataRow("|_. ", "|_.", "|"),
-831:        headerrow=DataRow("", separator, ""),
-832:        datarow=DataRow("", separator, ""),
-2510:def _build_simple_row(padded_cells: list[list], rowfmt: DataRow) -> str:
-2511:    "Format row according to DataRow format without padding."
-2515:    escape_map: dict = rowfmt.escape_map
-2517:    if escape_map:
-2519:            return escape_map.get(c, c)
-2527:def _build_row(padded_cells: list[list], colwidths: list[int], colaligns: list[str], rowfmt: Union[DataRow, Callable]) -> str:
-2586:        rowfmt = DataRow(begin, sep, end)
 
-[stderr]
-/usr/bin/bash: line 1: cd: /workspace: No such file or directory
+
+def _align_cell_veritically(text_lines, num_lines, column_width, row_alignment):
+    delta_lines = num_lines - len(text_lines)
+    blank = [" " * column_width]
+    if row_alignment == "bottom":
+        return blank * delta_lines + text_lines
+    elif row_alignment == "center":
+        top_delta = delta_lines // 2
+        bottom_delta = delta_lines - top_delta
+        return top_delta * blank + text_lines + bottom_delta * blank
+    else:
+        return text_lines + blank * delta_lines
+
+
+def _append_multiline_row(
+    lines, padded_multiline_cells, padded_widths, colaligns, rowfmt, pad, rowalign=None
+):
+    colwidths = [w - 2 * pad for w in padded_widths]
+    cells_lines = [c.splitlines() for c in padded_multiline_cells]

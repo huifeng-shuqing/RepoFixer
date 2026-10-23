@@ -1,0 +1,80 @@
+        print("Expected:\n%r\n" % expected)
+        print("Got:\n%r\n" % result)
+>       assert expected == result
+               ^^^^^^^^^^^^^^^^^^
+E       AssertionError
+
+test\common.py:10: AssertionError
+---------------------------- Captured stdout call -----------------------------
+Expected:
+'| Name   |   Age |\n|:-------|------:|\n| Alice  |    24 |\n| Bob    |    19 |'
+
+Got:
+'| Name   |   Age |\n|--------|-------|\n| Alice  |    24 |\n| Bob    |    19 |'
+
+=========================== short test summary info ===========================
+FAILED test\test_output.py::test_simple_headerless_with_sep_line_with_padding_in_tablefmt
+FAILED test\test_output.py::test_github - AssertionError
+FAILED test\test_output.py::test_github_multiline - AssertionError
+FAILED test\test_output.py::test_github_with_colalign - AssertionError
+4 failed, 279 passed, 60 skipped in 3.14s
+101:# with_header_hide:
+116:        "with_header_hide",
+133:def _pipe_segment_with_colons(align, colwidth):
+147:def _pipe_line_with_colons(colwidths, colaligns):
+150:    if not colaligns:  # e.g. printing an empty data frame (github issue #15)
+152:    segments = "|".join(_pipe_segment_with_colons(a, w) for a, w in zip(colaligns, colwidths))
+156:def _grid_segment_with_colons(colwidth, align):
+170:def _grid_line_with_colons(colwidths, colaligns):
+175:    segments = "+".join(_grid_segment_with_colons(w, a) for a, w in zip(colaligns, colwidths))
+363:        with_header_hide=["lineabove", "linebelow"],
+373:        with_header_hide=None,
+383:        with_header_hide=None,
+385:    "simple_grid": TableFormat(
+393:        with_header_hide=None,
+395:    "rounded_grid": TableFormat(
+403:        with_header_hide=None,
+405:    "heavy_grid": TableFormat(
+413:        with_header_hide=None,
+415:    "mixed_grid": TableFormat(
+423:        with_header_hide=None,
+425:    "double_grid": TableFormat(
+433:        with_header_hide=None,
+435:    "fancy_grid": TableFormat(
+443:        with_header_hide=None,
+445:    "colon_grid": TableFormat(
+447:        linebelowheader=_grid_line_with_colons,
+453:        with_header_hide=None,
+463:        with_header_hide=None,
+473:        with_header_hide=None,
+483:        with_header_hide=None,
+493:        with_header_hide=None,
+503:        with_header_hide=None,
+513:        with_header_hide=None,
+523:        with_header_hide=None,
+525:    "github": TableFormat(
+533:        with_header_hide=["lineabove"],
+536:        lineabove=_pipe_line_with_colons,
+537:        linebelowheader=_pipe_line_with_colons,
+543:        with_header_hide=["lineabove"],
+553:        with_header_hide=None,
+563:        with_header_hide=None,
+573:        with_header_hide=None,
+583:        with_header_hide=None,
+593:        with_header_hide=None,
+603:        with_header_hide=None,
+618:        with_header_hide=None,
+628:        with_header_hide=None,
+638:        with_header_hide=["lineabove"],
+648:        with_header_hide=["lineabove"],
+658:        with_header_hide=None,
+668:        with_header_hide=None,
+678:        with_header_hide=None,
+688:        with_header_hide=None,
+698:        with_header_hide=None,
+708:        with_header_hide=None,
+718:        with_header_hide=["lineabove"],
+732:    "simple_grid": "simple_grid",
+733:    "rounded_grid": "rounded_grid",
+734:    "heavy_grid": "heavy_grid",
+735:    "mixed_grid": "mixed_grid",

@@ -1,0 +1,61 @@
+  1180 | 
+  1181 |     def __init__(self, iterable, key, validator=None):
+  1182 |         self._it = iter(iterable)
+  1183 |         self._key = key
+  1184 |         self._cache = defaultdict(deque)
+  1185 |         self._validator = validator or (lambda x: True)
+  1186 | 
+  1187 |     def __contains__(self, value):
+  1188 |         if not self._validator(value):
+  1189 |             return False
+  1190 | 
+  1191 |         try:
+  1192 |             item = next(self[value])
+  1193 |         except StopIteration:
+  1194 |             return False
+  1195 |         else:
+  1196 |             self._cache[value].appendleft(item)
+  1197 | 
+  1198 |         return True
+  1199 | 
+  1200 |     def _get_values(self, value):
+  1201 |         """
+  1202 |         Helper to yield items from the parent iterator that match *value*.
+  1203 |         Items that don't match are stored in the local cache as they
+  1204 |         are encountered.
+  1205 |         """
+  1206 |         while True:
+  1207 |             # If we've cached some items that match the target value, emit
+  1208 |             # the first one and evict it from the cache.
+  1209 |             if self._cache.get(value):
+  1210 |                 yield self._cache[value].popleft()
+  1211 |             # Otherwise we need to advance the parent iterator to search for
+  1212 |             # a matching item, caching the rest.
+  1213 |             else:
+  1214 |                 while True:
+  1215 |                     try:
+  1216 |                         item = next(self._it)
+  1217 |                     except StopIteration:
+  1218 |                         return
+  1219 |                     item_value = self._key(item)
+  1220 |                     if item_value == value:
+  1221 |                         if value not in self._cache:
+  1222 |                             self._cache[value] = deque()
+  1223 |                         yield item
+  1224 |                         break
+  1225 |                     elif self._validator(item_value):
+  1226 |                         self._cache[item_value].append(item)
+  1227 | 
+  1228 |     def __iter__(self):
+  1229 |         for item in self._it:
+  1230 |             item_value = self._key(item)
+  1231 |             if self._validator(item_value):
+  1232 |                 self._cache[item_value].append(item)
+  1233 | 
+  1234 |         return iter(self._cache)
+  1235 | 
+  1236 |     def __getitem__(self, value):
+  1237 |         if not self._validator(value):
+  1238 |             return iter(())
+  1239 | 
+... [4402 more lines; pass offset=1240 for next page]

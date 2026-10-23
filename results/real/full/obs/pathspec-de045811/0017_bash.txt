@@ -1,0 +1,81 @@
+	*file* (:class:`str`) is the normalized file path to be matched against
+	*patterns*.
+
+	*is_reversed* (:class:`bool` or :data:`None`) is whether the order of the
+	patterns has been reversed. Default is :data:`None` for :data:`False`.
+	Reversing the order of the patterns is an optimization.
+
+	Returns a :class:`tuple` containing whether to include *file* (:class:`bool`
+	or :data:`None`), and the index of the last matched pattern (:class:`int` or
+	:data:`None`).
+	"""
+	if is_reversed:
+		# Check patterns in reverse order. The first pattern that matches takes
+		# precedence.
+		for index, pattern in patterns:
+			if pattern.include is not None and pattern.match_file(file) is not None:
+				return pattern.include, index
+
+		return None, None
+
+	else:
+		# Check all patterns. The last pattern that matches takes precedence.
+		out_include: Optional[bool] = None
+		out_index: Optional[int] = None
+		for index, pattern in patterns:
+			if pattern.include is not None and pattern.match_file(file) is not None:
+				out_include = pattern.include
+				out_index = index
+
+		return out_include, out_index
+
+
+def detailed_match_files(
+	patterns: Iterable[Pattern],
+	files: Iterable[str],
+	all_matches: Optional[bool] = None,
+) -> dict[str, MatchDetail]:
+	"""
+	Matches the files to the patterns, and returns which patterns matched the
+	files.
+
+>   			self.assertTrue(spec.match_file("d/child/grand/deep.txt"))
+E      AssertionError: False is not true
+
+tests\test_06_gitignore.py:1157: AssertionError
+_____________ GitIgnoreSpecIssue137Test.test_d [simple (minopt)] ______________
+
+self = <tests.test_06_gitignore.GitIgnoreSpecIssue137Test testMethod=test_d>
+
+    def test_d(self):
+    	"""
+    	Test terminal-globstar negation with excluded ancestor directories.
+    	"""
+    	for sub_test in self.parameterize_from_lines([
+    		"d/**/",
+    		"!d/child/",
+    	]):
+    		with sub_test() as spec:
+    			# PathSpec leaves the bare pattern-root directory unmatched so a
+    			# traversal can still reach its direct files.
+    			self.assertFalse(spec.match_file("d/"))
+    			self.assertFalse(spec.match_file("d/top.txt"))
+    			self.assertFalse(spec.match_file("d/child/"))
+    			self.assertFalse(spec.match_file("d/child/top.txt"))
+    			self.assertTrue(spec.match_file("d/child/grand/"))
+    			# Re-including child does not re-include the excluded grand directory.
+>   			self.assertTrue(spec.match_file("d/child/grand/deep.txt"))
+E      AssertionError: False is not true
+
+tests\test_06_gitignore.py:1157: AssertionError
+============================== warnings summary ===============================
+dataset/repos/pathspec-de045811/tests/test_01_util.py: 14 warnings
+  C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\pathspec-de045811\pathspec\util.py:158: DeprecationWarning: Pattern.match() is deprecated. Use Pattern.match_file() with a loop for similar results.
+    result_files = pattern.match(all_files)  # TODO: Replace with `.match_file()`.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+SUBFAILED[simple (unopt)] tests\test_06_gitignore.py::GitIgnoreSpecIssue137Test::test_d
+SUBFAILED[simple (minopt)] tests\test_06_gitignore.py::GitIgnoreSpecIssue137Test::test_d
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 2 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+2 failed, 236 passed, 515 skipped, 14 warnings, 718 subtests passed in 0.65s

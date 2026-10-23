@@ -1,0 +1,401 @@
+   160 |         return self.tell()
+   161 | 
+   162 |     @property
+   163 |     def buf(self):
+   164 |         return self.getvalue()
+   165 | 
+   166 |     def fileno(self):
+   167 |         self.rollover()
+   168 |         return self.buffer.fileno()
+   169 | 
+   170 |     def truncate(self, size=None):
+   171 |         """
+   172 |         Truncate the contents of the buffer.
+   173 | 
+   174 |         Custom version of truncate that takes either no arguments (like the
+   175 |         real SpooledTemporaryFile) or a single argument that truncates the
+   176 |         value to a certain index location.
+   177 |         """
+   178 |         self._checkClosed()
+   179 |         if size is None:
+   180 |             return self.buffer.truncate()
+   181 | 
+   182 |         if size < 0:
+   183 |             raise OSError(EINVAL, "Negative size not allowed")
+   184 | 
+   185 |         # Emulate truncation to a particular location
+   186 |         pos = self.tell()
+   187 |         self.seek(size)
+   188 |         self.buffer.truncate()
+   189 |         if pos < size:
+   190 |             self.seek(pos)
+   191 | 
+   192 |     def getvalue(self):
+   193 |         """Return the entire files contents."""
+   194 |         self._checkClosed()
+   195 |         pos = self.tell()
+   196 |         self.seek(0)
+   197 |         val = self.read()
+   198 |         self.seek(pos)
+   199 |         return val
+   200 | 
+   201 |     def seekable(self):
+   202 |         return True
+   203 | 
+   204 |     def readable(self):
+   205 |         return True
+   206 | 
+   207 |     def writable(self):
+   208 |         return True
+   209 | 
+   210 |     def __next__(self):
+   211 |         self._checkClosed()
+   212 |         line = self.readline()
+   213 |         if not line:
+   214 |             pos = self.buffer.tell()
+   215 |             self.buffer.seek(0, os.SEEK_END)
+   216 |             if pos == self.buffer.tell():
+   217 |                 raise StopIteration
+   218 |             else:
+   219 |                 self.buffer.seek(pos)
+   220 |         return line
+   221 | 
+   222 |     next = __next__
+   223 | 
+   224 |     def __len__(self):
+   225 |         return self.len
+   226 | 
+   227 |     def __iter__(self):
+   228 |         self._checkClosed()
+   229 |         return self
+   230 | 
+   231 |     def __enter__(self):
+   232 |         self._checkClosed()
+   233 |         return self
+   234 | 
+   235 |     def __exit__(self, *args):
+   236 |         self._file.close()
+   237 | 
+   238 |     def __eq__(self, other):
+   239 |         if isinstance(other, self.__class__):
+   240 |             self_pos = self.tell()
+   241 |             other_pos = other.tell()
+   242 |             try:
+   243 |                 self.seek(0)
+   244 |                 other.seek(0)
+   245 |                 eq = True
+   246 |                 for self_line, other_line in zip_longest(self, other):
+   247 |                     if self_line != other_line:
+   248 |                         eq = False
+   249 |                         break
+   250 |                 self.seek(self_pos)
+   251 |                 other.seek(other_pos)
+   252 |             except Exception:
+   253 |                 # Attempt to return files to original position if there were any errors
+   254 |                 try:
+   255 |                     self.seek(self_pos)
+   256 |                 except Exception:
+   257 |                     pass
+   258 |                 try:
+   259 |                     other.seek(other_pos)
+   260 |                 except Exception:
+   261 |                     pass
+   262 |                 raise
+   263 |             else:
+   264 |                 return eq
+   265 |         return False
+   266 | 
+   267 |     def __ne__(self, other):
+   268 |         return not self.__eq__(other)
+   269 | 
+   270 |     def __bool__(self):
+   271 |         return True
+   272 | 
+   273 |     def __del__(self):
+   274 |         """Can fail when called at program exit so suppress traceback."""
+   275 |         try:
+   276 |             self.close()
+   277 |         except Exception:
+   278 |             pass
+   279 | 
+   280 | 
+   281 | class SpooledBytesIO(SpooledIOBase):
+   282 |     """
+   283 |     SpooledBytesIO is a spooled file-like-object that only accepts bytes. On
+   284 |     Python 2.x this means the 'str' type; on Python 3.x this means the 'bytes'
+   285 |     type. Bytes are written in and retrieved exactly as given, but it will
+   286 |     raise TypeErrors if something other than bytes are written.
+   287 | 
+   288 |     Example::
+   289 | 
+   290 |         >>> from boltons import ioutils
+   291 |         >>> with ioutils.SpooledBytesIO() as f:
+   292 |         ...     f.write(b"Happy IO")
+   293 |         ...     _ = f.seek(0)
+   294 |         ...     isinstance(f.getvalue(), bytes)
+   295 |         True
+   296 |     """
+   297 | 
+   298 |     def read(self, n=-1):
+   299 |         self._checkClosed()
+   300 |         return self.buffer.read(n)
+   301 | 
+   302 |     def write(self, s):
+   303 |         self._checkClosed()
+   304 |         if not isinstance(s, bytes):
+   305 |             raise TypeError("bytes expected, got {}".format(
+   306 |                 type(s).__name__
+   307 |             ))
+   308 | 
+   309 |         if self.tell() + len(s) >= self._max_size:
+   310 |             self.rollover()
+   311 |         self.buffer.write(s)
+   312 | 
+   313 |     def seek(self, pos, mode=0):
+   314 |         self._checkClosed()
+   315 |         return self.buffer.seek(pos, mode)
+   316 | 
+   317 |     def readline(self, length=None):
+   318 |         self._checkClosed()
+   319 |         if length:
+   320 |             return self.buffer.readline(length)
+   321 |         else:
+   322 |             return self.buffer.readline()
+   323 | 
+   324 |     def readlines(self, sizehint=0):
+   325 |         return self.buffer.readlines(sizehint)
+   326 | 
+   327 |     def rollover(self):
+   328 |         """Roll the StringIO over to a TempFile"""
+   329 |         if not self._rolled:
+   330 |             tmp = TemporaryFile(dir=self._dir)
+   331 |             pos = self.buffer.tell()
+   332 |             tmp.write(self.buffer.getvalue())
+   333 |             tmp.seek(pos)
+   334 |             self.buffer.close()
+   335 |             self._buffer = tmp
+   336 | 
+   337 |     @property
+   338 |     def _rolled(self):
+   339 |         return not isinstance(self.buffer, BytesIO)
+   340 | 
+   341 |     @property
+   342 |     def buffer(self):
+   343 |         try:
+   344 |             return self._buffer
+   345 |         except AttributeError:
+   346 |             self._buffer = BytesIO()
+   347 |         return self._buffer
+   348 | 
+   349 |     @property
+   350 |     def len(self):
+   351 |         """Determine the length of the file"""
+   352 |         pos = self.tell()
+   353 |         if self._rolled:
+   354 |             self.seek(0)
+   355 |             val = os.fstat(self.fileno()).st_size
+   356 |         else:
+   357 |             self.seek(0, os.SEEK_END)
+   358 |             val = self.tell()
+   359 |         self.seek(pos)
+   360 |         return val
+   361 | 
+   362 |     def tell(self):
+   363 |         self._checkClosed()
+   364 |         return self.buffer.tell()
+   365 | 
+   366 | 
+   367 | class SpooledStringIO(SpooledIOBase):
+   368 |     """
+   369 |     SpooledStringIO is a spooled file-like-object that only accepts unicode
+   370 |     values. On Python 2.x this means the 'unicode' type and on Python 3.x this
+   371 |     means the 'str' type. Values are accepted as unicode and then coerced into
+   372 |     utf-8 encoded bytes for storage. On retrieval, the values are returned as
+   373 |     unicode.
+   374 | 
+   375 |     Example::
+   376 | 
+   377 |         >>> from boltons import ioutils
+   378 |         >>> with ioutils.SpooledStringIO() as f:
+   379 |         ...     f.write(u"\u2014 Hey, an emdash!")
+   380 |         ...     _ = f.seek(0)
+   381 |         ...     isinstance(f.read(), str)
+   382 |         True
+   383 | 
+   384 |     """
+   385 |     def __init__(self, *args, **kwargs):
+   386 |         self._tell = 0
+   387 |         super().__init__(*args, **kwargs)
+   388 | 
+   389 |     def read(self, n=-1):
+   390 |         self._checkClosed()
+   391 |         ret = self.buffer.reader.read(n, n)
+   392 |         self._tell = self.tell() + len(ret)
+   393 |         return ret
+   394 | 
+   395 |     def write(self, s):
+   396 |         self._checkClosed()
+   397 |         if not isinstance(s, str):
+   398 |             raise TypeError("str expected, got {}".format(
+   399 |                 type(s).__name__
+   400 |             ))
+   401 |         current_pos = self.tell()
+   402 |         if self.buffer.tell() + len(s.encode('utf-8')) >= self._max_size:
+   403 |             self.rollover()
+   404 |         self.buffer.write(s.encode('utf-8'))
+   405 |         self._tell = current_pos + len(s)
+   406 | 
+   407 |     def _traverse_codepoints(self, current_position, n):
+   408 |         """Traverse from current position to the right n codepoints"""
+   409 |         dest = current_position + n
+   410 |         while True:
+   411 |             if current_position == dest:
+   412 |                 # By chance we've landed on the right position, break
+   413 |                 break
+   414 | 
+   415 |             # If the read would take us past the intended position then
+   416 |             # seek only enough to cover the offset
+   417 |             if current_position + READ_CHUNK_SIZE > dest:
+   418 |                 self.read(dest - current_position)
+   419 |                 break
+   420 |             else:
+   421 |                 ret = self.read(READ_CHUNK_SIZE)
+   422 | 
+   423 |             # Increment our current position
+   424 |             current_position += READ_CHUNK_SIZE
+   425 | 
+   426 |             # If we kept reading but there was nothing here, break
+   427 |             # as we are at the end of the file
+   428 |             if not ret:
+   429 |                 break
+   430 | 
+   431 |         return dest
+   432 | 
+   433 |     def seek(self, pos, mode=0):
+   434 |         """Traverse from offset to the specified codepoint"""
+   435 |         self._checkClosed()
+   436 |         # Seek to position from the start of the file
+   437 |         if mode == os.SEEK_SET:
+   438 |             self.buffer.seek(0)
+   439 |             self._traverse_codepoints(0, pos)
+   440 |             self._tell = pos
+   441 |         # Seek to new position relative to current position
+   442 |         elif mode == os.SEEK_CUR:
+   443 |             start_pos = self.tell()
+   444 |             self._traverse_codepoints(self.tell(), pos)
+   445 |             self._tell = start_pos + pos
+   446 |         elif mode == os.SEEK_END:
+   447 |             self.buffer.seek(0)
+   448 |             dest_position = self.len - pos
+   449 |             self._traverse_codepoints(0, dest_position)
+   450 |             self._tell = dest_position
+   451 |         else:
+   452 |             raise ValueError(
+   453 |                 f"Invalid whence ({mode}, should be 0, 1, or 2)"
+   454 |             )
+   455 |         return self.tell()
+   456 | 
+   457 |     def readline(self, length=None):
+   458 |         self._checkClosed()
+   459 |         ret = self.buffer.readline(length).decode('utf-8')
+   460 |         self._tell = self.tell() + len(ret)
+   461 |         return ret
+   462 | 
+   463 |     def readlines(self, sizehint=0):
+   464 |         ret = [x.decode('utf-8') for x in self.buffer.readlines(sizehint)]
+   465 |         self._tell = self.tell() + sum(len(x) for x in ret)
+   466 |         return ret
+   467 | 
+   468 |     @property
+   469 |     def buffer(self):
+   470 |         try:
+   471 |             return self._buffer
+   472 |         except AttributeError:
+   473 |             self._buffer = EncodedFile(BytesIO(), data_encoding='utf-8')
+   474 |         return self._buffer
+   475 | 
+   476 |     @property
+   477 |     def _rolled(self):
+   478 |         return not isinstance(self.buffer.stream, BytesIO)
+   479 | 
+   480 |     def rollover(self):
+   481 |         """Roll the buffer over to a TempFile"""
+   482 |         if not self._rolled:
+   483 |             tmp = EncodedFile(TemporaryFile(dir=self._dir),
+   484 |                               data_encoding='utf-8')
+   485 |             pos = self.buffer.tell()
+   486 |             tmp.write(self.buffer.getvalue())
+   487 |             tmp.seek(pos)
+   488 |             self.buffer.close()
+   489 |             self._buffer = tmp
+   490 | 
+   491 |     def tell(self):
+   492 |         """Return the codepoint position"""
+   493 |         self._checkClosed()
+   494 |         return self._tell
+   495 | 
+   496 |     @property
+   497 |     def len(self):
+   498 |         """Determine the number of codepoints in the file"""
+   499 |         pos = self.buffer.tell()
+   500 |         self.buffer.seek(0)
+   501 |         total = 0
+   502 |         while True:
+   503 |             ret = self.read(READ_CHUNK_SIZE)
+   504 |             if not ret:
+   505 |                 break
+   506 |             total += len(ret)
+   507 |         self.buffer.seek(pos)
+   508 |         return total
+   509 | 
+   510 | 
+   511 | def is_text_fileobj(fileobj):
+   512 |     if getattr(fileobj, 'encoding', False):
+   513 |         # codecs.open and io.TextIOBase
+   514 |         return True
+   515 |     if getattr(fileobj, 'getvalue', False):
+   516 |         # StringIO.StringIO / io.StringIO
+   517 |         try:
+   518 |             if isinstance(fileobj.getvalue(), str):
+   519 |                 return True
+   520 |         except Exception:
+   521 |             pass
+   522 |     return False
+   523 | 
+   524 | 
+   525 | class MultiFileReader:
+   526 |     """Takes a list of open files or file-like objects and provides an
+   527 |     interface to read from them all contiguously. Like
+   528 |     :func:`itertools.chain()`, but for reading files.
+   529 | 
+   530 |        >>> mfr = MultiFileReader(BytesIO(b'ab'), BytesIO(b'cd'), BytesIO(b'e'))
+   531 |        >>> mfr.read(3).decode('ascii')
+   532 |        u'abc'
+   533 |        >>> mfr.read(3).decode('ascii')
+   534 |        u'de'
+   535 | 
+   536 |     The constructor takes as many fileobjs as you hand it, and will
+   537 |     raise a TypeError on non-file-like objects. A ValueError is raised
+   538 |     when file-like objects are a mix of bytes- and text-handling
+   539 |     objects (for instance, BytesIO and StringIO).
+   540 |     """
+   541 | 
+   542 |     def __init__(self, *fileobjs):
+   543 |         if not all([callable(getattr(f, 'read', None)) and
+   544 |                     callable(getattr(f, 'seek', None)) for f in fileobjs]):
+   545 |             raise TypeError('MultiFileReader expected file-like objects'
+   546 |                             ' with .read() and .seek()')
+   547 |         if all([is_text_fileobj(f) for f in fileobjs]):
+   548 |             # codecs.open and io.TextIOBase
+   549 |             self._joiner = ''
+   550 |         elif any([is_text_fileobj(f) for f in fileobjs]):
+   551 |             raise ValueError('All arguments to MultiFileReader must handle'
+   552 |                              ' bytes OR text, not a mix')
+   553 |         else:
+   554 |             # open/file and io.BytesIO
+   555 |             self._joiner = b''
+   556 |         self._fileobjs = fileobjs
+   557 |         self._index = 0
+   558 | 
+   559 |     def read(self, amt=None):
+... [28 more lines; pass offset=560 for next page]

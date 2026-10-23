@@ -1,0 +1,122 @@
+				if errors == 'raise':
+					raise GitIgnorePatternError((
+						f"Invalid git pattern: {original_pattern!r}"
+					)) from e  # GitIgnorePatternError
+				else:
+					return (None, None)
+
+			regex = ''.join(regex_parts)
+
+		else:
+			assert_unreachable((
+				f"{override_regex=} and {pattern_segs=} cannot both be null."
+			))  # assert_unreachable
+
+		# Encode regex if needed.
+		out_regex: AnyStr
+		if regex is not None and return_type is bytes:
+			regex_bytes = regex.encode(_BYTES_ENCODING)
+			out_regex = regex_bytes  # type: ignore[assignment]
+		else:
+			out_regex = regex  # type: ignore[assignment]
+
+		return (out_regex, include)
+
+	@classmethod
+	def __translate_segments(
+		cls,
+		errors: Literal['literal', 'raise'],
+		is_dir_pattern: bool,
+		pattern_segs: list[str],
+	) -> list[str]:
+		"""
+		Translate the pattern segments to regular expressions.
+
+		*errors* (:class:`str`) is how to handle invalid pattern notation in the
+		pattern:
+
+		-	``'literal'``: Invalid notation will be treated as a literal string.
+
+		-	``'raise'``: Invalid notation will raise an exception.
+
+		*is_dir_pattern* (:class:`bool`) is whether the original pattern ends
+		with a slash.
+
+		*pattern_segs* (:class:`list` of :class:`str`) contains the pattern
+		segments.
+
+		Raises :exc:`_PosixClassError` when an invalid POXIS class is found and
+		*errors* is ``'literal'``.
+
+		Raises :exc:`_RangeNotationError` when an invalid range notation is found
+		and *errors* is ``'literal'``.
+
+		Raises :exc:`_TrailingBackslashError` when a trailing backslash is found at
+		the end of the pattern, regardless of the value of *errors*.
+
+		Returns the regular expression parts (:class:`list` of :class:`str`).
+		"""
+		# Build regular expression from pattern.
+		out_parts = []
+		need_slash = False
+		end = len(pattern_segs) - 1
+		for i, seg in enumerate(pattern_segs):
+			if seg == '**':
+				if i == 0:
+					# A normalized pattern beginning with double-asterisks ('**') will
+					# match any leading path segments.
+					# - NOTICE: '(?:^|/)' benchmarks slower using p15 (sm=0.9382,
+					#   hs=0.9966, re2=0.9337).
+					out_parts.append('^(?s:.+/)?')
+
+				elif i < end:
+					# A pattern with inner double-asterisks ('**') will match multiple (or
+					# zero) inner path segments.
+					out_parts.append('(?s:/.+)?')
+					need_slash = True
+
+				else:
+					assert i == end, (i, end)
+					# A normalized pattern ending with double-asterisks ('**') will match
+					# nonempty trailing path segments, not the parent directory itself.
+					out_parts.append('/' if is_dir_pattern else '/[^/]')
+
+			else:
+				# Match path segment.
+				if i == 0:
+					# Anchor to root directory.
+					out_parts.append('^')
+
+				if need_slash:
+					out_parts.append('/')
+
+				if seg == '*':
+					# Match whole path segment.
+					out_parts.append('[^/]+')
+
+				else:
+					# Match segment glob pattern.
+					# - EDGE CASE: The gitignore docs defer to *fnmatch(3)* which treats
+					#   invalid range notation as a literal.
+					out_parts.append(cls._translate_segment_glob(seg, errors))
+
+				if i == end:
+					if seg == '*':
+						# A pattern ending with an asterisk ('*') will match a file or
+						# directory (without matching descendant paths). E.g., "foo/*"
+						# matches "foo/test.json", "foo/bar/", but not "foo/bar/hello.c".
+						out_parts.append(r'/?\Z')
+
+					else:
+						# A pattern ending without a slash ('/') will match a file or a
+						# directory (with paths underneath it). E.g., "foo" matches "foo",
+						# "foo/bar", "foo/bar/baz", etc.
+						out_parts.append(r'(?:/|\Z)')
+
+				need_slash = True
+
+		return out_parts
+
+
+# Register GitIgnoreBasicPattern as "gitignore".
+util.register_pattern('gitignore', GitIgnoreBasicPattern)

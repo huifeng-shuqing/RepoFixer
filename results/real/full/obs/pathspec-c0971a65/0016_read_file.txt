@@ -1,0 +1,101 @@
+   339 | 					# Build regex bracket expression.
+   340 | 					#
+   341 | 					# A backslash escapes the next character (e.g. "[\]]" matches ']'),
+   342 | 					# the same as outside of a bracket expression.
+   343 | 					#
+   344 | 					# Translate POSIX character classes (e.g. "[:alpha:]") into their
+   345 | 					# ASCII regex equivalents. Git's wildmatch supports these, but
+   346 | 					# Python's `re` does not, so passing them through verbatim builds a
+   347 | 					# broken regex that silently mismatches (and warns about a nested
+   348 | 					# set).
+   349 | 					try:
+   350 | 						body = _BRACKET_TOKEN_REGEX.sub(_sub_bracket_token, pattern[i:j - 1])
+   351 | 					except _PosixClassError:
+   352 | 						if errors == 'raise':
+   353 | 							# EDGE CASE: Git discards patterns with an invalid range notation
+   354 | 							# or an invalid POSIX class.
+   355 | 							raise
+   356 | 						else:
+   357 | 							# Treat the whole bracket expression as a literal.
+   358 | 							regex += re.escape(pattern[bracket_start:j])
+   359 | 							i = j
+   360 | 							continue
+   361 | 
+   362 | 					if is_expr_negated:
+   363 | 						# Negated expressions must also exclude the directory separator.
+   364 | 						# Preserve literal ']' and '-' when inserting '/' ahead of them.
+   365 | 						if body.startswith((']', '-')):
+   366 | 							body = '\\' + body
+   367 | 						expr += '/'
+   368 | 
+   369 | 					expr += body + ']'
+   370 | 
+   371 | 					if errors == 'raise':
+   372 | 						try:
+   373 | 							re.compile(expr)
+   374 | 						except re.error as e:  # Renamed to `re.PatternError` in 3.13.
+   375 | 							raise _RangeNotationError((
+   376 | 								f"Invalid range notation={pattern[i:j]!r} found in "
+   377 | 								f"pattern={pattern!r}."
+   378 | 							)) from e
+   379 | 
+   380 | 					# Add regex bracket expression to regex result.
+   381 | 					regex += expr
+   382 | 
+   383 | 					# Set i to one past the closing bracket.
+   384 | 					i = j
+   385 | 
+   386 | 				else:
+   387 | 					# Failed to find closing bracket.
+   388 | 					if errors == 'raise':
+   389 | 						# Treat invalid range notation as an error.
+   390 | 						raise _RangeNotationError((
+   391 | 							f"Invalid range notation={pattern[i:j]!r} found in {pattern=!r}."
+   392 | 						))
+   393 | 					else:
+   394 | 						# Treat opening bracket as a bracket literal instead of as an
+   395 | 						# expression.
+   396 | 						regex += '\\['
+   397 | 
+   398 | 			else:
+   399 | 				# Regular character, escape it for regex.
+   400 | 				regex += re.escape(char)
+   401 | 
+   402 | 		if escape:
+   403 | 			# Trailing backslash found. According to the gitignore docs, this "is an
+   404 | 			# invalid pattern that never matches".
+   405 | 			raise _TrailingBackslashError()
+   406 | 
+   407 | 		return regex
+   408 | 
+   409 | 
+   410 | class GitIgnorePatternError(ValueError):
+   411 | 	"""
+   412 | 	The :class:`GitIgnorePatternError` class indicates an invalid gitignore
+   413 | 	pattern.
+   414 | 	"""
+   415 | 	pass
+   416 | 
+   417 | 
+   418 | class _PosixClassError(GitIgnorePatternError):
+   419 | 	"""
+   420 | 	Raised internally when a bracket expression contains an unknown or negated
+   421 | 	POSIX character class name. Git treats such a pattern as malformed.
+   422 | 	"""
+   423 | 	pass
+   424 | 
+   425 | 
+   426 | class _RangeNotationError(GitIgnorePatternError):
+   427 | 	"""
+   428 | 	Raised internally when an invalid range notation was found in a gitignore
+   429 | 	pattern.
+   430 | 	"""
+   431 | 	pass
+   432 | 
+   433 | 
+   434 | class _TrailingBackslashError(GitIgnorePatternError):
+   435 | 	"""
+   436 | 	Raised internally when a trailing backslash is found at the end of a gitignore
+   437 | 	pattern.
+   438 | 	"""
+... [1 more lines; pass offset=439 for next page]

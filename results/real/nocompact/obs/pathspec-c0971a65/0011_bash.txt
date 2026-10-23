@@ -1,0 +1,84 @@
+		need_slash = False
+		end = len(pattern_segs) - 1
+		for i, seg in enumerate(pattern_segs):
+			if seg == '**':
+				if i == 0:
+					# A normalized pattern beginning with double-asterisks ('**') will
+					# match any leading path segments.
+					# - NOTICE: '(?:^|/)' benchmarks slower using p15 (sm=0.9382,
+					#   hs=0.9966, re2=0.9337).
+					out_parts.append('^(?s:.+/)?')
+
+				elif i < end:
+					# A pattern with inner double-asterisks ('**') will match multiple (or
+					# zero) inner path segments.
+					out_parts.append('(?s:/.+)?')
+					need_slash = True
+
+				else:
+					assert i == end, (i, end)
+					# A normalized pattern ending with double-asterisks ('**') will match
+					# nonempty trailing path segments, not the parent directory itself.
+					out_parts.append('/' if is_dir_pattern else '/[^/]')
+
+			else:
+				# Match path segment.
+				if i == 0:
+					# Anchor to root directory.
+					out_parts.append('^')
+
+				if need_slash:
+					out_parts.append('/')
+
+				if seg == '*':
+					# Match whole path segment.
+					out_parts.append('[^/]+')
+
+				else:
+					# Match segment glob pattern.
+					# - EDGE CASE: The gitignore docs defer to *fnmatch(3)* which treats
+					#   invalid range notation as a literal.
+					out_parts.append(cls._translate_segment_glob(seg, errors))
+
+				if i == end:
+					if seg == '*':
+						# A pattern ending with an asterisk ('*') will match a file or
+						# directory (without matching descendant paths). E.g., "foo/*"
+						# matches "foo/test.json", "foo/bar/", but not "foo/bar/hello.c".
+						out_parts.append(r'/?\Z')
+
+					else:
+						# A pattern ending without a slash ('/') will match a file or a
+						# directory (with paths underneath it). E.g., "foo" matches "foo",
+						# "foo/bar", "foo/bar/baz", etc.
+						out_parts.append(r'(?:/|\Z)')
+
+				need_slash = True
+
+		return out_parts
+
+
+# Register GitIgnoreBasicPattern as "gitignore".
+util.register_pattern('gitignore', GitIgnoreBasicPattern)
+32:-	Matches a POSIX bracket character class token such as ``[:alpha:]`` inside a
+34:	group 5 captures the class name.
+44:	# ASCII (locale-independent) ``is*`` functions, so each class maps to an
+62:Maps each POSIX bracket character class name to ASCII regex ranges, excluding
+67:def _strip_trailing_ws(pattern: str) -> str:
+101:def _sub_bracket_token(match: re.Match[str]) -> str:
+105:	POSIX bracket character class (groups 4 and 5).
+135:class _GitIgnoreBasePattern(RegexPattern):
+137:	.. warning:: This class is not part of the public API. It is subject to
+140:	The :class:`_GitIgnoreBasePattern` class is the base implementation for a
+144:	# Keep the dict-less class hierarchy.
+147:	def __init__(
+180:	def escape(s: AnyStr) -> AnyStr:
+216:	def _translate_segment_glob(
+234:		Raises :exc:`._PosixClassError` when an invalid POXIS class is found and
+301:						# Skip over a POSIX character class token ("[:name:]") so its
+410:class GitIgnorePatternError(ValueError):
+412:	The :class:`GitIgnorePatternError` class indicates an invalid gitignore
+418:class _PosixClassError(GitIgnorePatternError):
+421:	POSIX character class name. Git treats such a pattern as malformed.
+426:class _RangeNotationError(GitIgnorePatternError):
+434:class _TrailingBackslashError(GitIgnorePatternError):

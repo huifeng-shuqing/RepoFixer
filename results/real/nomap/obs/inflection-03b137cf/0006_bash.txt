@@ -1,0 +1,80 @@
+1:# -*- coding: utf-8 -*-
+3:    inflection
+6:    A port of Ruby on Rails' inflector to Python.
+8:    :copyright: (c) 2012-2015 by Janne Vanhala
+10:    :license: MIT, see LICENSE for more details.
+12:import re
+13:import unicodedata
+15:__version__ = '0.3.0'
+19:    (r"(?i)^(oxen)$", r'\1'),
+20:    (r"(?i)^(ox)$", r'\1en'),
+22:    (r"(?i)(m|l)ouse$", r'\1ice'),
+25:    (r"(?i)([^aeiouy]|qu)y$", r'\1ies'),
+32:    (r"(?i)(buffal|tomat)o$", r'\1oes'),
+35:    (r"(?i)(octop|vir)i$", r'\1i'),
+36:    (r"(?i)(octop|vir)us$", r'\1i'),
+47:    (r"(?i)^(ox)en", r'\1'),
+49:    (r"(?i)(octop|vir)(us|i)$", r'\1us'),
+52:    (r"(?i)(shoe)s$", r'\1'),
+53:    (r"(?i)(o)es$", r'\1'),
+55:    (r"(?i)(m|l)ice$", r'\1ouse'),
+57:    (r"(?i)(m)ovies$", r'\1ovie'),
+59:    (r"(?i)([^aeiouy]|qu)ies$", r'\1y'),
+65:    (r"(?i)(s)ynop(sis|ses)$", r"\1ynopsis"),
+66:    (r"(?i)(p)rogno(sis|ses)$", r"\1rognosis"),
+68:    (r"(?i)(d)iagno(sis|ses)$", r"\1iagnosis"),
+80:    'information',
+82:    'money',
+90:def _irregular(singular, plural):
+92:    A convenience function to add appropriate rules to plurals and singular
+93:    for irregular words.
+95:    :param singular: irregular word in singular form
+96:    :param plural: irregular word in plural form
+99:        return ''.join('[' + char + char.upper() + ']' for char in string)
+101:    if singular[0].upper() == plural[0].upper():
+104:            r'\1' + plural[1:]
+107:            r"(?i)(%s)%s$" % (plural[0], plural[1:]),
+108:            r'\1' + plural[1:]
+111:            r"(?i)(%s)%s$" % (plural[0], plural[1:]),
+117:            plural[0].upper() + plural[1:]
+120:            r"%s%s$" % (singular[0].lower(), caseinsensitive(singular[1:])),
+121:            plural[0].lower() + plural[1:]
+124:            r"%s%s$" % (plural[0].upper(), caseinsensitive(plural[1:])),
+125:            plural[0].upper() + plural[1:]
+128:            r"%s%s$" % (plural[0].lower(), caseinsensitive(plural[1:])),
+129:            plural[0].lower() + plural[1:]
+132:            r"%s%s$" % (plural[0].upper(), caseinsensitive(plural[1:])),
+136:            r"%s%s$" % (plural[0].lower(), caseinsensitive(plural[1:])),
+137:            singular[0].lower() + singular[1:]
+143:    Convert strings to CamelCase.
+152:    :func:`camelize` can be though as a inverse of :func:`underscore`, although
+153:    there are some cases where that does not hold::
+155:        >>> camelize(underscore("IOError"))
+156:        "IoError"
+158:    :param uppercase_first_letter: if set to `True` :func:`camelize` converts
+159:        strings to UpperCamelCase. If set to `False` :func:`camelize` produces
+160:        lowerCamelCase. Defaults to `True`.
+163:        return re.sub(r"(?:^|_)(.)", lambda m: m.group(1).upper(), string)
+165:        return string[0].lower() + camelize(string)[1:]
+168:def dasherize(word):
+169:    """Replace underscores with dashes in the string.
+177:    return word.replace('_', '-')
+180:def humanize(word):
+182:    Capitalize the first word and turn underscores into spaces and strip a
+183:    trailing ``"_id"``, if any. Like :func:`titleize`, this is meant for
+184:    creating pretty output.
+188:        >>> humanize("employee_salary")
+189:        "Employee salary"
+190:        >>> humanize("author_id")
+191:        "Author"
+194:    word = re.sub(r"_id$", "", word)
+195:    word = word.replace('_', ' ')
+196:    word = re.sub(r"(?i)([a-z\d]*)", lambda m: m.group(1).lower(), word)
+197:    word = re.sub(r"^\w", lambda m: m.group(0).upper(), word)
+198:    return word
+201:def ordinal(number):
+203:    Return the suffix that should be added to a number to denote the position
+204:    in an ordered sequence such as 1st, 2nd, 3rd, 4th.
+208:        >>> ordinal(1)
+210:        >>> ordinal(2)
+212:        >>> ordinal(1002)

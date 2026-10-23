@@ -1,0 +1,81 @@
+  1300 |     True
+  1301 |     >>> import datetime as dt
+  1302 |     >>> _column_type([dt.datetime(1991,2,19), dt.time(17,35)]) is str
+  1303 |     True
+  1304 | 
+  1305 |     """
+  1306 |     types = [_type(s, has_invisible, numparse) for s in strings]
+  1307 |     return reduce(_more_generic, types, bool)
+  1308 | 
+  1309 | 
+  1310 | def _format(val, valtype, floatfmt, intfmt, missingval="", has_invisible=True):
+  1311 |     """Format a value according to its deduced type.  Empty values are deemed valid for any type.
+  1312 | 
+  1313 |     Unicode is supported:
+  1314 | 
+  1315 |     >>> hrow = ['\u0431\u0443\u043a\u0432\u0430', '\u0446\u0438\u0444\u0440\u0430'] ; \
+  1316 |         tbl = [['\u0430\u0437', 2], ['\u0431\u0443\u043a\u0438', 4]] ; \
+  1317 |         good_result = '\\u0431\\u0443\\u043a\\u0432\\u0430      \\u0446\\u0438\\u0444\\u0440\\u0430\\n-------  -------\\n\\u0430\\u0437             2\\n\\u0431\\u0443\\u043a\\u0438           4' ; \
+  1318 |         tabulate(tbl, headers=hrow) == good_result
+  1319 |     True
+  1320 | 
+  1321 |     """
+  1322 |     if val is None:
+  1323 |         return missingval
+  1324 |     if isinstance(val, (bytes, str)) and not val:
+  1325 |         return ""
+  1326 | 
+  1327 |     if valtype is str:
+  1328 |         return f"{val}"
+  1329 |     elif valtype is int:
+  1330 |         if isinstance(val, str):
+  1331 |             val_striped = val.encode("unicode_escape").decode("utf-8")
+  1332 |             colored = re.search(r"(\\[xX]+[0-9a-fA-F]+\[\d+[mM]+)([0-9.]+)(\\.*)$", val_striped)
+  1333 |             if colored:
+  1334 |                 total_groups = len(colored.groups())
+  1335 |                 if total_groups == 3:
+  1336 |                     digits = colored.group(2)
+  1337 |                     if digits.isdigit():
+  1338 |                         val_new = colored.group(1) + format(int(digits), intfmt) + colored.group(3)
+  1339 |                         val = val_new.encode("utf-8").decode("unicode_escape")
+  1340 |             intfmt = ""
+  1341 |         return format(val, intfmt)
+  1342 |     elif valtype is bytes:
+  1343 |         try:
+  1344 |             return str(val, "ascii")
+  1345 |         except (TypeError, UnicodeDecodeError):
+  1346 |             return str(val)
+  1347 |     elif valtype is float:
+  1348 |         is_a_colored_number = has_invisible and isinstance(val, (str, bytes))
+  1349 |         if is_a_colored_number:
+  1350 |             raw_val = _strip_ansi(val)
+  1351 |             try:
+  1352 |                 formatted_val = format(float(raw_val), floatfmt)
+  1353 |             except (ValueError, TypeError):
+  1354 |                 return f"{val}"
+  1355 |             return val.replace(raw_val, formatted_val)
+  1356 |         else:
+  1357 |             if isinstance(val, str) and "," in val:
+  1358 |                 val = val.replace(",", "")  # handle thousands-separators
+  1359 |             try:
+  1360 |                 return format(float(val), floatfmt)
+  1361 |             except (ValueError, TypeError):
+  1362 |                 return f"{val}"
+  1363 |     else:
+  1364 |         return f"{val}"
+  1365 | 
+  1366 | 
+  1367 | def _align_header(header, alignment, width, visible_width, is_multiline=False, width_fn=None):
+  1368 |     "Pad string header to width chars given known visible_width of the header."
+  1369 |     if is_multiline:
+  1370 |         header_lines = re.split(_multiline_codes, header)
+  1371 |         padded_lines = [_align_header(h, alignment, width, width_fn(h)) for h in header_lines]
+  1372 |         return "\n".join(padded_lines)
+  1373 |     # else: not multiline
+  1374 |     ninvisible = len(header) - visible_width
+  1375 |     width += ninvisible
+  1376 |     if alignment == "left":
+  1377 |         return _padright(width, header)
+  1378 |     elif alignment == "center":
+  1379 |         return _padboth(width, header)
+... [1627 more lines; pass offset=1380 for next page]

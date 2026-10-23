@@ -1,0 +1,71 @@
+2984:class seekable:
+2985-    """Wrap an iterator to allow for seeking backward and forward. This
+2986-    progressively caches the items in the source iterable so they can be
+2987-    re-visited.
+2988-
+2989-    Call :meth:`seek` with an index to seek to that position in the source
+2990-    iterable.
+2991-
+2992-    To "reset" an iterator, seek to ``0``:
+2993-
+2994-        >>> from itertools import count
+2995-        >>> it = seekable((str(n) for n in count()))
+2996-        >>> next(it), next(it), next(it)
+2997-        ('0', '1', '2')
+2998-        >>> it.seek(0)
+2999-        >>> next(it), next(it), next(it)
+3000-        ('0', '1', '2')
+3001-
+3002-    You can also seek forward:
+3003-
+3004-        >>> it = seekable((str(n) for n in range(20)))
+3005-        >>> it.seek(10)
+3006-        >>> next(it)
+3007-        '10'
+3008-        >>> it.seek(20)  # Seeking past the end of the source isn't a problem
+3009-        >>> list(it)
+3010-        []
+3011-        >>> it.seek(0)  # Resetting works even after hitting the end
+3012-        >>> next(it)
+3013-        '0'
+3014-
+3015-    Call :meth:`relative_seek` to seek relative to the source iterator's
+3016-    current position.
+3017-
+3018-        >>> it = seekable((str(n) for n in range(20)))
+3019-        >>> next(it), next(it), next(it)
+3020-        ('0', '1', '2')
+3021-        >>> it.relative_seek(2)
+3022-        >>> next(it)
+3023-        '5'
+3024-        >>> it.relative_seek(-3)  # Source is at '6', we move back to '3'
+3025-        >>> next(it)
+3026-        '3'
+3027-        >>> it.relative_seek(-3)  # Source is at '4', we move back to '1'
+3028-        >>> next(it)
+3029-        '1'
+3030-
+3031-
+3032-    Call :meth:`peek` to look ahead one item without advancing the iterator:
+3033-
+3034-        >>> it = seekable('1234')
+3035-        >>> it.peek()
+3036-        '1'
+3037-        >>> list(it)
+3038-        ['1', '2', '3', '4']
+3039-        >>> it.peek(default='empty')
+3040-        'empty'
+3041-
+3042-    Before the iterator is at its end, calling :func:`bool` on it will return
+3043-    ``True``. After it will return ``False``:
+3044-
+3045-        >>> it = seekable('5678')
+3046-        >>> bool(it)
+3047-        True
+3048-        >>> list(it)
+3049-        ['5', '6', '7', '8']
+3050-        >>> bool(it)
+3051-        False
+3052-
+3053-    You may view the contents of the cache with the :meth:`elements` method.
+3054-    That returns a :class:`SequenceView`, a view that updates automatically:

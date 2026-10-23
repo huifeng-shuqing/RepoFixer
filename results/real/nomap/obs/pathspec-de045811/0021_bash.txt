@@ -1,0 +1,81 @@
+418:	def match_files(
+419-		self,
+420-		files: Iterable[TStrPath],
+421-		separators: Optional[Collection[str]] = None,
+422-		*,
+423-		negate: Optional[bool] = None,
+424-	) -> Iterator[TStrPath]:
+425-		"""
+426-		Matches the files to this path-spec.
+427-
+428-		*files* (:class:`~collections.abc.Iterable` of :class:`str` or
+429-		:class:`os.PathLike`) contains the file paths to be matched against
+430-		:attr:`self.patterns <.PathSpec.patterns>`.
+431-
+432-		*separators* (:class:`~collections.abc.Collection` of :class:`str`; or
+433-		:data:`None`) optionally contains the path separators to normalize. See
+434-		:func:`.normalize_file` for more information.
+435-
+436-		*negate* (:class:`bool` or :data:`None`) is whether to negate the match
+437-		results of the patterns. If :data:`True`, a pattern matching a file will
+438-		exclude the file rather than include it. Default is :data:`None` for
+439-		:data:`False`.
+440-
+441-		Returns the matched files (:class:`~collections.abc.Iterator` of
+442-		:class:`str` or :class:`os.PathLike`).
+443-		"""
+444-		if not _is_iterable(files):
+445-			raise TypeError(f"files:{files!r} is not an iterable.")
+446-
+447-		for orig_file in files:
+448-			norm_file = normalize_file(orig_file, separators)
+449-			include, _index = self._backend.match_file(norm_file)
+450-
+451-			if negate:
+452-				include = not include
+453-
+454-			if include:
+455-				yield orig_file
+456-
+457-	def match_tree_entries(
+458-		self,
+397:	def match_file(
+398-		self,
+399-		file: StrPath,
+400-		separators: Optional[Collection[str]] = None,
+401-	) -> bool:
+402-		"""
+403-		Matches the file to this path-spec.
+404-
+405-		*file* (:class:`str` or :class:`os.PathLike`) is the file path to be matched
+406-		against :attr:`self.patterns <.PathSpec.patterns>`.
+407-
+408-		*separators* (:class:`~collections.abc.Collection` of :class:`str`)
+409-		optionally contains the path separators to normalize. See
+410-		:func:`.normalize_file` for more information.
+411-
+412-		Returns :data:`True` if *file* matched; otherwise, :data:`False`.
+413-		"""
+414-		norm_file = normalize_file(file, separators)
+415-		include, _index = self._backend.match_file(norm_file)
+416-		return bool(include)
+417-
+418:	def match_files(
+419-		self,
+420-		files: Iterable[TStrPath],
+421-		separators: Optional[Collection[str]] = None,
+422-		*,
+423-		negate: Optional[bool] = None,
+424-	) -> Iterator[TStrPath]:
+425-		"""
+426-		Matches the files to this path-spec.
+427-
+428-		*files* (:class:`~collections.abc.Iterable` of :class:`str` or
+429-		:class:`os.PathLike`) contains the file paths to be matched against
+430-		:attr:`self.patterns <.PathSpec.patterns>`.
+431-
+432-		*separators* (:class:`~collections.abc.Collection` of :class:`str`; or
+433-		:data:`None`) optionally contains the path separators to normalize. See
+434-		:func:`.normalize_file` for more information.
+435-
+436-		*negate* (:class:`bool` or :data:`None`) is whether to negate the match

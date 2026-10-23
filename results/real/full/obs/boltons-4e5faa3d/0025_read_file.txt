@@ -1,0 +1,131 @@
+    85 |         self.assertEqual(b.tell(), 2)
+    86 | 
+    87 |     def test_truncate_noargs_norollover(self):
+    88 |         """Test truncating with no args with in-memory flo"""
+    89 |         self.spooled_flo.write(self.test_str)
+    90 |         self.spooled_flo.seek(10)
+    91 |         self.spooled_flo.truncate()
+    92 |         self.assertEqual(self.spooled_flo.getvalue(), self.test_str[:10])
+    93 | 
+    94 |     def test_truncate_noargs_rollover(self):
+    95 |         """Test truncating with no args with on-disk flo"""
+    96 |         self.spooled_flo.write(self.test_str)
+    97 |         self.spooled_flo.seek(10)
+    98 |         self.spooled_flo.rollover()
+    99 |         self.spooled_flo.truncate()
+   100 |         self.assertEqual(self.spooled_flo.getvalue(), self.test_str[:10])
+   101 | 
+   102 |     def test_truncate_with_args_norollover(self):
+   103 |         """Test truncating to a value with in-memory flo"""
+   104 |         self.spooled_flo.write(self.test_str)
+   105 |         self.spooled_flo.seek(5)
+   106 |         self.spooled_flo.truncate(10)
+   107 |         self.assertEqual(self.spooled_flo.getvalue(), self.test_str[:10])
+   108 | 
+   109 |     def test_truncate_with_args_rollover(self):
+   110 |         """Test truncating to a value with on-disk flo"""
+   111 |         self.spooled_flo.write(self.test_str)
+   112 |         self.spooled_flo.seek(5)
+   113 |         self.spooled_flo.rollover()
+   114 |         self.spooled_flo.truncate(10)
+   115 |         self.assertEqual(self.spooled_flo.getvalue(), self.test_str[:10])
+   116 | 
+   117 |     def test_type_error_too_many_args(self):
+   118 |         """Make sure TypeError raised if too many args passed to truncate"""
+   119 |         self.spooled_flo.write(self.test_str)
+   120 |         self.assertRaises(TypeError, self.spooled_flo.truncate, 0, 10)
+   121 | 
+   122 |     def test_io_error_negative_truncate(self):
+   123 |         """Make sure IOError raised trying to truncate with negative value"""
+   124 |         self.spooled_flo.write(self.test_str)
+   125 |         self.assertRaises(IOError, self.spooled_flo.truncate, -1)
+   126 | 
+   127 |     def test_compare_different_instances(self):
+   128 |         """Make sure two different instance types are not considered equal"""
+   129 |         a = ioutils.SpooledBytesIO()
+   130 |         a.write(b"I am equal!")
+   131 |         b = ioutils.SpooledStringIO()
+   132 |         b.write("I am equal!")
+   133 |         self.assertNotEqual(a, b)
+   134 | 
+   135 |     def test_compare_unequal_instances(self):
+   136 |         """Comparisons of non-SpooledIOBase classes should fail"""
+   137 |         self.assertNotEqual("Bummer dude", self.spooled_flo)
+   138 | 
+   139 |     def test_set_softspace_attribute(self):
+   140 |         """Ensure softspace attribute can be retrieved and set"""
+   141 |         self.spooled_flo.softspace = True
+   142 |         self.assertTrue(self.spooled_flo.softspace)
+   143 | 
+   144 |     def test_set_softspace_attribute_rolled(self):
+   145 |         """Ensure softspace attribute can be retrieved and set if rolled"""
+   146 |         self.spooled_flo.softspace = True
+   147 |         self.assertTrue(self.spooled_flo.softspace)
+   148 |         self.spooled_flo.rollover()
+   149 |         self.spooled_flo.softspace = True
+   150 |         self.assertTrue(self.spooled_flo.softspace)
+   151 | 
+   152 |     def test_buf_property(self):
+   153 |         """'buf' property returns the same value as getvalue()"""
+   154 |         self.assertEqual(self.spooled_flo.buf, self.spooled_flo.getvalue())
+   155 | 
+   156 |     def test_pos_property(self):
+   157 |         """'pos' property returns the same value as tell()"""
+   158 |         self.assertEqual(self.spooled_flo.pos, self.spooled_flo.tell())
+   159 | 
+   160 |     def test_closed_property(self):
+   161 |         """'closed' property works as expected"""
+   162 |         self.assertFalse(self.spooled_flo.closed)
+   163 |         self.spooled_flo.close()
+   164 |         self.assertTrue(self.spooled_flo.closed)
+   165 | 
+   166 |     def test_readline(self):
+   167 |         """Make readline returns expected values"""
+   168 |         self.spooled_flo.write(self.test_str_lines)
+   169 |         self.spooled_flo.seek(0)
+   170 |         self.assertEqual(self.spooled_flo.readline().rstrip(self.linesep),
+   171 |                          self.test_str_lines.split(self.linesep)[0])
+   172 | 
+   173 |     def test_readlines(self):
+   174 |         """Make sure readlines returns expected values"""
+   175 |         self.spooled_flo.write(self.test_str_lines)
+   176 |         self.spooled_flo.seek(0)
+   177 |         self.assertEqual(
+   178 |             [x.rstrip(self.linesep) for x in self.spooled_flo.readlines()],
+   179 |             self.test_str_lines.split(self.linesep)
+   180 |         )
+   181 | 
+   182 |     def test_next(self):
+   183 |         """Make next returns expected values"""
+   184 |         self.spooled_flo.write(self.test_str_lines)
+   185 |         self.spooled_flo.seek(0)
+   186 |         self.assertEqual(self.spooled_flo.next().rstrip(self.linesep),
+   187 |                          self.test_str_lines.split(self.linesep)[0])
+   188 | 
+   189 |     def test_isatty(self):
+   190 |         """Make sure we can check if the value is a tty"""
+   191 |         # This should simply not fail
+   192 |         self.assertTrue(self.spooled_flo.isatty() is True or
+   193 |                         self.spooled_flo.isatty() is False)
+   194 | 
+   195 |     def test_truthy(self):
+   196 |         """Make sure empty instances are still considered truthy"""
+   197 |         self.spooled_flo.seek(0)
+   198 |         self.spooled_flo.truncate()
+   199 |         if not self.spooled_flo:
+   200 |             raise AssertionError("Instance is not truthy")
+   201 | 
+   202 |     def test_instance_check(self):
+   203 |         """Instance checks against IOBase succeed."""
+   204 |         if not isinstance(self.spooled_flo, io.IOBase):
+   205 |             raise AssertionError(f'{type(self.spooled_flo)} is not an instance of IOBase')
+   206 | 
+   207 |     def test_closed_file_method_valueerrors(self):
+   208 |         """ValueError raised on closed files for certain methods."""
+   209 |         self.spooled_flo.close()
+   210 |         methods = (
+   211 |             'flush', 'isatty', 'pos', 'buf', 'truncate', '__next__', '__iter__',
+   212 |             '__enter__', 'read', 'readline', 'tell',
+   213 |         )
+   214 |         for method_name in methods:
+... [352 more lines; pass offset=215 for next page]

@@ -1,0 +1,120 @@
+... [100%]
+================================== FAILURES ===================================
+________ AncestorNegationTest.test_excluded_ancestor [simple (unopt)] _________
+
+self = <tests.test_09_gitignore_ancestor_negation.AncestorNegationTest testMethod=test_excluded_ancestor>
+
+    def test_excluded_ancestor(self):
+    	# Expected ignore decisions and pattern indices verified with
+    	# git check-ignore --no-index (Git 2.52.0.windows.1).
+    	for lines, paths in (
+    		(['a/', '!a/b/'], ['a/b/file.txt', 'a/b/c/deep.txt']),
+    		(['a/', '!a/b/', '!*.txt'], ['a/b/file.txt']),
+    		(['a/', '!a/b/', '*.txt'], ['a/b/file.txt']),
+    		(['d/**/', '!d/child/'], ['d/child/grand/deep.txt']),
+    		(['a/**', '!a/b/**'], ['a/b/file.txt', 'a/b/c/deep.txt']),
+    		(['a/**', '!*.txt'], ['a/b/file.txt']),
+    		(['*', '!*.txt'], ['a/top.txt', 'a/b/file.txt']),
+    	):
+    		for sub_test in self.parameterize_from_lines(lines):
+    			with sub_test() as spec:
+    				results = list(spec.check_files(iter(paths)))
+>   				self.assertEqual(
+    					[(r.include, r.index) for r in results],
+    					[(True, 0)] * len(paths),
+    					(lines, results),
+    				)
+E       AssertionError: Lists differ: [(False, 1), (False, 1)] != [(True, 0), (True, 0)]
+E       
+E       First differing element 0:
+E       (False, 1)
+E       (True, 0)
+E       
+E       - [(False, 1), (False, 1)]
+E       + [(True, 0), (True, 0)] : (['a/', '!a/b/'], [CheckResult(file='a/b/file.txt', include=False, index=1), CheckResult(file='a/b/c/deep.txt', include=False, index=1)])
+
+tests\test_09_gitignore_ancestor_negation.py:26: AssertionError
+________ AncestorNegationTest.test_excluded_ancestor [simple (minopt)] ________
+
+self = <tests.test_09_gitignore_ancestor_negation.AncestorNegationTest testMethod=test_excluded_ancestor>
+
+    def test_excluded_ancestor(self):
+    	# Expected ignore decisions and pattern indices verified with
+    	# git check-ignore --no-index (Git 2.52.0.windows.1).
+    	for lines, paths in (
+    		(['a/', '!a/b/'], ['a/b/file.txt', 'a/b/c/deep.txt']),
+    		(['a/', '!a/b/', '!*.txt'], ['a/b/file.txt']),
+    		(['a/', '!a/b/', '*.txt'], ['a/b/file.txt']),
+    		(['d/**/', '!d/child/'], ['d/child/grand/deep.txt']),
+    		(['a/**', '!a/b/**'], ['a/b/file.txt', 'a/b/c/deep.txt']),
+    		(['a/**', '!*.txt'], ['a/b/file.txt']),
+    		(['*', '!*.txt'], ['a/top.txt', 'a/b/file.txt']),
+    	):
+    		for sub_test in self.parameterize_from_lines(lines):
+    			with sub_test() as spec:
+    				results = list(spec.check_files(iter(paths)))
+>   				self.assertEqual(
+    					[(r.include, r.index) for r in results],
+    					[(True, 0)] * len(paths),
+    					(lines, results),
+    				)
+E       AssertionError: Lists differ: [(False, 1), (False, 1)] != [(True, 0), (True, 0)]
+E       
+E       First differing element 0:
+E       (False, 1)
+E       (True, 0)
+E       
+E       - [(False, 1), (False, 1)]
+E       + [(True, 0), (True, 0)] : (['a/', '!a/b/'], [CheckResult(file='a/b/file.txt', include=False, index=1), CheckResult(file='a/b/c/deep.txt', include=False, index=1)])
+
+tests\test_09_gitignore_ancestor_negation.py:26: AssertionError
+________ AncestorNegationTest.test_excluded_ancestor [simple (unopt)] _________
+
+self = <tests.test_09_gitignore_ancestor_negation.AncestorNegationTest testMethod=test_excluded_ancestor>
+
+    def test_excluded_ancestor(self):
+    	# Expected ignore decisions and pattern indices verified with
+    	# git check-ignore --no-index (Git 2.52.0.windows.1).
+    	for lines, paths in (
+    		(['a/', '!a/b/'], ['a/b/file.txt', 'a/b/c/deep.txt']),
+    		(['a/', '!a/b/', '!*.txt'], ['a/b/file.txt']),
+    		(['a/', '!a/b/', '*.txt'], ['a/b/file.txt']),
+    		(['d/**/', '!d/child/'], ['d/child/grand/deep.txt']),
+    		(['a/**', '!a/b/**'], ['a/b/file.txt', 'a/b/c/deep.txt']),
+    		(['a/**', '!*.txt'], ['a/b/file.txt']),
+    		(['*', '!*.txt'], ['a/top.txt', 'a/b/file.txt']),
+    	):
+    		for sub_test in self.parameterize_from_lines(lines):
+    			with sub_test() as spec:
+    				results = list(spec.check_files(iter(paths)))
+>   				self.assertEqual(
+    					[(r.include, r.index) for r in results],
+    					[(True, 0)] * len(paths),
+    					(lines, results),
+    				)
+E       AssertionError: Lists differ: [(False, 2)] != [(True, 0)]
+E       
+E       First differing element 0:
+E       (False, 2)
+E       (True, 0)
+E       
+E       - [(False, 2)]
+E       + [(True, 0)] : (['a/', '!a/b/', '!*.txt'], [CheckResult(file='a/b/file.txt', include=False, index=2)])
+
+tests\test_09_gitignore_ancestor_negation.py:26: AssertionError
+________ AncestorNegationTest.test_excluded_ancestor [simple (minopt)] ________
+
+self = <tests.test_09_gitignore_ancestor_negation.AncestorNegationTest testMethod=test_excluded_ancestor>
+
+    def test_excluded_ancestor(self):
+    	# Expected ignore decisions and pattern indices verified with
+    	# git check-ignore --no-index (Git 2.52.0.windows.1).
+    	for lines, paths in (
+    		(['a/', '!a/b/'], ['a/b/file.txt', 'a/b/c/deep.txt']),
+    		(['a/', '!a/b/', '!*.txt'], ['a/b/file.txt']),
+    		(['a/', '!a/b/', '*.txt'], ['a/b/file.txt']),
+    		(['d/**/', '!d/child/'], ['d/child/grand/deep.txt']),
+    		(['a/**', '!a/b/**'], ['a/b/file.txt', 'a/b/c/deep.txt']),
+    		(['a/**', '!*.txt'], ['a/b/file.txt']),
+    		(['*', '!*.txt'], ['a/top.txt', 'a/b/file.txt']),
+    	):

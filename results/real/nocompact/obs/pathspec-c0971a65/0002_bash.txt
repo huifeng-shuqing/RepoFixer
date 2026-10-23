@@ -1,0 +1,41 @@
+/c/Users/wuqiong/Documents/deepseek-harness/default-workspace/repair-agent/work/repos_nocompact/pathspec-c0971a65
+total 226
+drwxr-xr-x 1 吴琼 197121     0 10月 23 18:06 .
+drwxr-xr-x 1 吴琼 197121     0 10月 23 17:05 ..
+drwxr-xr-x 1 吴琼 197121     0 10月 23 18:06 .git
+drwxr-xr-x 1 吴琼 197121     0 10月 23 17:05 .github
+-rw-r--r-- 1 吴琼 197121   183 10月 23 17:05 .gitignore
+-rw-r--r-- 1 吴琼 197121   216 10月 23 17:05 .readthedocs.yaml
+drwxr-xr-x 1 吴琼 197121     0 10月 23 17:05 benchmarks
+-rw-r--r-- 1 吴琼 197121  7139 10月 23 17:05 benchmarks_backends.md
+-rw-r--r-- 1 吴琼 197121 26932 10月 23 17:05 CHANGES.rst
+-rw-r--r-- 1 吴琼 197121 15324 10月 23 17:05 CHANGES_0.in.rst
+-rw-r--r-- 1 吴琼 197121 11572 10月 23 17:05 CHANGES_1.in.rst
+drwxr-xr-x 1 吴琼 197121     0 10月 23 17:05 dev
+-rw-r--r-- 1 吴琼 197121  4508 10月 23 17:05 DEV.md
+drwxr-xr-x 1 吴琼 197121     0 10月 23 17:05 doc
+-rw-r--r-- 1 吴琼 197121  3846 10月 23 17:05 justfile
+-rw-r--r-- 1 吴琼 197121  1074 10月 23 17:05 LICENSE-MIT
+-rw-r--r-- 1 吴琼 197121 17099 10月 23 17:05 LICENSE-MPL-2.0
+-rw-r--r-- 1 吴琼 197121   650 10月 23 17:05 LICENSING.md
+-rw-r--r-- 1 吴琼 197121   283 10月 23 17:05 MANIFEST.in
+drwxr-xr-x 1 吴琼 197121     0 10月 23 18:06 pathspec
+-rw-r--r-- 1 吴琼 197121  4087 10月 23 17:05 prebuild.py
+-rw-r--r-- 1 吴琼 197121  2059 10月 23 17:05 pyproject.in.toml
+-rw-r--r-- 1 吴琼 197121  2106 10月 23 17:05 pyproject.toml
+-rw-r--r-- 1 吴琼 197121  8060 10月 23 17:05 README.rst
+-rw-r--r-- 1 吴琼 197121 14750 10月 23 17:05 README-dist.rst
+-rw-r--r-- 1 吴琼 197121   606 10月 23 17:05 SECURITY.md
+-rw-r--r-- 1 吴琼 197121  1267 10月 23 17:05 setup.cfg
+-rw-r--r-- 1 吴琼 197121   178 10月 23 17:05 setup.py
+-rw-r--r-- 1 吴琼 197121  1566 10月 23 17:05 testpypi_prepublish.py
+drwxr-xr-x 1 吴琼 197121     0 10月 23 18:06 tests
+-rw-r--r-- 1 吴琼 197121  3763 10月 23 17:05 tox.toml
+-rw-r--r-- 1 吴琼 197121   244 10月 23 17:05 tox-ci-constraints.txt
+-rw-r--r-- 1 吴琼 197121  1051 10月 23 17:05 tox-ci-py39.ini
+-rw-r--r-- 1 吴琼 197121  1809 10月 23 17:05 UPGRADING.rst
+8888e72 build: apply test patch + stub _version (source fix removed)
+7c7e7f4 Rename RecursionError to RecursivePathError
+f70175c Rename RecursionError to RecursivePathError
+7fb003d Rename RecursionError to RecursivePathError
+bce9a57 Clean up #165

@@ -1,0 +1,76 @@
+    result = tabulate([["False"], ["1."]])
+    expected = "\n".join(["-----", "False", "    1", "-----"])
+    assert_equal(expected, result)
+
+
+def test_asciidoc_without_trailing_whitespace():
+    "Regression: asciidoc format output must not generate trailing whitespace (issue #408)"
+    result = tabulate([["foo"]], headers=("longheader",), tablefmt="asciidoc")
+    expected = '[cols="<14",options="header"]\n|====\n| longheader\n| foo\n|===='
+    assert_equal(expected, result)
+
+    result = tabulate([["longtext"]], headers=("bar",), tablefmt="asciidoc")
+    expected = '[cols="<10",options="header"]\n|====\n| bar\n| longtext\n|===='
+    assert_equal(expected, result)
+    expected = "\n".join(["| spam |  41.9999 |", "| eggs | 451      |"])
+    result = tabulate(_test_table, tablefmt="orgtbl")
+    assert_equal(expected, result)
+
+
+def test_asciidoc():
+    "Output: asciidoc with headers"
+    expected = "\n".join(
+        [
+            '[cols="<11,>11",options="header"]',
+            "|====",
+            "| strings   |   numbers",
+            "| spam      |   41.9999",
+            "| eggs      |  451",
+            "|====",
+        ]
+    )
+    result = tabulate(_test_table, _test_table_headers, tablefmt="asciidoc")
+    assert_equal(expected, result)
+
+
+def test_asciidoc_headerless():
+    "Output: asciidoc without headers"
+    expected = "\n".join(
+        [
+            '[cols="<6,>10"]',
+            "|====",
+            "| spam |  41.9999",
+            "| eggs | 451",
+            "|====",
+        ]
+    )
+    result = tabulate(_test_table, tablefmt="asciidoc")
+    assert_equal(expected, result)
+
+
+def test_psql():
+    "Output: psql with headers"
+    expected = "\n".join(
+        [
+            "+-----------+-----------+",
+
+        return "[{}]\n|====".format(",".join(header_list))
+
+    if len(args) == 2:
+        # two arguments are passed if called in the context of aboveline
+        # print the table header with column widths and optional header tag
+        return make_header_line(False, *args)
+
+    elif len(args) == 3:
+        # three arguments are passed if called in the context of dataline or headerline
+        # print the table line and make the aboveline if it is a header
+
+        cell_values, colwidths, colaligns = args
+        data_line = "|" + "|".join(cell_values)
+
+        if is_header:
+            return make_header_line(True, colwidths, colaligns) + "\n" + data_line
+        else:
+            return data_line
+
+    else:

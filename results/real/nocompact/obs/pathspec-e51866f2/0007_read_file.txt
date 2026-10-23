@@ -1,0 +1,101 @@
+     1 | """
+     2 | This module provides common classes for the gitignore patterns.
+     3 | """
+     4 | from __future__ import annotations
+     5 | 
+     6 | import re
+     7 | from typing import (
+     8 | 	Literal,
+     9 | 	Optional,  # Replaced by `X | None` in 3.10.
+    10 | 	Union)  # Replaced by `X | Y` in 3.10.
+    11 | 
+    12 | from pathspec.pattern import (
+    13 | 	RegexPattern)
+    14 | from pathspec._typing import (
+    15 | 	AnyStr)  # Removed in 3.18.
+    16 | 
+    17 | _BRACKET_TOKEN_REGEX = re.compile((
+    18 | 	# Escaped character.
+    19 | 	r'\\(.)'
+    20 | 	# POSIX class.
+    21 | 	r'|\[:(\^?)([^:\]]*):\]'
+    22 | ), re.DOTALL)
+    23 | """
+    24 | Matches tokens inside a bracket expression:
+    25 | 
+    26 | - A backslash escaped character (group 1).
+    27 | 
+    28 | -	Matches a POSIX bracket character class token such as ``[:alpha:]`` inside a
+    29 | 	bracket expression. Group 2 captures a leading caret (unsupported by git);
+    30 | 	group 3 captures the class name.
+    31 | """
+    32 | 
+    33 | _BYTES_ENCODING = 'latin1'
+    34 | """
+    35 | The encoding to use when parsing a byte string pattern.
+    36 | """
+    37 | 
+    38 | _POSIX_CLASS_TO_REGEX: dict[str, str] = {
+    39 | 	# Git's wildmatch implements POSIX bracket character classes using its own
+    40 | 	# ASCII (locale-independent) ``is*`` functions, so each class maps to an
+    41 | 	# explicit ASCII set. These are NOT the Unicode-aware equivalents (``\w``,
+    42 | 	# ``\d``, ``\s``); using those would over-match non-ASCII characters that git
+    43 | 	# never matches.
+    44 | 	'alnum': '0-9A-Za-z',
+    45 | 	'alpha': 'A-Za-z',
+    46 | 	'blank': '\\t ',
+    47 | 	'cntrl': '\\x00-\\x1f\\x7f',
+    48 | 	'digit': '0-9',
+    49 | 	'graph': '\\x21-\\x7e',
+    50 | 	'lower': 'a-z',
+    51 | 	'print': '\\x20-\\x7e',
+    52 | 	'punct': '!-/:-@\\[-`{-~',
+    53 | 	'space': '\\t\\n\\r ',
+    54 | 	'upper': 'A-Z',
+    55 | 	'xdigit': '0-9A-Fa-f',
+    56 | }
+    57 | """
+    58 | Maps each POSIX bracket character class name to the ASCII regex range that
+    59 | reproduces git's wildmatch behavior.
+    60 | """
+    61 | 
+    62 | 
+    63 | def _strip_trailing_ws(pattern: str) -> str:
+    64 | 	"""
+    65 | 	Strip trailing spaces and line endings from the pattern while considering
+    66 | 	that they can be escaped. Other whitespace is part of the filename.
+    67 | 
+    68 | 	*pattern* (:class:`str`) is the pattern.
+    69 | 
+    70 | 	Returns the modified pattern (:class:`str`).
+    71 | 	"""
+    72 | 	i = len(pattern) - 1
+    73 | 	if i == -1 or pattern[i] not in ' \r\n':
+    74 | 		# Fast path: pattern does not end with a space or line ending.
+    75 | 		return pattern
+    76 | 
+    77 | 	# Scan past spaces and line endings.
+    78 | 	i -= 1
+    79 | 	while i >= 0 and pattern[i] in ' \r\n':
+    80 | 		i -= 1
+    81 | 
+    82 | 	last_ws = i + 1
+    83 | 
+    84 | 	# Count backslashes.
+    85 | 	while i >= 0 and pattern[i] == '\\':
+    86 | 		i -= 1
+    87 | 
+    88 | 	bs_count = last_ws - i - 1
+    89 | 	if bs_count % 2 == 1:
+    90 | 		# Odd count, first whitespace character is escaped, strip the rest.
+    91 | 		last_ws += 1
+    92 | 
+    93 | 	# Strip trailing whitespace.
+    94 | 	return pattern[:last_ws]
+    95 | 
+    96 | 
+    97 | def _sub_bracket_token(match: re.Match[str]) -> str:
+    98 | 	"""
+    99 | 	Translate a single token matched by :data:`_BRACKET_TOKEN_REGEX`. A token can
+   100 | 	be a backslash escaped character (group 1), a POSIX bracket character class
+... [318 more lines; pass offset=101 for next page]

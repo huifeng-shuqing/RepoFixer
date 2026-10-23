@@ -1,0 +1,75 @@
+
+    def __reversed__(self):
+        return chain.from_iterable(reversed(l) for l in reversed(self.lists))
+
+    def __len__(self):
+        return sum([len(l) for l in self.lists])
+
+    def __contains__(self, item):
+        for cur in self.lists:
+            if item in cur:
+                return True
+        return False
+
+    def __getitem__(self, index):
+        try:
+            start, stop, step = index.start, index.stop, index.step
+        except AttributeError:
+            index = operator.index(index)
+        else:
+            iter_slice = self.iter_slice(start, stop, step)
+            ret = self.from_iterable(iter_slice)
+            return ret
+        list_idx, rel_idx = self._translate_index(index)
+        if list_idx is None:
+            raise IndexError()
+        return self.lists[list_idx][rel_idx]
+
+    def __delitem__(self, index):
+        try:
+            start, stop, step = index.start, index.stop, index.step
+        except AttributeError:
+            index = operator.index(index)
+        else:
+            self.del_slice(start, stop, step)
+            return
+        list_idx, rel_idx = self._translate_index(index)
+        if list_idx is None:
+            raise IndexError()
+        del self.lists[list_idx][rel_idx]
+
+    def __setitem__(self, index, item):
+        try:
+            start, stop, step = index.start, index.stop, index.step
+        except AttributeError:
+            index = operator.index(index)
+        else:
+            if len(self.lists) == 1:
+                self.lists[0][index] = item
+            else:
+                tmp = list(self)
+                tmp[index] = item
+                self.lists[:] = [tmp]
+            self._balance_list(0)
+            return
+        list_idx, rel_idx = self._translate_index(index)
+        if list_idx is None:
+            raise IndexError()
+        self.lists[list_idx][rel_idx] = item
+
+    def __getslice__(self, start, stop):
+        iter_slice = self.iter_slice(start, stop, 1)
+        return self.from_iterable(iter_slice)
+
+    def __setslice__(self, start, stop, sequence):
+        if len(self.lists) == 1:
+            self.lists[0][start:stop] = sequence
+        else:
+            tmp = list(self)
+            tmp[start:stop] = sequence
+            self.lists[:] = [tmp]
+        self._balance_list(0)
+        return
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}({list(self)!r})'

@@ -1,0 +1,131 @@
+    20 |         self.assertTrue(item is None, msg)
+    21 | 
+    22 | 
+    23 | class BaseTestMixin:
+    24 |     """
+    25 |     A set of tests that work the same for SpooledBtyesIO and SpooledStringIO
+    26 |     """
+    27 | 
+    28 |     def test_getvalue_norollover(self):
+    29 |         """Make sure getvalue function works with in-memory flo"""
+    30 |         self.spooled_flo.write(self.test_str)
+    31 |         self.assertEqual(self.spooled_flo.getvalue(), self.test_str)
+    32 | 
+    33 |     def test_getvalue_rollover(self):
+    34 |         """Make sure getvalue function works with on-disk flo"""
+    35 |         self.spooled_flo.write(self.test_str)
+    36 |         self.assertFalse(self.spooled_flo._rolled)
+    37 |         self.spooled_flo.rollover()
+    38 |         self.assertEqual(self.spooled_flo.getvalue(), self.test_str)
+    39 |         self.assertTrue(self.spooled_flo._rolled)
+    40 | 
+    41 |     def test_rollover_custom_directory(self):
+    42 |         """dir keyword argument is passed to TemporaryFile instantiation"""
+    43 |         custom_dir = mkdtemp()
+    44 |         try:
+    45 |             # Re-instantiate self.spooled_flo with the custom dir argument
+    46 |             _spooled_flo = type(self.spooled_flo)(dir=custom_dir)
+    47 |             self.assertEqual(_spooled_flo._dir, custom_dir)
+    48 |             # TemporaryFile is kind of a black box, we can't really test it
+    49 |             # since the directory entry for the file is removed immediately
+    50 |             # after the file is created. So we can't check path using fd.name
+    51 |             # or listdir(custom_dir). We could either convert rollover() to
+    52 |             # use NamedtemporaryFile-s or assume it's well tested enough that
+    53 |             # passing dir= into the constructor will work as expected. We'll
+    54 |             # call rollover() with the dir attribute set just to ensure
+    55 |             # nothing has gone absurdly wrong.
+    56 |             _spooled_flo.write(self.test_str)
+    57 |             _spooled_flo.rollover()
+    58 |             self.assertEqual(_spooled_flo.getvalue(), self.test_str)
+    59 |             self.assertTrue(_spooled_flo._rolled)
+    60 |             _spooled_flo.close()
+    61 |         finally:
+    62 |             os.rmdir(custom_dir)
+    63 | 
+    64 |     def test_compare_err(self):
+    65 |         """Read-heads are reset if a comparison raises an error."""
+    66 |         def _monkey_err(*args, **kwargs):
+    67 |             raise Exception('A sad error has occurred today')
+    68 | 
+    69 |         a = self.spooled_flo.__class__()
+    70 |         a.write(self.test_str)
+    71 |         b = self.spooled_flo.__class__()
+    72 |         b.write(self.test_str)
+    73 | 
+    74 |         a.seek(1)
+    75 |         b.seek(2)
+    76 | 
+    77 |         b.__next__ = _monkey_err
+    78 | 
+    79 |         try:
+    80 |             a == b
+    81 |         except Exception:
+    82 |             pass
+    83 | 
+    84 |         self.assertEqual(a.tell(), 1)
+    85 |         self.assertEqual(b.tell(), 2)
+    86 | 
+    87 |     def test_truncate_noargs_norollover(self):
+    88 |         """Test truncating with no args with in-memory flo"""
+    89 |         self.spooled_flo.write(self.test_str)
+    90 |         self.spooled_flo.seek(10)
+    91 |         self.spooled_flo.truncate()
+    92 |         self.assertEqual(self.spooled_flo.getvalue(), self.test_str[:10])
+    93 | 
+    94 |     def test_truncate_noargs_rollover(self):
+    95 |         """Test truncating with no args with on-disk flo"""
+    96 |         self.spooled_flo.write(self.test_str)
+    97 |         self.spooled_flo.seek(10)
+    98 |         self.spooled_flo.rollover()
+    99 |         self.spooled_flo.truncate()
+   100 |         self.assertEqual(self.spooled_flo.getvalue(), self.test_str[:10])
+   101 | 
+   102 |     def test_truncate_with_args_norollover(self):
+   103 |         """Test truncating to a value with in-memory flo"""
+   104 |         self.spooled_flo.write(self.test_str)
+   105 |         self.spooled_flo.seek(5)
+   106 |         self.spooled_flo.truncate(10)
+   107 |         self.assertEqual(self.spooled_flo.getvalue(), self.test_str[:10])
+   108 | 
+   109 |     def test_truncate_with_args_rollover(self):
+   110 |         """Test truncating to a value with on-disk flo"""
+   111 |         self.spooled_flo.write(self.test_str)
+   112 |         self.spooled_flo.seek(5)
+   113 |         self.spooled_flo.rollover()
+   114 |         self.spooled_flo.truncate(10)
+   115 |         self.assertEqual(self.spooled_flo.getvalue(), self.test_str[:10])
+   116 | 
+   117 |     def test_type_error_too_many_args(self):
+   118 |         """Make sure TypeError raised if too many args passed to truncate"""
+   119 |         self.spooled_flo.write(self.test_str)
+   120 |         self.assertRaises(TypeError, self.spooled_flo.truncate, 0, 10)
+   121 | 
+   122 |     def test_io_error_negative_truncate(self):
+   123 |         """Make sure IOError raised trying to truncate with negative value"""
+   124 |         self.spooled_flo.write(self.test_str)
+   125 |         self.assertRaises(IOError, self.spooled_flo.truncate, -1)
+   126 | 
+   127 |     def test_compare_different_instances(self):
+   128 |         """Make sure two different instance types are not considered equal"""
+   129 |         a = ioutils.SpooledBytesIO()
+   130 |         a.write(b"I am equal!")
+   131 |         b = ioutils.SpooledStringIO()
+   132 |         b.write("I am equal!")
+   133 |         self.assertNotEqual(a, b)
+   134 | 
+   135 |     def test_compare_unequal_instances(self):
+   136 |         """Comparisons of non-SpooledIOBase classes should fail"""
+   137 |         self.assertNotEqual("Bummer dude", self.spooled_flo)
+   138 | 
+   139 |     def test_set_softspace_attribute(self):
+   140 |         """Ensure softspace attribute can be retrieved and set"""
+   141 |         self.spooled_flo.softspace = True
+   142 |         self.assertTrue(self.spooled_flo.softspace)
+   143 | 
+   144 |     def test_set_softspace_attribute_rolled(self):
+   145 |         """Ensure softspace attribute can be retrieved and set if rolled"""
+   146 |         self.spooled_flo.softspace = True
+   147 |         self.assertTrue(self.spooled_flo.softspace)
+   148 |         self.spooled_flo.rollover()
+   149 |         self.spooled_flo.softspace = True
+... [417 more lines; pass offset=150 for next page]

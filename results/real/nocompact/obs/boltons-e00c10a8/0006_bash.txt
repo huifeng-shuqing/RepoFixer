@@ -1,0 +1,245 @@
+# TODO: inherit from set()
+# TODO: .discard_many(), .remove_many()
+# TODO: raise exception on non-set params?
+# TODO: technically reverse operators should probably reverse the
+# order of the 'other' inputs and put self last (to try and maintain
+# insertion order)
+
+
+class IndexedSet(MutableSet):
+    """``IndexedSet`` is a :class:`collections.MutableSet` that maintains
+    insertion order and uniqueness of inserted elements. It's a hybrid
+    type, mostly like an OrderedSet, but also :class:`list`-like, in
+    that it supports indexing and slicing.
+
+    Args:
+        other (iterable): An optional iterable used to initialize the set.
+
+    >>> x = IndexedSet(list(range(4)) + list(range(8)))
+    >>> x
+    IndexedSet([0, 1, 2, 3, 4, 5, 6, 7])
+    >>> x - set(range(2))
+    IndexedSet([2, 3, 4, 5, 6, 7])
+    >>> x[-1]
+    7
+    >>> fcr = IndexedSet('freecreditreport.com')
+    >>> ''.join(fcr[:fcr.index('.')])
+    'frecditpo'
+
+    Standard set operators and interoperation with :class:`set` are
+    all supported:
+
+    >>> fcr & set('cash4gold.com')
+    IndexedSet(['c', 'd', 'o', '.', 'm'])
+
+    As you can see, the ``IndexedSet`` is almost like a ``UniqueList``,
+    retaining only one copy of a given value, in the order it was
+    first added. For the curious, the reason why IndexedSet does not
+    support setting items based on index (i.e, ``__setitem__()``),
+    consider the following dilemma::
+
+      my_indexed_set = [A, B, C, D]
+      my_indexed_set[2] = A
+
+    At this point, a set requires only one *A*, but a :class:`list` would
+    overwrite *C*. Overwriting *C* would change the length of the list,
+    meaning that ``my_indexed_set[2]`` would not be *A*, as expected with a
+    list, but rather *D*. So, no ``__setitem__()``.
+
+    Otherwise, the API strives to be as complete a union of the
+    :class:`list` and :class:`set` APIs as possible.
+    """
+    def __init__(self, other=None):
+        self.item_index_map = dict()
+        self.item_list = []
+        self.dead_indices = []
+        self._compactions = 0
+        self._c_max_size = 0
+        if other:
+            self.update(other)
+
+    # internal functions
+    @property
+    def _dead_index_count(self):
+        return len(self.item_list) - len(self.item_index_map)
+
+    def _compact(self):
+        if not self.dead_indices:
+            return
+        self._compactions += 1
+        dead_index_count = self._dead_index_count
+        items, index_map = self.item_list, self.item_index_map
+        self._c_max_size = max(self._c_max_size, len(items))
+        for i, item in enumerate(self):
+            items[i] = item
+            index_map[item] = i
+        del items[-dead_index_count:]
+        del self.dead_indices[:]
+
+    def _cull(self):
+        ded = self.dead_indices
+        if not ded:
+            return
+        items, ii_map = self.item_list, self.item_index_map
+        if not ii_map:
+            del items[:]
+            del ded[:]
+        elif len(ded) > 384:
+            self._compact()
+        elif self._dead_index_count > (len(items) / _COMPACTION_FACTOR):
+            self._compact()
+        elif items[-1] is _MISSING:  # get rid of dead right hand side
+            num_dead = 1
+            while items[-(num_dead + 1)] is _MISSING:
+                num_dead += 1
+            if ded and ded[-1][1] == len(items):
+                del ded[-1]
+            del items[-num_dead:]
+
+    def _get_real_index(self, index):
+        if index < 0:
+            index += len(self)
+        if index < 0 or index >= len(self):
+            raise IndexError('IndexedSet index out of range')
+        if not self.dead_indices:
+            return index
+        real_index = index
+        for d_start, d_stop in self.dead_indices:
+            if real_index < d_start:
+                break
+            real_index += d_stop - d_start
+        return real_index
+
+    def _get_apparent_index(self, index):
+        if index < 0:
+            index += len(self)
+        if not self.dead_indices:
+            return index
+        apparent_index = index
+        for d_start, d_stop in self.dead_indices:
+            if index < d_start:
+                break
+            apparent_index -= d_stop - d_start
+        return apparent_index
+
+    def _add_dead(self, start, stop=None):
+        # TODO: does not handle when the new interval subsumes
+        # multiple existing intervals
+        dints = self.dead_indices
+        if stop is None:
+            stop = start + 1
+        cand_int = [start, stop]
+        if not dints:
+            dints.append(cand_int)
+            return
+        int_idx = bisect_left(dints, cand_int)
+        dint = dints[int_idx - 1]
+        d_start, d_stop = dint
+        if start <= d_start <= stop:
+            dint[0] = start
+        elif start <= d_stop <= stop:
+            dint[1] = stop
+----
+    def __rsub__(self, other):
+        vals = [x for x in other if x not in self]
+        return type(other)(vals)
+
+    # in-place set operations
+    def update(self, *others):
+        "update(*others) -> add values from one or more iterables"
+        if not others:
+            return  # raise?
+        elif len(others) == 1:
+            other = others[0]
+        else:
+            other = chain(others)
+        for o in other:
+            self.add(o)
+
+    def intersection_update(self, *others):
+        "intersection_update(*others) -> discard self.difference(*others)"
+        for val in self.difference(*others):
+            self.discard(val)
+
+    def difference_update(self, *others):
+        "difference_update(*others) -> discard self.intersection(*others)"
+        if self in others:
+            self.clear()
+        for val in self.intersection(*others):
+            self.discard(val)
+
+    def symmetric_difference_update(self, other):  # note singular 'other'
+        "symmetric_difference_update(other) -> in-place XOR with other"
+        if self is other:
+            self.clear()
+        for val in other:
+            if val in self:
+                self.discard(val)
+            else:
+                self.add(val)
+
+    def __ior__(self, *others):
+        self.update(*others)
+        return self
+---
+            if inc is None:  # + -
+                return _ComplementSet(included=self._included & exc)
+            else:  # + +
+                return _ComplementSet(included=self._included.difference(inc))
+
+    def __rsub__(self, other):
+        inc, exc = _norm_args_notimplemented(other)
+        if inc is NotImplemented:
+            return NotImplemented
+        # rsub, so the expression being evaluated is "other - self"
+        if self._included is None:
+            if exc is None:  # - +
+                return _ComplementSet(included=inc & self._excluded)
+            else:  # - -
+                return _ComplementSet(included=self._excluded - exc)
+        else:
+            if inc is None:  # + -
+                return _ComplementSet(excluded=exc | self._included)
+            else:  # + +
+                return _ComplementSet(included=inc.difference(self._included))
+
+    def difference_update(self, other):
+        try:
+            self -= other
+        except NotImplementedError:
+            raise TypeError('argument must be another set or complement(set)')
+
+    def __isub__(self, other):
+        inc, exc = _norm_args_notimplemented(other)
+        if inc is NotImplemented:
+            return NotImplemented
+        if self._included is None:
+            if exc is None:  # - +
+                self._excluded |= inc
+            else:  # - -
+                self._included, self._excluded = exc - self._excluded, None
+        else:
+            if inc is None:  # + -
+                self._included &= exc
+            else:  # + +
+                self._included.difference_update(inc)
+        return self
+
+    def __eq__(self, other):
+        return (
+            type(self) is type(other)
+            and self._included == other._included
+            and self._excluded == other._excluded) or (
+            type(other) in (set, frozenset) and self._included == other)
+
+    def __hash__(self):
+        return hash(self._included) ^ hash(self._excluded)
+
+    def __len__(self):
+        if self._included is not None:
+            return len(self._included)
+        raise NotImplementedError('complemented sets have undefined length')
+
+    def __iter__(self):
+        if self._included is not None:
+            return iter(self._included)

@@ -1,0 +1,28 @@
+boltons/statsutils.py:313:        """Inter-quartile range (IQR) is the difference between the 75th
+boltons/statsutils.py:329:        upper and lower quartiles.
+boltons/statsutils.py:576:    def get_histogram_counts(self, bins=None, **kw):
+boltons/statsutils.py:577:        """Produces a list of ``(bin, count)`` pairs comprising a histogram of
+boltons/statsutils.py:579:        :meth:`Stats.format_histogram` for more details.
+boltons/statsutils.py:589:        then passed to :func:`statsutils.format_histogram_counts` to
+boltons/statsutils.py:591:        :meth:`~Stats.format_histogram` method. This can be useful for
+boltons/statsutils.py:626:    def format_histogram(self, bins=None, **kw):
+boltons/statsutils.py:627:        """Produces a textual histogram of the data, using fixed-width bins,
+boltons/statsutils.py:631:        >>> print(Stats(data).format_histogram(width=30))
+boltons/statsutils.py:638:        In this histogram, five values are between 0.0 and 4.4, eight
+boltons/statsutils.py:649:                histogram. Also accepts a list of floating-point
+boltons/statsutils.py:658:               in the histogram. Defaults to console width on Python
+boltons/statsutils.py:665:        the :meth:`~Stats.get_histogram_counts` method, the output of
+boltons/statsutils.py:666:        is used by format_histogram. The :meth:`~Stats.describe`
+boltons/statsutils.py:674:        bin_counts = self.get_histogram_counts(bins=bins, **kw)
+boltons/statsutils.py:675:        return format_histogram_counts(bin_counts,
+boltons/statsutils.py:688:                quartiles.
+boltons/statsutils.py:763:    See :meth:`Stats.format_histogram` for another very useful
+boltons/statsutils.py:792:def format_histogram_counts(bin_counts, width=None, format_bin=None):
+boltons/statsutils.py:793:    """The formatting logic behind :meth:`Stats.format_histogram`, which
+boltons/statsutils.py:794:    takes the output of :meth:`Stats.get_histogram_counts`, and passes
+tests/test_statsutils.py:45:def test_histogram_zero_interquartile_range():
+tests/test_statsutils.py:47:        counts = Stats(data).get_histogram_counts()
+tests/test_statsutils.py:49:        assert Stats(data).format_histogram()
+CHANGELOG.md:444:  [Stats.format_histogram][statsutils.Stats.format_histogram] complete
+CHANGELOG.md:446:- Added inter-quartile range (iqr) to [statsutils.Stats][statsutils.Stats]
+CHANGELOG.md:1221:[statsutils.Stats.format_histogram]: http://boltons.readthedocs.org/en/latest/statsutils.html#boltons.statsutils.Stats.format_histogram

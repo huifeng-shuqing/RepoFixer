@@ -1,0 +1,80 @@
+127:    row_type = type(row)
+128:    is_sl = (row_type == list or row_type == str) and (
+818:_float_with_thousands_separators = re.compile(
+843:def _isnumber_with_thousands_separator(string):
+845:    >>> _isnumber_with_thousands_separator(".")
+847:    >>> _isnumber_with_thousands_separator("1")
+849:    >>> _isnumber_with_thousands_separator("1.")
+851:    >>> _isnumber_with_thousands_separator(".1")
+853:    >>> _isnumber_with_thousands_separator("1000")
+855:    >>> _isnumber_with_thousands_separator("1,000")
+857:    >>> _isnumber_with_thousands_separator("1,0000")
+859:    >>> _isnumber_with_thousands_separator("1,000.1234")
+861:    >>> _isnumber_with_thousands_separator(b"1,000.1234")
+863:    >>> _isnumber_with_thousands_separator("+1,000.1234")
+865:    >>> _isnumber_with_thousands_separator("-1,000.1234")
+873:    return bool(re.match(_float_with_thousands_separators, string))
+884:def _isnumber(string):
+887:    This promotes types convertible to both int and float to be considered
+888:    a float.  Note that, iff *all* values appear to be some form of numeric
+894:    >>> _isnumber(123)
+896:    >>> _isnumber(123.45)
+898:    >>> _isnumber("123.45")
+900:    >>> _isnumber("123")
+902:    >>> _isnumber("spam")
+904:    >>> _isnumber("123e45")
+906:    >>> _isnumber("123e45678")  # evaluates equal to 'inf', but ... isn't
+908:    >>> _isnumber("inf")
+911:    >>> _isnumber(Fraction(1,3))
+917:        type(string) in (float, int)
+919:        # convertible to int/float.
+921:            _isconvertible(float, string)
+923:                # some other type convertible to float
+928:                    not (math.isinf(float(string)) or math.isnan(float(string)))
+969:def _type(string, has_invisible=True, numparse=True):
+970:    """The least generic type (type(None), int, float, str, unicode).
+975:    >>> _type(None) is type(None)
+977:    >>> _type("") is type(None)
+979:    >>> _type("foo") is type("")
+981:    >>> _type("1") is type(1)
+983:    >>> _type('\x1b[31m42\x1b[0m') is type(42)
+985:    >>> _type('\x1b[31m42\x1b[0m') is type(42)
+1003:            and _isnumber_with_thousands_separator(string)
+1009:        _isnumber(string)
+1010:        or (isinstance(string, str) and _isnumber_with_thousands_separator(string))
+1012:        return float
+1034:    if _isnumber(string) or _isnumber_with_thousands_separator(string):
+1268:        float: 3,
+1275:        3: float,
+1284:def _column_type(strings, has_invisible=True, numparse=True):
+1287:    >>> _column_type([True, False]) is bool
+1289:    >>> _column_type(["1", "2"]) is int
+1291:    >>> _column_type(["1", "2.3"]) is float
+1293:    >>> _column_type(["1", "2.3", "four"]) is str
+1295:    >>> _column_type(["four", '\u043f\u044f\u0442\u044c']) is str
+1297:    >>> _column_type([None, "brux"]) is str
+1299:    >>> _column_type([1, 2, None]) is int
+1302:    >>> _column_type([dt.datetime(1991,2,19), dt.time(17,35)]) is str
+1306:    types = [_type(s, has_invisible, numparse) for s in strings]
+1310:def _format(val, valtype, floatfmt, intfmt, missingval="", has_invisible=True):
+1347:    elif valtype is float:
+1352:                formatted_val = format(float(raw_val), floatfmt)
+1360:                return format(float(val), floatfmt)
+1641:            if _isnumber(cell) and numparse:
+1654:                # custom floatfmt/intfmt, nor with any missing/blank cells.
+1660:                        if cell == "" or _isnumber(cell)
+1661:                        else str(_type(cell, numparse)(cell))
+1706:    floatfmt=_DEFAULT_FLOATFMT,
+1810:    `floatfmt` is a format specification used for columns which
+1815:    `floatfmt`, this can also be a list of values for different
+2348:    coltypes = [_column_type(col, numparse=np) for col, np in zip(cols, numparses)]
+2349:    if isinstance(floatfmt, str):  # old version
+2350:        float_formats = len(cols) * [floatfmt]  # just duplicate the string to use in each column
+2351:    else:  # if floatfmt is list, tuple etc we have one per column
+2352:        float_formats = list(floatfmt)
+2353:        if len(float_formats) < len(cols):
+2354:            float_formats.extend((len(cols) - len(float_formats)) * [_DEFAULT_FLOATFMT])
+2370:            cols, coltypes, float_formats, int_formats, missing_vals
+2379:        aligns = [numalign if ct in [int, float] else stralign for ct in coltypes]
+2599:def _format_table(
+2900:    -F FPFMT, --float FPFMT   floating point number format (default: g)

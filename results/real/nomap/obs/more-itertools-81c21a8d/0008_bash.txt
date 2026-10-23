@@ -1,0 +1,68 @@
+        else:
+            self._cache[value].appendleft(item)
+
+        return True
+
+    def _get_values(self, value):
+        """
+        Helper to yield items from the parent iterator that match *value*.
+        Items that don't match are stored in the local cache as they
+        are encountered.
+        """
+        while True:
+            # If we've cached some items that match the target value, emit
+            # the first one and evict it from the cache.
+            if self._cache.get(value):
+                yield self._cache[value].popleft()
+            # Otherwise we need to advance the parent iterator to search for
+            # a matching item, caching the rest.
+            else:
+                while True:
+                    try:
+                        item = next(self._it)
+                    except StopIteration:
+                        return
+                    item_value = self._key(item)
+                    if item_value == value:
+                        if value not in self._cache:
+                            self._cache[value] = deque()
+                        yield item
+                        break
+                    elif self._validator(item_value):
+                        self._cache[item_value].append(item)
+
+    def __iter__(self):
+        for item in self._it:
+            item_value = self._key(item)
+            if self._validator(item_value):
+                self._cache[item_value].append(item)
+
+        return iter(self._cache)
+
+    def __getitem__(self, value):
+        if not self._validator(value):
+            return iter(())
+
+        return self._get_values(value)
+
+
+def spy(iterable, n=1):
+    """Return a 2-tuple with a list containing the first *n* elements of
+    *iterable*, and an iterator with the same items as *iterable*.
+    This allows you to "look ahead" at the items in the iterable without
+    advancing it.
+
+    There is one item in the list by default:
+
+        >>> iterable = 'abcdefg'
+        >>> head, iterable = spy(iterable)
+        >>> head
+        ['a']
+        >>> list(iterable)
+        ['a', 'b', 'c', 'd', 'e', 'f', 'g']
+
+    You may use unpacking to retrieve items instead of lists:
+
+        >>> (head,), iterable = spy('abcdefg')
+        >>> head
+        'a'

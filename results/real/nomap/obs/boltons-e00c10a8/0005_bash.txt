@@ -1,0 +1,302 @@
+             21384, 40145, 26160, 46428, 30360]
+
+
+if __name__ == '__main__':
+    _TUNE_SETUP = """\
+from boltons.listutils import BarrelList
+bl = BarrelList()
+bl._size_factor = %s
+bl.extend(range(int(%s)))
+"""
+
+    def tune():
+        from collections import defaultdict
+        import gc
+        from timeit import timeit
+        data_size = 1e5
+        old_size_factor = size_factor = 512
+        all_times = defaultdict(list)
+        min_times = {}
+        step = 512
+        while abs(step) > 4:
+            gc.collect()
+            for x in range(3):
+                tottime = timeit('bl.insert(0, bl.pop(len(bl)//2))',
+                                 _TUNE_SETUP % (size_factor, data_size),
+                                 number=10000)
+                all_times[size_factor].append(tottime)
+            min_time = round(min(all_times[size_factor]), 3)
+            min_times[size_factor] = min_time
+            print(size_factor, min_time, step)
+            if min_time > (min_times[old_size_factor] + 0.002):
+                step = -step // 2
+            old_size_factor = size_factor
+            size_factor += step
+        print(tottime)
+
+    try:
+        tune()  # main()
+    except Exception as e:
+        import pdb;pdb.post_mortem()
+        raise
+
+
+def _multi_sublist_bl(n=30000):
+    # BarrelList only splits into sublists after a mutating op triggers
+    # _balance_list; a single indexed pop on a freshly-built list does it
+    bl = BarrelList(range(n))
+    bl.pop(0)
+    bl.insert(0, 0)
+    assert len(bl.lists) > 1
+    assert list(bl) == list(range(n))
+    return bl
+
+
+def test_barrel_list_getitem_past_end():
+    # bl[len(bl)] used to return an element from the middle
+    bl = _multi_sublist_bl()
+    try:
+        bl[len(bl)]
+    except IndexError:
+        pass
+    else:
+        assert False, 'expected IndexError'
+
+
+def test_barrel_list_insert_at_end():
+    # insert(len(bl), x) used to insert mid-list; list.insert clamps to append
+    bl = _multi_sublist_bl()
+    bl.insert(len(bl), 'end')
+    assert bl[-1] == 'end'
+    bl.insert(len(bl) + 100, 'past_end')
+    assert bl[-1] == 'past_end'
+    bl.insert(-len(bl) - 100, 'front')
+    assert bl[0] == 'front'
+
+
+def test_barrel_list_pop_after_tail_drained():
+    # pop() used to raise IndexError on a non-empty BarrelList whose tail
+    # sublist had been emptied by indexed pops
+    bl = _multi_sublist_bl()
+    for _ in range(len(bl.lists[-1])):
+        bl.pop(len(bl) - 1)
+    expected = bl[-1]
+    assert bl.pop() == expected
+
+
+def test_barrel_list_matches_list():
+    import random
+    rng = random.Random(7)
+    ref, bl = list(range(2000)), BarrelList(range(2000))
+    for _ in range(4000):
+        op = rng.random()
+        if op < 0.3 and ref:
+            i = rng.randrange(-len(ref), len(ref))
+            assert ref.pop(i) == bl.pop(i)
+        elif op < 0.5 and ref:
+            assert ref.pop() == bl.pop()
+        elif op < 0.8:
+            i = rng.randrange(-len(ref) - 2, len(ref) + 2)
+            v = rng.random()
+            ref.insert(i, v)
+60:class BarrelList(list):
+61-    """The ``BarrelList`` is a :class:`list` subtype backed by many
+62-    dynamically-scaled sublists, to provide better scaling and random
+63-    insertion/deletion characteristics. It is a subtype of the builtin
+64-    :class:`list` and has an identical API, supporting indexing,
+65-    slicing, sorting, etc. If application requirements call for
+66-    something more performant, consider the `blist module available on
+67-    PyPI`_.
+68-
+69-    The name comes by way of Kurt Rose, who said it reminded him of
+70-    barrel shifters. Not sure how, but it's BList-like, so the name
+71-    stuck. BList is of course a reference to `B-trees`_.
+72-
+73-    Args:
+74-        iterable: An optional iterable of initial values for the list.
+75-
+76-    >>> blist = BList(range(100000))
+77-    >>> blist.pop(50000)
+78-    50000
+79-    >>> len(blist)
+80-    99999
+81-    >>> len(blist.lists)  # how many underlying lists
+82-    8
+83-    >>> slice_idx = blist.lists[0][-1]
+84-    >>> blist[slice_idx:slice_idx + 2]
+85-    BarrelList([11637, 11638])
+86-
+87-    Slicing is supported and works just fine across list borders,
+88-    returning another instance of the BarrelList.
+89-
+90-    .. _blist module available on PyPI: https://pypi.python.org/pypi/blist
+91-    .. _B-trees: https://en.wikipedia.org/wiki/B-tree
+92-
+93-    """
+94-
+95-    _size_factor = 1520
+96-    "This size factor is the result of tuning using the tune() function below."
+97-
+98-    def __init__(self, iterable=None):
+99-        self.lists = [[]]
+100-        if iterable:
+101-            self.extend(iterable)
+102-
+103-    @property
+104-    def _cur_size_limit(self):
+105-        len_self, size_factor = len(self), self._size_factor
+106-        return int(round(size_factor * math_log(len_self + 2, 2)))
+107-
+108-    def _translate_index(self, index):
+109-        if index < 0:
+110-            index += len(self)
+111-        rel_idx, lists = index, self.lists
+112-        for list_idx in range(len(lists)):
+113-            len_list = len(lists[list_idx])
+114-            if rel_idx < len_list:
+115-                break
+116-            rel_idx -= len_list
+117-        if rel_idx < 0:
+118-            return None, None
+119-        return list_idx, rel_idx
+120-
+121-    def _balance_list(self, list_idx):
+122-        if list_idx < 0:
+123-            list_idx += len(self.lists)
+124-        cur_list = self.lists[list_idx]
+125-        size_limit = self._cur_size_limit
+126-        if len(cur_list) > size_limit:
+127-            half_limit = size_limit // 2
+128-            while len(cur_list) > half_limit:
+129-                next_list_idx = list_idx + 1
+130-                self.lists.insert(next_list_idx, cur_list[-half_limit:])
+131-                del cur_list[-half_limit:]
+132-            return True
+133-        return False
+134-
+135-    def insert(self, index, item):
+136-        if len(self.lists) == 1:
+137-            self.lists[0].insert(index, item)
+138-            self._balance_list(0)
+139-        else:
+140-            list_idx, rel_idx = self._translate_index(index)
+141-            if list_idx is None:
+142-                list_idx, rel_idx = 0, 0
+143-            self.lists[list_idx].insert(rel_idx, item)
+144-            self._balance_list(list_idx)
+145-        return
+146-
+147-    def append(self, item):
+148-        self.lists[-1].append(item)
+149-
+150-    def extend(self, iterable):
+151-        self.lists[-1].extend(iterable)
+152-
+153-    def pop(self, *a):
+154-        lists = self.lists
+155-        if len(lists) == 1 and not a:
+156-            return self.lists[0].pop()
+157-        index = a and a[0]
+158-        if index == () or index is None or index == -1:
+159-            ret = lists[-1].pop()
+160-            if len(lists) > 1 and not lists[-1]:
+161-                lists.pop()
+162-        else:
+163-            list_idx, rel_idx = self._translate_index(index)
+164-            if list_idx is None:
+165-                raise IndexError()
+166-            ret = lists[list_idx].pop(rel_idx)
+167-            self._balance_list(list_idx)
+168-        return ret
+169-
+170-    def iter_slice(self, start, stop, step=None):
+171-        iterable = self  # TODO: optimization opportunities abound
+172-        # start_list_idx, stop_list_idx = 0, len(self.lists)
+173-        if start is None:
+174-            start = 0
+175-        if stop is None:
+176-            stop = len(self)
+177-        if step is not None and step < 0:
+178-            step = -step
+179-            start, stop = -start, -stop - 1
+180-            iterable = reversed(self)
+181-        if start < 0:
+182-            start += len(self)
+183-            # start_list_idx, start_rel_idx = self._translate_index(start)
+184-        if stop < 0:
+185-            stop += len(self)
+186-            # stop_list_idx, stop_rel_idx = self._translate_index(stop)
+187-        return islice(iterable, start, stop, step)
+188-
+189-    def del_slice(self, start, stop, step=None):
+190-        if step is not None and abs(step) > 1:  # punt
+191-            new_list = chain(self.iter_slice(0, start, step),
+192-                             self.iter_slice(stop, None, step))
+193-            self.lists[0][:] = new_list
+194-            self._balance_list(0)
+195-            return
+196-        if start is None:
+197-            start = 0
+198-        if stop is None:
+199-            stop = len(self)
+200-        start_list_idx, start_rel_idx = self._translate_index(start)
+201-        stop_list_idx, stop_rel_idx = self._translate_index(stop)
+202-        if start_list_idx is None:
+203-            raise IndexError()
+204-        if stop_list_idx is None:
+205-            raise IndexError()
+206-
+207-        if start_list_idx == stop_list_idx:
+208-            del self.lists[start_list_idx][start_rel_idx:stop_rel_idx]
+209-        elif start_list_idx < stop_list_idx:
+210-            del self.lists[start_list_idx + 1:stop_list_idx]
+211-            del self.lists[start_list_idx][start_rel_idx:]
+212-            del self.lists[stop_list_idx][:stop_rel_idx]
+213-        else:
+214-            assert False, ('start list index should never translate to'
+215-                           ' greater than stop list index')
+216-
+217-    __delslice__ = del_slice
+218-
+219-    @classmethod
+220-    def from_iterable(cls, it):
+221-        return cls(it)
+222-
+223-    def __iter__(self):
+224-        return chain.from_iterable(self.lists)
+225-
+226-    def __reversed__(self):
+227-        return chain.from_iterable(reversed(l) for l in reversed(self.lists))
+228-
+229-    def __len__(self):
+230-        return sum([len(l) for l in self.lists])
+231-
+232-    def __contains__(self, item):
+233-        for cur in self.lists:
+234-            if item in cur:
+235-                return True
+236-        return False
+237-
+238-    def __getitem__(self, index):
+239-        try:
+240-            start, stop, step = index.start, index.stop, index.step
+241-        except AttributeError:
+242-            index = operator.index(index)
+243-        else:
+244-            iter_slice = self.iter_slice(start, stop, step)
+245-            ret = self.from_iterable(iter_slice)
+246-            return ret
+247-        list_idx, rel_idx = self._translate_index(index)
+248-        if list_idx is None:
+249-            raise IndexError()
+250-        return self.lists[list_idx][rel_idx]
+251-
+252-    def __delitem__(self, index):
+253-        try:
+254-            start, stop, step = index.start, index.stop, index.step
+255-        except AttributeError:
+256-            index = operator.index(index)
+257-        else:
+258-            self.del_slice(start, stop, step)
+259-            return
+260-        list_idx, rel_idx = self._translate_index(index)

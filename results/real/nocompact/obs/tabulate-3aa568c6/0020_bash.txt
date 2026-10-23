@@ -1,0 +1,80 @@
+1307:def _format(val, valtype, floatfmt, intfmt, missingval="", has_invisible=True):
+1308-    """Format a value according to its deduced type.  Empty values are deemed valid for any type.
+1309-
+1310-    Unicode is supported:
+1311-
+1312-    >>> hrow = ['\u0431\u0443\u043a\u0432\u0430', '\u0446\u0438\u0444\u0440\u0430'] ; \
+1313-        tbl = [['\u0430\u0437', 2], ['\u0431\u0443\u043a\u0438', 4]] ; \
+1314-        good_result = '\\u0431\\u0443\\u043a\\u0432\\u0430      \\u0446\\u0438\\u0444\\u0440\\u0430\\n-------  -------\\n\\u0430\\u0437             2\\n\\u0431\\u0443\\u043a\\u0438           4' ; \
+1315-        tabulate(tbl, headers=hrow) == good_result
+1316-    True
+1317-
+1318-    """
+1319-    if val is None:
+1320-        return missingval
+1321-    if isinstance(val, (bytes, str)) and not val:
+1322-        return ""
+1323-
+1324-    if valtype is str:
+1325-        return f"{val}"
+1326-    elif valtype is int:
+1327-        if isinstance(val, str):
+1328-            val_striped = val.encode("unicode_escape").decode("utf-8")
+1329-            colored = re.search(r"(\\[xX]+[0-9a-fA-F]+\[\d+[mM]+)([0-9.]+)(\\.*)$", val_striped)
+1330-            if colored:
+1331-                total_groups = len(colored.groups())
+1332-                if total_groups == 3:
+1333-                    digits = colored.group(2)
+1334-                    if digits.isdigit():
+1335-                        val_new = colored.group(1) + format(int(digits), intfmt) + colored.group(3)
+1336-                        val = val_new.encode("utf-8").decode("unicode_escape")
+1337-            intfmt = ""
+1338-        return format(val, intfmt)
+1339-    elif valtype is bytes:
+1340-        try:
+1341-            return str(val, "ascii")
+1342-        except (TypeError, UnicodeDecodeError):
+1343-            return str(val)
+1344-    elif valtype is float:
+1345-        is_a_colored_number = has_invisible and isinstance(val, (str, bytes))
+1346-        if is_a_colored_number:
+1347-            raw_val = _strip_ansi(val)
+1348-            try:
+1349-                formatted_val = format(float(raw_val), floatfmt)
+1350-            except (ValueError, TypeError):
+1351-                return f"{val}"
+1352-            return val.replace(raw_val, formatted_val)
+1353-        else:
+1354-            if isinstance(val, str) and "," in val:
+1355-                val = val.replace(",", "")  # handle thousands-separators
+1356-            if isinstance(val, Decimal):
+1357-                return format(val, floatfmt)
+1358-            try:
+1359-                return format(float(val), floatfmt)
+1360-            except (ValueError, TypeError):
+1361-                return f"{val}"
+1362-    else:
+1363-        return f"{val}"
+1364-
+1365-
+1366-def _align_header(header, alignment, width, visible_width, is_multiline=False, width_fn=None):
+1367-    "Pad string header to width chars given known visible_width of the header."
+--
+2598:def _format_table(
+2599-    fmt, headers, headersaligns, rows, colwidths, colaligns, is_multiline, rowaligns
+2600-):
+2601-    """Produce a plain-text representation of the table."""
+2602-    lines = []
+2603-    hidden = fmt.with_header_hide if (headers and fmt.with_header_hide) else []
+2604-    pad = fmt.padding
+2605-    headerrow = fmt.headerrow
+2606-
+2607-    padded_widths = [(w + 2 * pad) for w in colwidths]
+2608-    if is_multiline:
+2609-        pad_row = lambda row, _: row  # noqa: E731 # do it later, in _append_multiline_row
+2610-        append_row = partial(_append_multiline_row, pad=pad)
+2611-    else:
+2612-        pad_row = _pad_row
+2613-        append_row = _append_basic_row
+2614-
+2615-    padded_headers = pad_row(headers, pad)

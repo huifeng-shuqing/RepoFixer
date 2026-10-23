@@ -1,0 +1,82 @@
+            if too_long is not None:
+                raise too_long
+            raise ValueError(
+                f'Expected exactly one item in iterable, but got {first!r}, '
+                f'{second!r}, and perhaps more.'
+            )
+        return first
+    return default
+
+
+def ichunked(iterable, n):
+    """Break *iterable* into sub-iterables with *n* elements each.
+    :func:`ichunked` is like :func:`chunked`, but it yields iterables
+    instead of lists.
+
+    If the sub-iterables are read in order, the elements of *iterable*
+    won't be stored in memory.
+    If they are read out of order, :func:`itertools.tee` is used to cache
+    elements as necessary.
+
+    >>> from itertools import count
+    >>> all_chunks = ichunked(count(), 4)
+    >>> c_1, c_2, c_3 = next(all_chunks), next(all_chunks), next(all_chunks)
+    >>> list(c_2)  # c_1's elements have been cached; c_3's haven't been
+    [4, 5, 6, 7]
+    >>> list(c_1)
+    [0, 1, 2, 3]
+    >>> list(c_3)
+    [8, 9, 10, 11]
+
+    """
+    iterator = iter(iterable)
+    for first in iterator:
+        rest = islice(iterator, n - 1)
+        cache, cacher = tee(rest)
+        yield chain([first], rest, cache)
+        consume(cacher)
+
+
+def iequals(*iterables):
+    """Return ``True`` if all given *iterables* are equal to each other,
+    which means that they contain the same elements in the same order.
+
+    The function is useful for comparing iterables of different data types
+    or iterables that do not support equality checks.
+
+    >>> iequals("abc", ['a', 'b', 'c'], ('a', 'b', 'c'), iter("abc"))
+    True
+
+    >>> iequals("abc", "acb")
+    False
+
+    Not to be confused with :func:`all_equal`, which checks whether all
+    elements of iterable are equal to each other.
+
+    """
+    try:
+        return all(map(all_equal, zip(*iterables, strict=True)))
+    except ValueError:
+        return False
+
+
+def distinct_combinations(iterable, r):
+    """Yield the distinct combinations of *r* items taken from *iterable*.
+
+        >>> list(distinct_combinations([0, 0, 1], 2))
+        [(0, 0), (0, 1)]
+
+    Equivalent to ``set(combinations(iterable))``, except duplicates are not
+    generated and thrown away. For larger input sequences this is much more
+    efficient.
+4530:        actual = [''.join(c) for c in mi.ichunked(iterable, 5)]
+4536:        actual = [''.join(c) for c in mi.ichunked(iterable, 4)]
+4542:        actual = [list(c) for c in mi.ichunked(iterable, 0)]
+4547:        # chunked(..., 0) yields nothing; ichunked should match, including
+4550:        actual = [list(c) for c in mi.ichunked(iterable, 0)]
+4554:        self.assertEqual([list(c) for c in mi.ichunked(source, 0)], [])
+4560:            [list(c) for c in mi.ichunked(iterable, -1)]
+4565:        it = mi.ichunked(iterable, 4)
+4577:        it = mi.ichunked(gen(), 4)
+4590:        # No items should be kept in memory when a ichunked is first called
+4591:        all_chunks = mi.ichunked(gen(), 4)

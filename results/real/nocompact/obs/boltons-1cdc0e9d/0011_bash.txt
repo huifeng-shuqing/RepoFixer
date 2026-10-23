@@ -1,0 +1,46 @@
+                to. Note that bins are always rounded down to avoid
+                clipping any data. Defaults to 1.
+            width (int): integer number of columns in the longest line
+               in the histogram. Defaults to console width on Python
+               3.3+, or 80 if that is not available.
+            format_bin (callable): Called on each bin to create a
+               label for the final output. Use this function to add
+               units, such as "ms" for milliseconds.
+
+        Should you want something more programmatically reusable, see
+        the :meth:`~Stats.get_histogram_counts` method, the output of
+        is used by format_histogram. The :meth:`~Stats.describe`
+        method is another useful summarization method, albeit less
+        visual.
+
+        .. _Freedman's algorithm: https://en.wikipedia.org/wiki/Freedman%E2%80%93Diaconis_rule
+        """
+        width = kw.pop('width', None)
+        format_bin = kw.pop('format_bin', None)
+        bin_counts = self.get_histogram_counts(bins=bins, **kw)
+        return format_histogram_counts(bin_counts,
+                                       width=width,
+                                       format_bin=format_bin)
+
+    def describe(self, quantiles=None, format=None):
+        """Provides standard summary statistics for the data in the Stats
+        object, in one of several convenient formats.
+
+        Args:
+            quantiles (list): A list of numeric values to use as
+                quantiles in the resulting summary. All values must be
+                0.0-1.0, with 0.5 representing the median. Defaults to
+                ``[0.25, 0.5, 0.75]``, representing the standard
+                quartiles.
+            format (str): Controls the return type of the function,
+                with one of three valid values: ``"dict"`` gives back
+                a :class:`dict` with the appropriate keys and
+                values. ``"list"`` is a list of key-value pairs in an
+                order suitable to pass to an OrderedDict or HTML
+                table. ``"text"`` converts the values to text suitable
+                for printing, as seen below.
+
+        Here is the information returned by a default ``describe``, as
+        presented in the ``"text"`` format:
+
+        >>> stats = Stats(range(1, 8))

@@ -51,7 +51,7 @@ uv run python scripts/show_trace.py results/run1/traces/<task_id>.jsonl   # 回�
 
 - 数据集：`data/tasks_real.jsonl`（29 条，8 个开源仓库的真实修复提交；SWE-bench 式测试补丁分离，见 [scripts/build_dataset.py](scripts/build_dataset.py)）
 - 质量门禁：`uv run python scripts/validate_dataset.py` → 29/29「修复前必失败、打上源码补丁必通过」
-- 结果：见 [results/real/](results/real/)（full / nomap / nocompact 三组对比 + 失败归因 FAILURES.md）
+- **最终结果**：完整流水线 **21/29（72.4%）**，三组消融对比 + 失败归因见 [results/real/COMPARISON.md](results/real/COMPARISON.md)
 
 ## 文档
 

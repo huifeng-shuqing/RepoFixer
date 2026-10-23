@@ -1,0 +1,121 @@
+            "-  --------------  ----",
+        ]
+    )
+    result = tabulate(table, tablefmt="simple")
+    assert_equal(expected, result)
+
+
+def test_github():
+    "Output: github with headers"
+    expected = "\n".join(
+        [
+            "| strings   |   numbers |",
+            "|:----------|----------:|",
+            "| spam      |   41.9999 |",
+            "| eggs      |  451      |",
+        ]
+    )
+    result = tabulate(_test_table, _test_table_headers, tablefmt="github")
+    assert_equal(expected, result)
+
+
+def test_github_multiline():
+    "Output: github with multiline cells with headers"
+    table = [[2, "foo\nbar"]]
+    headers = ("more\nspam eggs", "more spam\n& eggs")
+    expected = "\n".join(
+        [
+            "|        more | more spam   |",
+            "|   spam eggs | & eggs      |",
+            "|------------:|:------------|",
+            "|           2 | foo         |",
+            "|             | bar         |",
+        ]
+    )
+    result = tabulate(table, headers, tablefmt="github")
+    assert_equal(expected, result)
+
+
+def test_github_with_colalign():
+    "Output: github with explicit column alignment"
+    expected = "\n".join(
+        [
+            "| Name   |   Age |",
+            "|:-------|------:|",
+            "| Alice  |    24 |",
+            "| Bob    |    19 |",
+        ]
+    )
+    result = tabulate(
+        [["Alice", 24], ["Bob", 19]],
+        ["Name", "Age"],
+        tablefmt="github",
+        colalign=("left", "right"),
+    )
+    assert_equal(expected, result)
+
+
+def test_github_no_alignment():
+    "Output: github without alignment hints when numalign/stralign are disabled"
+    expected = "\n".join(
+        [
+            "| strings | numbers |",
+            "|-----------|-----------|",
+            "| spam | 41.9999 |",
+            "| eggs | 451 |",
+        ]
+    )
+    result = tabulate(
+        _test_table,
+        _test_table_headers,
+        tablefmt="github",
+        numalign=None,
+        stralign=None,
+    )
+    assert_equal(expected, result)
+
+
+def test_grid():
+    "Output: grid with headers"
+    expected = "\n".join(
+        [
+________ test_simple_headerless_with_sep_line_with_padding_in_tablefmt ________
+
+    def test_simple_headerless_with_sep_line_with_padding_in_tablefmt():
+        "Output: simple without headers with sep line with padding in tablefmt"
+        expected = "\n".join(
+            [
+                "|:-----|---------:|",
+                "| spam |  41.9999 |",
+                "|:-----|---------:|",
+                "| eggs | 451      |",
+            ]
+        )
+        result = tabulate(_test_table_with_sep_line, tablefmt="github")
+>       assert_equal(expected, result)
+
+test\test_output.py:379: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+expected = '|:-----|---------:|\n| spam |  41.9999 |\n|:-----|---------:|\n| eggs | 451      |'
+result = '|------|----------|\n| spam |  41.9999 |\n|------|----------|\n| eggs | 451      |'
+
+    def assert_equal(expected, result):
+        print("Expected:\n%r\n" % expected)
+        print("Got:\n%r\n" % result)
+>       assert expected == result
+               ^^^^^^^^^^^^^^^^^^
+E       AssertionError
+
+test\common.py:10: AssertionError
+---------------------------- Captured stdout call -----------------------------
+Expected:
+'|:-----|---------:|\n| spam |  41.9999 |\n|:-----|---------:|\n| eggs | 451      |'
+
+Got:
+'|------|----------|\n| spam |  41.9999 |\n|------|----------|\n| eggs | 451      |'
+
+=========================== short test summary info ===========================
+FAILED test\test_output.py::test_simple_headerless_with_sep_line_with_padding_in_tablefmt
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 76 passed, 29 skipped in 2.35s

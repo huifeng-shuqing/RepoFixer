@@ -1,0 +1,55 @@
+		"""
+		Implements :meth:`match_file`. *check_ancestors* (:class:`bool`) is
+		whether to ask if an ancestor directory of *file* is excluded; see
+		:meth:`_ancestor_excluded` for why it can be skipped.
+		"""
+		is_reversed = self._is_reversed
+
+		# Resolve the ancestor directory and the file separately: a file negation
+		# only applies while no ancestor directory is excluded.
+		dir_include: Optional[bool] = None
+		dir_index: Optional[int] = None
+		file_include: Optional[bool] = None
+		file_index: Optional[int] = None
+
+		for index, pattern in self._patterns:
+			if (
+				(include := pattern.include) is not None
+				and (match := pattern.match_file(file)) is not None
+			):
+				# Pattern matched.
+				if match.match.groupdict().get(_DIR_MARK):
+					# A pattern can match both a strict ancestor of the file and the
+					# file itself. For anchored patterns there is only one match, but
+					# `**/` compiles to the unanchored `(?P<ps_d>/)`: on "a/b/" it
+					# matches at "a/" and at "b/", and `match` only returns the first.
+					is_ancestor = is_self = False
+					assert pattern.regex is not None, pattern
+					for dir_match in pattern.regex.finditer(file):
+						if dir_match.end(_DIR_MARK) < len(file):
+							is_ancestor = True
+						else:
+							is_self = True
+
+					if is_ancestor and (dir_include is None or not is_reversed):
+						dir_include = include
+						dir_index = index
+
+					if is_self and (file_include is None or not is_reversed):
+						file_include = include
+						file_index = index
+				elif file_include is None or not is_reversed:
+					# Pattern matched by a file pattern.
+					file_include = include
+					file_index = index
+
+		if dir_include and check_ancestors and self._ancestor_excluded(file):
+			return (dir_include, dir_index)
+		elif file_include is not None:
+			return (file_include, file_index)
+		elif dir_include:
+			# An ancestor matched an exclude pattern, but the spec as a whole
+			# re-includes that ancestor, so the rule does not apply.
+			return (None, None)
+		else:
+			return (dir_include, dir_index)

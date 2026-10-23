@@ -1,0 +1,101 @@
+                yield self._cache[value].popleft()
+            # Otherwise we need to advance the parent iterator to search for
+            # a matching item, caching the rest.
+            else:
+                while True:
+                    try:
+                        item = next(self._it)
+                    except StopIteration:
+                        return
+                    item_value = self._key(item)
+                    if item_value == value:
+                        if value not in self._cache:
+                            self._cache[value] = deque()
+                        yield item
+                        break
+                    elif self._validator(item_value):
+                        self._cache[item_value].append(item)
+
+    def __iter__(self):
+        for item in self._it:
+            item_value = self._key(item)
+            if self._validator(item_value):
+                self._cache[item_value].append(item)
+
+        return iter(self._cache)
+
+    def __getitem__(self, value):
+        if not self._validator(value):
+            return iter(())
+
+        return self._get_values(value)
+
+
+def spy(iterable, n=1):
+    """Return a 2-tuple with a list containing the first *n* elements of
+    *iterable*, and an iterator with the same items as *iterable*.
+    This allows you to "look ahead" at the items in the iterable without
+    advancing it.
+
+    There is one item in the list by default:
+
+        >>> iterable = 'abcdefg'
+        >>> head, iterable = spy(iterable)
+        >>> head
+        ['a']
+        >>> list(iterable)
+        ['a', 'b', 'c', 'd', 'e', 'f', 'g']
+
+    You may use unpacking to retrieve items instead of lists:
+
+        >>> (head,), iterable = spy('abcdefg')
+commit 173fd76b5c1d2c72454f1c8984be366c0e9a36bd
+Author: dataset <dataset@local>
+Date:   Fri Oct 23 15:59:32 2026 +0800
+
+    build: apply test patch + stub _version (source fix removed)
+
+ more_itertools/_version.py |  2 ++
+ tests/test_more.py         | 16 ++++++++++++++++
+ 2 files changed, 18 insertions(+)
+commit 173fd76b5c1d2c72454f1c8984be366c0e9a36bd
+Author: dataset <dataset@local>
+Date:   Fri Oct 23 15:59:32 2026 +0800
+
+    build: apply test patch + stub _version (source fix removed)
+
+diff --git a/more_itertools/_version.py b/more_itertools/_version.py
+new file mode 100644
+index 0000000..f7c3ae1
+--- /dev/null
++++ b/more_itertools/_version.py
+@@ -0,0 +1,2 @@
++__version__ = version = "0.0.0"
++__version_tuple__ = version_tuple = (0, 0, 0)
+diff --git a/tests/test_more.py b/tests/test_more.py
+index 1fdf22a..9ecdd06 100644
+--- a/tests/test_more.py
++++ b/tests/test_more.py
+@@ -1109,6 +1109,22 @@ class BucketTests(TestCase):
+         self.assertEqual(list(D[20]), [])
+         self.assertEqual(list(D[30]), [30, 31, 33])
+ 
++    def test_falsey_validator_is_honoured(self):
++        # A falsey callable is still a valid validator and must not be
++        # replaced by the default (see #1308).
++        class AllowedKeys(set):
++            def __call__(self, key):
++                return key in self
++
++        allowed = AllowedKeys()
++        self.assertFalse(allowed)  # Sanity: the validator itself is falsey
++        D = mi.bucket(
++            iter([10, 20, 11, 21]), key=lambda x: x, validator=allowed
++        )
++        self.assertEqual(list(D[10]), [])
++        self.assertNotIn(10, D)
++        self.assertEqual(set(D), set())
++
+     def test_in_does_not_add_key(self):
+         # A failed membership test must not invent a key (see #1284)
+         iterable = [10, 20, 11, 21]

@@ -1,0 +1,80 @@
+..                                                                 [100%]
+================================== FAILURES ===================================
+________ TestSpooledBytesIO.test_buffered_writer_flush (rolled=False) _________
+
+self = <tests.test_ioutils.TestSpooledBytesIO testMethod=test_buffered_writer_flush>
+
+    def test_buffered_writer_flush(self):
+        for rolled in (False, True):
+            with self.subTest(rolled=rolled):
+                stream = ioutils.SpooledBytesIO()
+                if rolled:
+                    stream.rollover()
+                writer = io.BufferedWriter(stream)
+                try:
+                    writer.write(b'payload')
+>                   writer.flush()
+
+tests\test_ioutils.py:303: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <boltons.ioutils.SpooledBytesIO object at 0x000001FCA56C3F70>
+s = <memory at 0x000001FCA5882500>
+
+    def write(self, s):
+        self._checkClosed()
+        if not isinstance(s, bytes):
+>           raise TypeError("bytes expected, got {}".format(
+                type(s).__name__
+            ))
+E           TypeError: bytes expected, got memoryview
+
+boltons\ioutils.py:305: TypeError
+
+During handling of the above exception, another exception occurred:
+
+self = <tests.test_ioutils.TestSpooledBytesIO testMethod=test_buffered_writer_flush>
+
+    def test_buffered_writer_flush(self):
+        for rolled in (False, True):
+            with self.subTest(rolled=rolled):
+                stream = ioutils.SpooledBytesIO()
+                if rolled:
+                    stream.rollover()
+                writer = io.BufferedWriter(stream)
+                try:
+                    writer.write(b'payload')
+                    writer.flush()
+                    self.assertEqual(stream.getvalue(), b'payload')
+                finally:
+                    try:
+>                       writer.close()
+
+tests\test_ioutils.py:307: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <boltons.ioutils.SpooledBytesIO object at 0x000001FCA56C3F70>
+s = <memory at 0x000001FCA5882440>
+
+    def write(self, s):
+        self._checkClosed()
+        if not isinstance(s, bytes):
+>           raise TypeError("bytes expected, got {}".format(
+                type(s).__name__
+            ))
+E           TypeError: bytes expected, got memoryview
+
+boltons\ioutils.py:305: TypeError
+_________ TestSpooledBytesIO.test_buffered_writer_flush (rolled=True) _________
+
+self = <tests.test_ioutils.TestSpooledBytesIO testMethod=test_buffered_writer_flush>
+
+    def test_buffered_writer_flush(self):
+        for rolled in (False, True):
+            with self.subTest(rolled=rolled):
+                stream = ioutils.SpooledBytesIO()
+                if rolled:
+                    stream.rollover()
+                writer = io.BufferedWriter(stream)
+                try:
+                    writer.write(b'payload')

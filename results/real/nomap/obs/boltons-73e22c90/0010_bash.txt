@@ -1,0 +1,45 @@
+commit 73e22c90de25aaae3e6aed57f7438ffe57349339
+Author: Mahmoud Hashemi <mahmoud@hatnote.com>
+Date:   Mon Sep 7 03:32:51 2026 -0700
+
+    statsutils: finish Pearson zero-denominator review and regression coverage
+    
+    Follow the maintainer review on #434: c0 == 0 selects Type I for negative c2, otherwise Type VI. Existing Normal and Gamma branches retain precedence. Note that rounded precision widens the Type V boundary.
+    
+    Delete the dead random _test_pearson helper and replace broad type-membership assertions with concrete Type IV, V, and VI samples. Add exact-moment boundary coverage that fails with ZeroDivisionError before this fix and passes afterward.
+    
+    Review: https://github.com/mahmoud/boltons/pull/434
+
+ boltons/statsutils.py    |  4 ++++
+ tests/test_statsutils.py | 38 +++++++++++++-------------------------
+ 2 files changed, 17 insertions(+), 25 deletions(-)
+commit 73e22c90de25aaae3e6aed57f7438ffe57349339
+Author: Mahmoud Hashemi <mahmoud@hatnote.com>
+Date:   Mon Sep 7 03:32:51 2026 -0700
+
+    statsutils: finish Pearson zero-denominator review and regression coverage
+    
+    Follow the maintainer review on #434: c0 == 0 selects Type I for negative c2, otherwise Type VI. Existing Normal and Gamma branches retain precedence. Note that rounded precision widens the Type V boundary.
+    
+    Delete the dead random _test_pearson helper and replace broad type-membership assertions with concrete Type IV, V, and VI samples. Add exact-moment boundary coverage that fails with ZeroDivisionError before this fix and passes afterward.
+    
+    Review: https://github.com/mahmoud/boltons/pull/434
+
+diff --git a/boltons/statsutils.py b/boltons/statsutils.py
+index b00fa09..abf5e09 100644
+--- a/boltons/statsutils.py
++++ b/boltons/statsutils.py
+@@ -466,9 +466,13 @@ class Stats:
+         elif round(c2, precision) == 0:
+             return 3  # Gamma
+         else:
++            if c0 == 0:
++                # At exact zero, c2's sign selects the limiting Type I/VI.
++                return 1 if c2 < 0 else 6
+             k = c1 ** 2 / (4 * c0 * c2)
+             if k < 0:
+                 return 1  # Beta
++            # The existing precision also widens the Type V boundary.
+             elif round(k, precision) == 1:
+                 return 5  # Type V
+             elif k < 1:

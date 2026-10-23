@@ -1,0 +1,181 @@
+    except (ValueError, TypeError):
+        return False
+
+
+def _isnumber(string):
+    """Detects if something *could* be considered a numeric value, vs. just a string.
+
+    This promotes types convertible to both int and float to be considered
+    a float.  Note that, iff *all* values appear to be some form of numeric
+    value such as eg. "1e2", they would be considered numbers!
+
+    The exception is things that appear to be numbers but overflow to
+    +/-inf, eg. "1e23456"; we'll have to exclude them explicitly.
+
+    >>> _isnumber(123)
+    True
+    >>> _isnumber(123.45)
+    True
+    >>> _isnumber("123.45")
+    True
+    >>> _isnumber("123")
+    True
+    >>> _isnumber("spam")
+    False
+    >>> _isnumber("123e45")
+    True
+    >>> _isnumber("123e45678")  # evaluates equal to 'inf', but ... isn't
+    False
+    >>> _isnumber("inf")
+    True
+    >>> from fractions import Fraction
+    >>> _isnumber(Fraction(1,3))
+    True
+
+    """
+    return (
+        # fast path
+        type(string) in (float, int)
+        # covers 'NaN', +/- 'inf', and eg. '1e2', as well as any type
+        # convertible to int/float.
+        or (
+            _isconvertible(float, string)
+            and (
+                # some other type convertible to float
+                not isinstance(string, (str, bytes))
+                # or, a numeric string eg. "1e1...", "NaN", ..., but isn't
+                # just an over/underflow
+                or (
+                    not (math.isinf(float(string)) or math.isnan(float(string)))
+                    or string.lower() in ["inf", "-inf", "nan"]
+                )
+            )
+        )
+    )
+
+
+def _isint(string, inttype=int):
+    """
+    >>> _isint("123")
+    True
+    >>> _isint("123.45")
+    False
+    """
+    return (
+        type(string) is inttype
+        or (
+            (hasattr(string, "is_integer") or hasattr(string, "__array__"))
+            and str(type(string)).startswith("<class 'numpy.int")
+        )  # numpy.int64 and similar
+        or (
+            isinstance(string, (bytes, str)) and _isconvertible(inttype, string)
+        )  # integer as string
+    )
+
+
+def _isbool(string):
+    """
+    >>> _isbool(True)
+    True
+    >>> _isbool("False")
+    True
+    >>> _isbool(1)
+    False
+    """
+    return type(string) is bool or (
+        isinstance(string, (bytes, str)) and string in ("True", "False")
+    )
+
+
+def _type(string, has_invisible=True, numparse=True):
+    """The least generic type (type(None), int, float, str, unicode).
+
+    Treats empty string as missing for the purposes of type deduction, so as to not influence
+    the type of an otherwise complete column; does *not* result in missingval replacement!
+
+    >>> _type(None) is type(None)
+    True
+    >>> _type("") is type(None)
+    True
+    >>> _type("foo") is type("")
+    True
+    >>> _type("1") is type(1)
+    True
+    >>> _type('\x1b[31m42\x1b[0m') is type(42)
+    True
+    >>> _type('\x1b[31m42\x1b[0m') is type(42)
+    True
+
+    """
+
+    if has_invisible and isinstance(string, (str, bytes)):
+        string = _strip_ansi(string)
+
+    if string is None or (isinstance(string, (bytes, str)) and not string):
+        return type(None)
+    elif hasattr(string, "isoformat"):  # datetime.datetime, date, and time
+        return str
+    elif _isbool(string):
+        return bool
+    elif numparse and (
+        _isint(string)
+        or (
+            isinstance(string, str)
+            and _isnumber_with_thousands_separator(string)
+            and "." not in string
+        )
+    ):
+        return int
+    elif numparse and (
+        _isnumber(string)
+        or (isinstance(string, str) and _isnumber_with_thousands_separator(string))
+    ):
+        return float
+    elif isinstance(string, bytes):
+        return bytes
+    else:
+        return str
+
+
+def _afterpoint(string):
+    """Symbols after a decimal point, -1 if the string lacks the decimal point.
+
+    >>> _afterpoint("123.45")
+    2
+    >>> _afterpoint("1001")
+    -1
+    >>> _afterpoint("eggs")
+    -1
+    >>> _afterpoint("123e45")
+    2
+    >>> _afterpoint("123,456.78")
+    2
+
+    """
+    if _isnumber(string) or _isnumber_with_thousands_separator(string):
+        if _isint(string):
+            return -1
+        else:
+            pos = string.rfind(".")
+            pos = string.lower().rfind("e") if pos < 0 else pos
+            if pos >= 0:
+                return len(string) - pos - 1
+            else:
+                return -1  # no point
+    else:
+        return -1  # not a number
+
+
+def _padleft(width, s):
+    """Flush right.
+
+    >>> _padleft(6, '\u044f\u0439\u0446\u0430') == '  \u044f\u0439\u0446\u0430'
+    True
+
+    """
+    fmt = "{0:>%ds}" % width
+    return fmt.format(s)
+
+
+def _padright(width, s):
+    """Flush left.

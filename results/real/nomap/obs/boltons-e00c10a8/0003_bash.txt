@@ -1,0 +1,40 @@
+
+    def test_barrel_list_getitem_past_end():
+        # bl[len(bl)] used to return an element from the middle
+        bl = _multi_sublist_bl()
+        try:
+            bl[len(bl)]
+        except IndexError:
+            pass
+        else:
+>           assert False, 'expected IndexError'
+E           AssertionError: expected IndexError
+E           assert False
+
+tests\test_listutils.py:162: AssertionError
+============================== warnings summary ===============================
+tests/test_funcutils_fb_py3.py::test_wraps_async
+  C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\work\repos_nomap\boltons-e00c10a8\tests\test_funcutils_fb_py3.py:236: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    assert asyncio.iscoroutinefunction(f)
+
+tests/test_funcutils_fb_py3.py::test_wraps_async
+  C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\work\repos_nomap\boltons-e00c10a8\tests\test_funcutils_fb_py3.py:240: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    assert asyncio.iscoroutinefunction(f2)
+
+tests/test_ioutils.py::TestMultiFileReader::test_open
+  C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\work\repos_nomap\boltons-e00c10a8\tests\test_ioutils.py:491: DeprecationWarning: codecs.open() is deprecated. Use open() instead.
+    utf8_file_str = codecs.open(CUR_FILE_PATH, encoding='utf8').read()
+
+tests/test_ioutils.py::TestMultiFileReader::test_open
+  C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\work\repos_nomap\boltons-e00c10a8\tests\test_ioutils.py:492: DeprecationWarning: codecs.open() is deprecated. Use open() instead.
+    f1, f2 = (codecs.open(CUR_FILE_PATH, encoding='utf8'),
+
+tests/test_ioutils.py::TestMultiFileReader::test_open
+  C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\work\repos_nomap\boltons-e00c10a8\tests\test_ioutils.py:493: DeprecationWarning: codecs.open() is deprecated. Use open() instead.
+    codecs.open(CUR_FILE_PATH, encoding='utf8'))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_listutils.py::test_barrel_list_getitem_past_end - Assertion...
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 255 passed, 5 warnings in 8.48s

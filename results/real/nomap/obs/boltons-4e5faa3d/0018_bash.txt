@@ -1,0 +1,131 @@
+        """"Test getting read, seek, tell, on various codepoints"""
+        test_str = "\u2014\u2014\u2014"
+        self.spooled_flo.write(test_str)
+        self.spooled_flo.seek(1)
+        self.assertEqual(self.spooled_flo.read(), "\u2014\u2014")
+        self.assertEqual(len(self.spooled_flo), len(test_str))
+
+    def test_seek_codepoints_SEEK_END(self):
+        """Make sure  seek() moves to codepoints relative to file end"""
+        self.spooled_flo.write(self.test_str)
+        ret = self.spooled_flo.seek(0, os.SEEK_END)
+        self.assertEqual(ret, len(self.test_str))
+
+    def test_seek_codepoints_large_SEEK_END(self):
+        """Make sure seek() moves to codepoints relative to file end"""
+        test_str = "".join(random.choice(string.ascii_letters) for
+                            x in range(34000))
+        self.spooled_flo.write(test_str)
+        ret = self.spooled_flo.seek(0, os.SEEK_END)
+        self.assertEqual(ret, len(test_str))
+
+    def test_seek_codepoints_SEEK_SET(self):
+        """Make sure seek() moves to codepoints relative to file start"""
+        self.spooled_flo.write(self.test_str)
+        ret = self.spooled_flo.seek(3, os.SEEK_SET)
+        self.assertEqual(ret, 3)
+
+    def test_seek_codepoints_large_SEEK_SET(self):
+        """Make sure seek() moves to codepoints relative to file start"""
+        test_str = "".join(random.choice(string.ascii_letters) for
+                            x in range(34000))
+
+    def writelines(self, lines):
+        """
+        Write lines to the file from an interable.
+
+        NOTE: writelines() does NOT add line separators.
+        """
+        self._checkClosed()
+        for line in lines:
+            self.write(line)
+
+    @abstractmethod
+    def rollover(self):
+        """Roll file-like-object over into a real temporary file"""
+
+    @abstractmethod
+    def tell(self):
+        """Return the current position"""
+
+    @abstractproperty
+    def buffer(self):
+        """Should return a flo instance"""
+
+    @abstractproperty
+    def _rolled(self):
+        """Returns whether the file has been rolled to a real file or not"""
+
+    @abstractproperty
+    def len(self):
+        """Returns the length of the data"""
+
+    def _get_softspace(self):
+        return self.buffer.softspace
+
+    def _set_softspace(self, val):
+        self.buffer.softspace = val
+
+    softspace = property(_get_softspace, _set_softspace)
+
+    @property
+    def _file(self):
+        return self.buffer
+
+    def close(self):
+        return self.buffer.close()
+
+    def flush(self):
+        self._checkClosed()
+        return self.buffer.flush()
+
+    def isatty(self):
+        self._checkClosed()
+        return self.buffer.isatty()
+
+    @property
+    def closed(self):
+        return self.buffer.closed
+
+    @property
+    def pos(self):
+        return self.tell()
+
+    @property
+    def buf(self):
+        return self.getvalue()
+
+    def fileno(self):
+        self.rollover()
+        return self.buffer.fileno()
+
+    def truncate(self, size=None):
+        """
+        Truncate the contents of the buffer.
+
+        Custom version of truncate that takes either no arguments (like the
+        real SpooledTemporaryFile) or a single argument that truncates the
+        value to a certain index location.
+        """
+        self._checkClosed()
+        if size is None:
+            return self.buffer.truncate()
+
+        if size < 0:
+            raise OSError(EINVAL, "Negative size not allowed")
+
+        # Emulate truncation to a particular location
+        pos = self.tell()
+        self.seek(size)
+        self.buffer.truncate()
+        if pos < size:
+            self.seek(pos)
+
+    def getvalue(self):
+        """Return the entire files contents."""
+        self._checkClosed()
+        pos = self.tell()
+        self.seek(0)
+        val = self.read()
+        self.seek(pos)
+        return val

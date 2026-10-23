@@ -1,0 +1,132 @@
+    ("newsletter", "newsletters"),
+
+    ("old_news", "old_news"),
+    ("news", "news"),
+
+    ("series", "series"),
+    ("species", "species"),
+
+    ("quiz", "quizzes"),
+
+    ("perspective", "perspectives"),
+
+    ("ox", "oxen"),
+    ("photo", "photos"),
+    ("buffalo", "buffaloes"),
+    ("tomato", "tomatoes"),
+    ("dwarf", "dwarves"),
+    ("elf", "elves"),
+    ("information", "information"),
+    ("equipment", "equipment"),
+    ("bus", "buses"),
+    ("status", "statuses"),
+    ("status_code", "status_codes"),
+    ("mouse", "mice"),
+
+    ("louse", "lice"),
+    ("house", "houses"),
+    ("octopus", "octopi"),
+    ("virus", "viri"),
+    ("alias", "aliases"),
+    ("portfolio", "portfolios"),
+
+    ("vertex", "vertices"),
+    ("matrix", "matrices"),
+    ("matrix_fu", "matrix_fus"),
+
+    ("axis", "axes"),
+    ("testis", "testes"),
+    ("crisis", "crises"),
+
+    ("rice", "rice"),
+    ("shoe", "shoes"),
+
+    ("horse", "horses"),
+    ("prize", "prizes"),
+    ("edge", "edges"),
+
+    ("cow", "kine"),
+    ("database", "databases"),
+    ("human", "humans")
+)
+
+CAMEL_TO_UNDERSCORE = (
+    ("Product",               "product"),
+    ("SpecialGuest",          "special_guest"),
+    ("ApplicationController", "application_controller"),
+    ("Area51Controller",      "area51_controller"),
+)
+
+CAMEL_TO_UNDERSCORE_WITHOUT_REVERSE = (
+    ("HTMLTidy",              "html_tidy"),
+    ("HTMLTidyGenerator",     "html_tidy_generator"),
+    ("FreeBSD",               "free_bsd"),
+    ("HTML",                  "html"),
+)
+
+STRING_TO_PARAMETERIZED = (
+    (u"Donald E. Knuth", "donald-e-knuth"),
+    (
+        u"Random text with *(bad)* characters",
+        "random-text-with-bad-characters"
+    string = re.sub(r"(?i)[^a-z0-9\-_]+", separator, string)
+    if separator:
+        re_sep = re.escape(separator)
+        # No more than one of the separator in a row.
+        string = re.sub(r'%s{2,}' % re_sep, separator, string)
+        # Remove leading/trailing separator.
+        string = re.sub(r"(?i)^%(sep)s|%(sep)s$" % {'sep': re_sep}, '', string)
+
+    return string.lower()
+
+
+def pluralize(word):
+    """
+    Return the plural form of a word.
+
+    Examples::
+
+        >>> pluralize("post")
+        "posts"
+        >>> pluralize("octopus")
+        "octopi"
+        >>> pluralize("sheep")
+        "sheep"
+        >>> pluralize("CamelOctopus")
+        "CamelOctopi"
+
+    """
+    if not word or word.lower() in UNCOUNTABLES:
+        return word
+    else:
+        for rule, replacement in PLURALS:
+            if re.search(rule, word):
+                return re.sub(rule, replacement, word)
+        return word
+
+
+def singularize(word):
+    """
+    Return the singular form of a word, the reverse of :func:`pluralize`.
+
+    Examples::
+
+        >>> singularize("posts")
+        "post"
+        >>> singularize("octopi")
+        "octopus"
+        >>> singularize("sheep")
+        "sheep"
+        >>> singularize("word")
+        "word"
+        >>> singularize("CamelOctopi")
+        "CamelOctopus"
+
+    """
+    for inflection in UNCOUNTABLES:
+        if re.search(r'(?i)\b(%s)\Z' % inflection, word):
+            return word
+
+    for rule, replacement in SINGULARS:
+        if re.search(rule, word):
+            return re.sub(rule, replacement, word)

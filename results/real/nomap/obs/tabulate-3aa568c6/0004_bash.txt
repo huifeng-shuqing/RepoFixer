@@ -1,0 +1,92 @@
+        # print the table line and make the aboveline if it is a header
+
+        cell_values, colwidths, colaligns = args
+        data_line = "|" + "|".join(cell_values)
+
+        if is_header:
+            return make_header_line(True, colwidths, colaligns) + "\n" + data_line
+        else:
+            return data_line
+
+    else:
+        raise ValueError(
+            "_asciidoc_row() requires two (colwidths, colaligns) "
+            "or three (cell_values, colwidths, colaligns) arguments) "
+        )
+
+
+LATEX_ESCAPE_RULES = {
+    r"&": r"\&",
+    r"%": r"\%",
+    r"$": r"\$",
+    r"#": r"\#",
+    r"_": r"\_",
+    r"^": r"\^{}",
+    r"{": r"\{",
+    r"}": r"\}",
+    r"~": r"\textasciitilde{}",
+    "\\": r"\textbackslash{}",
+    r"<": r"\ensuremath{<}",
+    r">": r"\ensuremath{>}",
+}
+2082-    assert_equal(expected, result)
+2083-
+2084-
+2085:def test_asciidoc():
+2086:    "Output: asciidoc with headers"
+2087-    expected = "\n".join(
+2088-        [
+2089-            '[cols="<11,>11",options="header"]',
+2090-            "|====",
+2091-            "| strings   |   numbers",
+2092-            "| spam      |   41.9999",
+2093-            "| eggs      |  451",
+2094-            "|====",
+2095-        ]
+2096-    )
+2097:    result = tabulate(_test_table, _test_table_headers, tablefmt="asciidoc")
+2098-    assert_equal(expected, result)
+2099-
+2100-
+2101:def test_asciidoc_headerless():
+2102:    "Output: asciidoc without headers"
+2103-    expected = "\n".join(
+2104-        [
+2105-            '[cols="<6,>10"]',
+2106-            "|====",
+2107-            "| spam |  41.9999",
+2108-            "| eggs | 451",
+2109-            "|====",
+2110-        ]
+2111-    )
+2112:    result = tabulate(_test_table, tablefmt="asciidoc")
+2113-    assert_equal(expected, result)
+2114-
+2115-
+2116-def test_psql():
+2117-    "Output: psql with headers"
+2118-    expected = "\n".join(
+2119-        [
+2120-            "+-----------+-----------+",
+2121-            "| strings   |   numbers |",
+2122-            "|-----------+-----------|",
+2123-            "| spam      |   41.9999 |",
+2124-            "| eggs      |  451      |",
+2125-            "+-----------+-----------+",
+2126-        ]
+2127-    )
+2128-    result = tabulate(_test_table, _test_table_headers, tablefmt="psql")
+2129-    assert_equal(expected, result)
+2130-
+2131-
+2132-def test_psql_headerless():
+2133-    "Output: psql without headers"
+2134-    expected = "\n".join(
+2135-        [
+2136-            "+------+----------+",
+2137-            "| spam |  41.9999 |",
+2138-            "| eggs | 451      |",
+2139-            "+------+----------+",
+2140-        ]
+2141-    )
+2142-    result = tabulate(_test_table, tablefmt="psql")

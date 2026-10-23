@@ -1,0 +1,121 @@
+   560 |         elif count is None:
+   561 |             # freedman algorithm for fixed-width bin selection
+   562 |             q25, q75 = self.get_quantile(0.25), self.get_quantile(0.75)
+   563 |             dx = 2 * (q75 - q25) / (len_data ** (1 / 3.0))
+   564 |             bin_count = max(1, int(ceil((max_data - min_data) / dx)))
+   565 |             bins = [min_data + (dx * i) for i in range(bin_count + 1)]
+   566 |             bins = [b for b in bins if b < max_data]
+   567 |         else:
+   568 |             dx = (max_data - min_data) / float(count)
+   569 |             bins = [min_data + (dx * i) for i in range(count)]
+   570 | 
+   571 |         if with_max:
+   572 |             bins.append(float(max_data))
+   573 | 
+   574 |         return bins
+   575 | 
+   576 |     def get_histogram_counts(self, bins=None, **kw):
+   577 |         """Produces a list of ``(bin, count)`` pairs comprising a histogram of
+   578 |         the Stats object's data, using fixed-width bins. See
+   579 |         :meth:`Stats.format_histogram` for more details.
+   580 | 
+   581 |         Args:
+   582 |             bins (int): maximum number of bins, or list of
+   583 |                 floating-point bin boundaries. Defaults to the output of
+   584 |                 Freedman's algorithm.
+   585 |             bin_digits (int): Number of digits used to round down the
+   586 |                 bin boundaries. Defaults to 1.
+   587 | 
+   588 |         The output of this method can be stored and/or modified, and
+   589 |         then passed to :func:`statsutils.format_histogram_counts` to
+   590 |         achieve the same text formatting as the
+   591 |         :meth:`~Stats.format_histogram` method. This can be useful for
+   592 |         snapshotting over time.
+   593 |         """
+   594 |         bin_digits = int(kw.pop('bin_digits', 1))
+   595 |         if kw:
+   596 |             raise TypeError('unexpected keyword arguments: %r' % kw.keys())
+   597 | 
+   598 |         if not bins:
+   599 |             bins = self._get_bin_bounds()
+   600 |         else:
+   601 |             try:
+   602 |                 bin_count = int(bins)
+   603 |             except TypeError:
+   604 |                 try:
+   605 |                     bins = [float(x) for x in bins]
+   606 |                 except Exception:
+   607 |                     raise ValueError('bins expected integer bin count or list'
+   608 |                                      ' of float bin boundaries, not %r' % bins)
+   609 |                 if self.min < bins[0]:
+   610 |                     bins = [self.min] + bins
+   611 |             else:
+   612 |                 bins = self._get_bin_bounds(bin_count)
+   613 | 
+   614 |         # floor and ceil really should have taken ndigits, like round()
+   615 |         round_factor = 10.0 ** bin_digits
+   616 |         bins = [floor(b * round_factor) / round_factor for b in bins]
+   617 |         bins = sorted(set(bins))
+   618 | 
+   619 |         idxs = [bisect.bisect(bins, d) - 1 for d in self.data]
+   620 |         count_map = Counter(idxs)
+   621 | 
+   622 |         bin_counts = [(b, count_map.get(i, 0)) for i, b in enumerate(bins)]
+   623 | 
+   624 |         return bin_counts
+   625 | 
+   626 |     def format_histogram(self, bins=None, **kw):
+   627 |         """Produces a textual histogram of the data, using fixed-width bins,
+   628 |         allowing for simple visualization, even in console environments.
+   629 | 
+   630 |         >>> data = list(range(20)) + list(range(5, 15)) + [10]
+   631 |         >>> print(Stats(data).format_histogram(width=30))
+   632 |          0.0:  5 #########
+   633 |          4.4:  8 ###############
+   634 |          8.9: 11 ####################
+   635 |         13.3:  5 #########
+   636 |         17.8:  2 ####
+   637 | 
+   638 |         In this histogram, five values are between 0.0 and 4.4, eight
+   639 |         are between 4.4 and 8.9, and two values lie between 17.8 and
+   640 |         the max.
+   641 | 
+   642 |         You can specify the number of bins, or provide a list of
+   643 |         bin boundaries themselves. If no bins are provided, as in the
+   644 |         example above, `Freedman's algorithm`_ for bin selection is
+   645 |         used.
+   646 | 
+   647 |         Args:
+   648 |             bins (int): Maximum number of bins for the
+   649 |                 histogram. Also accepts a list of floating-point
+   650 |                 bin boundaries. If the minimum boundary is still
+   651 |                 greater than the minimum value in the data, that
+   652 |                 boundary will be implicitly added. Defaults to the bin
+   653 |                 boundaries returned by `Freedman's algorithm`_.
+   654 |             bin_digits (int): Number of digits to round each bin
+   655 |                 to. Note that bins are always rounded down to avoid
+   656 |                 clipping any data. Defaults to 1.
+   657 |             width (int): integer number of columns in the longest line
+   658 |                in the histogram. Defaults to console width on Python
+   659 |                3.3+, or 80 if that is not available.
+   660 |             format_bin (callable): Called on each bin to create a
+   661 |                label for the final output. Use this function to add
+   662 |                units, such as "ms" for milliseconds.
+   663 | 
+   664 |         Should you want something more programmatically reusable, see
+   665 |         the :meth:`~Stats.get_histogram_counts` method, the output of
+   666 |         is used by format_histogram. The :meth:`~Stats.describe`
+   667 |         method is another useful summarization method, albeit less
+   668 |         visual.
+   669 | 
+   670 |         .. _Freedman's algorithm: https://en.wikipedia.org/wiki/Freedman%E2%80%93Diaconis_rule
+   671 |         """
+   672 |         width = kw.pop('width', None)
+   673 |         format_bin = kw.pop('format_bin', None)
+   674 |         bin_counts = self.get_histogram_counts(bins=bins, **kw)
+   675 |         return format_histogram_counts(bin_counts,
+   676 |                                        width=width,
+   677 |                                        format_bin=format_bin)
+   678 | 
+   679 |     def describe(self, quantiles=None, format=None):
+... [156 more lines; pass offset=680 for next page]

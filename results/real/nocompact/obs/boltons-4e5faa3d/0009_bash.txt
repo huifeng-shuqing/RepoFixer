@@ -1,0 +1,281 @@
+
+class SpooledBytesIO(SpooledIOBase):
+    """
+    SpooledBytesIO is a spooled file-like-object that only accepts bytes. On
+    Python 2.x this means the 'str' type; on Python 3.x this means the 'bytes'
+    type. Bytes are written in and retrieved exactly as given, but it will
+    raise TypeErrors if something other than bytes are written.
+
+    Example::
+
+        >>> from boltons import ioutils
+        >>> with ioutils.SpooledBytesIO() as f:
+        ...     f.write(b"Happy IO")
+        ...     _ = f.seek(0)
+        ...     isinstance(f.getvalue(), bytes)
+        True
+    """
+
+    def read(self, n=-1):
+        self._checkClosed()
+        return self.buffer.read(n)
+
+    def write(self, s):
+        self._checkClosed()
+        if not isinstance(s, bytes):
+            raise TypeError("bytes expected, got {}".format(
+                type(s).__name__
+            ))
+
+        if self.tell() + len(s) >= self._max_size:
+            self.rollover()
+        self.buffer.write(s)
+
+    def seek(self, pos, mode=0):
+        self._checkClosed()
+        return self.buffer.seek(pos, mode)
+
+    def readline(self, length=None):
+        self._checkClosed()
+        if length:
+            return self.buffer.readline(length)
+        else:
+            return self.buffer.readline()
+
+    def readlines(self, sizehint=0):
+        return self.buffer.readlines(sizehint)
+
+    def rollover(self):
+        """Roll the StringIO over to a TempFile"""
+        if not self._rolled:
+            tmp = TemporaryFile(dir=self._dir)
+            pos = self.buffer.tell()
+            tmp.write(self.buffer.getvalue())
+            tmp.seek(pos)
+            self.buffer.close()
+            self._buffer = tmp
+
+    @property
+    def _rolled(self):
+        return not isinstance(self.buffer, BytesIO)
+
+    @property
+    def buffer(self):
+        try:
+            return self._buffer
+        except AttributeError:
+            self._buffer = BytesIO()
+        return self._buffer
+
+    @property
+    def len(self):
+        """Determine the length of the file"""
+        pos = self.tell()
+        if self._rolled:
+            self.seek(0)
+            val = os.fstat(self.fileno()).st_size
+        else:
+            self.seek(0, os.SEEK_END)
+            val = self.tell()
+        self.seek(pos)
+        return val
+
+    def tell(self):
+        self._checkClosed()
+        return self.buffer.tell()
+
+
+class SpooledStringIO(SpooledIOBase):
+    """
+    SpooledStringIO is a spooled file-like-object that only accepts unicode
+    values. On Python 2.x this means the 'unicode' type and on Python 3.x this
+    means the 'str' type. Values are accepted as unicode and then coerced into
+    utf-8 encoded bytes for storage. On retrieval, the values are returned as
+    unicode.
+
+    Example::
+
+        >>> from boltons import ioutils
+        >>> with ioutils.SpooledStringIO() as f:
+        ...     f.write(u"\u2014 Hey, an emdash!")
+        ...     _ = f.seek(0)
+        ...     isinstance(f.read(), str)
+        True
+
+    """
+    def __init__(self, *args, **kwargs):
+        self._tell = 0
+        super().__init__(*args, **kwargs)
+
+    def read(self, n=-1):
+        self._checkClosed()
+        ret = self.buffer.reader.read(n, n)
+        self._tell = self.tell() + len(ret)
+        return ret
+
+    def write(self, s):
+        self._checkClosed()
+        if not isinstance(s, str):
+            raise TypeError("str expected, got {}".format(
+                type(s).__name__
+            ))
+        current_pos = self.tell()
+        if self.buffer.tell() + len(s.encode('utf-8')) >= self._max_size:
+            self.rollover()
+        self.buffer.write(s.encode('utf-8'))
+        self._tell = current_pos + len(s)
+
+    def _traverse_codepoints(self, current_position, n):
+        """Traverse from current position to the right n codepoints"""
+        dest = current_position + n
+        while True:
+            if current_position == dest:
+                # By chance we've landed on the right position, break
+                break
+
+            # If the read would take us past the intended position then
+            # seek only enough to cover the offset
+            if current_position + READ_CHUNK_SIZE > dest:
+                self.read(dest - current_position)
+                break
+            else:
+                ret = self.read(READ_CHUNK_SIZE)
+
+            # Increment our current position
+            current_position += READ_CHUNK_SIZE
+
+            # If we kept reading but there was nothing here, break
+            # as we are at the end of the file
+            if not ret:
+                break
+
+        return dest
+
+    def seek(self, pos, mode=0):
+        """Traverse from offset to the specified codepoint"""
+        self._checkClosed()
+        # Seek to position from the start of the file
+        if mode == os.SEEK_SET:
+            self.buffer.seek(0)
+            self._traverse_codepoints(0, pos)
+            self._tell = pos
+        # Seek to new position relative to current position
+        elif mode == os.SEEK_CUR:
+            start_pos = self.tell()
+            self._traverse_codepoints(self.tell(), pos)
+            self._tell = start_pos + pos
+        elif mode == os.SEEK_END:
+            self.buffer.seek(0)
+            dest_position = self.len - pos
+            self._traverse_codepoints(0, dest_position)
+            self._tell = dest_position
+        else:
+            raise ValueError(
+                f"Invalid whence ({mode}, should be 0, 1, or 2)"
+            )
+        return self.tell()
+
+    def readline(self, length=None):
+        self._checkClosed()
+        ret = self.buffer.readline(length).decode('utf-8')
+        self._tell = self.tell() + len(ret)
+        return ret
+
+    def readlines(self, sizehint=0):
+        ret = [x.decode('utf-8') for x in self.buffer.readlines(sizehint)]
+        self._tell = self.tell() + sum(len(x) for x in ret)
+        return ret
+
+    @property
+    def buffer(self):
+        try:
+            return self._buffer
+        except AttributeError:
+            self._buffer = EncodedFile(BytesIO(), data_encoding='utf-8')
+        return self._buffer
+
+    @property
+    def _rolled(self):
+        return not isinstance(self.buffer.stream, BytesIO)
+
+    def rollover(self):
+        """Roll the buffer over to a TempFile"""
+        if not self._rolled:
+            tmp = EncodedFile(TemporaryFile(dir=self._dir),
+                              data_encoding='utf-8')
+            pos = self.buffer.tell()
+            tmp.write(self.buffer.getvalue())
+            tmp.seek(pos)
+            self.buffer.close()
+            self._buffer = tmp
+
+    def tell(self):
+        """Return the codepoint position"""
+        self._checkClosed()
+        return self._tell
+
+    @property
+    def len(self):
+        """Determine the number of codepoints in the file"""
+        pos = self.buffer.tell()
+        self.buffer.seek(0)
+        total = 0
+        while True:
+            ret = self.read(READ_CHUNK_SIZE)
+            if not ret:
+                break
+            total += len(ret)
+        self.buffer.seek(pos)
+        return total
+
+
+def is_text_fileobj(fileobj):
+    if getattr(fileobj, 'encoding', False):
+        # codecs.open and io.TextIOBase
+        return True
+    if getattr(fileobj, 'getvalue', False):
+        # StringIO.StringIO / io.StringIO
+        try:
+            if isinstance(fileobj.getvalue(), str):
+                return True
+        except Exception:
+            pass
+    return False
+
+
+class MultiFileReader:
+    """Takes a list of open files or file-like objects and provides an
+    interface to read from them all contiguously. Like
+    :func:`itertools.chain()`, but for reading files.
+
+       >>> mfr = MultiFileReader(BytesIO(b'ab'), BytesIO(b'cd'), BytesIO(b'e'))
+       >>> mfr.read(3).decode('ascii')
+       u'abc'
+       >>> mfr.read(3).decode('ascii')
+       u'de'
+
+    The constructor takes as many fileobjs as you hand it, and will
+    raise a TypeError on non-file-like objects. A ValueError is raised
+    when file-like objects are a mix of bytes- and text-handling
+    objects (for instance, BytesIO and StringIO).
+    """
+
+    def __init__(self, *fileobjs):
+        if not all([callable(getattr(f, 'read', None)) and
+                    callable(getattr(f, 'seek', None)) for f in fileobjs]):
+            raise TypeError('MultiFileReader expected file-like objects'
+                            ' with .read() and .seek()')
+        if all([is_text_fileobj(f) for f in fileobjs]):
+            # codecs.open and io.TextIOBase
+            self._joiner = ''
+        elif any([is_text_fileobj(f) for f in fileobjs]):
+            raise ValueError('All arguments to MultiFileReader must handle'
+                             ' bytes OR text, not a mix')
+        else:
+            # open/file and io.BytesIO
+            self._joiner = b''
+        self._fileobjs = fileobjs
+        self._index = 0
+
+    def read(self, amt=None):
+        """Read up to the specified *amt*, seamlessly bridging across

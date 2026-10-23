@@ -1,0 +1,38 @@
+36:__all__ = ["tabulate", "tabulate_formats", "simple_separated_format"]
+354:_table_formats = {
+723:tabulate_formats = sorted(_table_formats.keys())
+728:multiline_formats = {
+823:def simple_separated_format(separator):
+826:    >>> tsv = simple_separated_format("\\t") ; \
+1310:def _format(val, valtype, floatfmt, intfmt, missingval="", has_invisible=True):
+1352:                formatted_val = format(float(raw_val), floatfmt)
+1360:                return format(float(val), floatfmt)
+1654:                # custom floatfmt/intfmt, nor with any missing/blank cells.
+1706:    floatfmt=_DEFAULT_FLOATFMT,
+1810:    `floatfmt` is a format specification used for columns which
+1815:    `floatfmt`, this can also be a list of values for different
+1830:    Variable `tabulate_formats`contains the list of currently supported formats.
+2336:        and tablefmt in multiline_formats
+2339:        tablefmt = multiline_formats.get(tablefmt, tablefmt)
+2349:    if isinstance(floatfmt, str):  # old version
+2350:        float_formats = len(cols) * [floatfmt]  # just duplicate the string to use in each column
+2351:    else:  # if floatfmt is list, tuple etc we have one per column
+2352:        float_formats = list(floatfmt)
+2353:        if len(float_formats) < len(cols):
+2354:            float_formats.extend((len(cols) - len(float_formats)) * [_DEFAULT_FLOATFMT])
+2356:        int_formats = len(cols) * [intfmt]  # just duplicate the string to use in each column
+2358:        int_formats = list(intfmt)
+2359:        if len(int_formats) < len(cols):
+2360:            int_formats.extend((len(cols) - len(int_formats)) * [_DEFAULT_INTFMT])
+2368:        [_format(v, ct, fl_fmt, int_fmt, miss_v, has_invisible) for v in c]
+2370:            cols, coltypes, float_formats, int_formats, missing_vals
+2453:        tablefmt = _table_formats.get(tablefmt, _table_formats["simple"])
+2459:    return _format_table(
+2599:def _format_table(
+2931:    floatfmt = _DEFAULT_FLOATFMT
+2943:            floatfmt = value
+2949:            if value not in tabulate_formats:
+2970:                    floatfmt=floatfmt,
+2982:                        floatfmt=floatfmt,
+2989:def _pprint_file(fobject, headers, tablefmt, sep, floatfmt, intfmt, file, colalign):
+2997:            floatfmt=floatfmt,

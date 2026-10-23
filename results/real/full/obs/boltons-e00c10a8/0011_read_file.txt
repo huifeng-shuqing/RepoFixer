@@ -1,0 +1,81 @@
+   232 |     def __contains__(self, item):
+   233 |         for cur in self.lists:
+   234 |             if item in cur:
+   235 |                 return True
+   236 |         return False
+   237 | 
+   238 |     def __getitem__(self, index):
+   239 |         try:
+   240 |             start, stop, step = index.start, index.stop, index.step
+   241 |         except AttributeError:
+   242 |             index = operator.index(index)
+   243 |         else:
+   244 |             iter_slice = self.iter_slice(start, stop, step)
+   245 |             ret = self.from_iterable(iter_slice)
+   246 |             return ret
+   247 |         list_idx, rel_idx = self._translate_index(index)
+   248 |         if list_idx is None:
+   249 |             raise IndexError()
+   250 |         return self.lists[list_idx][rel_idx]
+   251 | 
+   252 |     def __delitem__(self, index):
+   253 |         try:
+   254 |             start, stop, step = index.start, index.stop, index.step
+   255 |         except AttributeError:
+   256 |             index = operator.index(index)
+   257 |         else:
+   258 |             self.del_slice(start, stop, step)
+   259 |             return
+   260 |         list_idx, rel_idx = self._translate_index(index)
+   261 |         if list_idx is None:
+   262 |             raise IndexError()
+   263 |         del self.lists[list_idx][rel_idx]
+   264 | 
+   265 |     def __setitem__(self, index, item):
+   266 |         try:
+   267 |             start, stop, step = index.start, index.stop, index.step
+   268 |         except AttributeError:
+   269 |             index = operator.index(index)
+   270 |         else:
+   271 |             if len(self.lists) == 1:
+   272 |                 self.lists[0][index] = item
+   273 |             else:
+   274 |                 tmp = list(self)
+   275 |                 tmp[index] = item
+   276 |                 self.lists[:] = [tmp]
+   277 |             self._balance_list(0)
+   278 |             return
+   279 |         list_idx, rel_idx = self._translate_index(index)
+   280 |         if list_idx is None:
+   281 |             raise IndexError()
+   282 |         self.lists[list_idx][rel_idx] = item
+   283 | 
+   284 |     def __getslice__(self, start, stop):
+   285 |         iter_slice = self.iter_slice(start, stop, 1)
+   286 |         return self.from_iterable(iter_slice)
+   287 | 
+   288 |     def __setslice__(self, start, stop, sequence):
+   289 |         if len(self.lists) == 1:
+   290 |             self.lists[0][start:stop] = sequence
+   291 |         else:
+   292 |             tmp = list(self)
+   293 |             tmp[start:stop] = sequence
+   294 |             self.lists[:] = [tmp]
+   295 |         self._balance_list(0)
+   296 |         return
+   297 | 
+   298 |     def __repr__(self):
+   299 |         return f'{self.__class__.__name__}({list(self)!r})'
+   300 | 
+   301 |     def sort(self):
+   302 |         # poor pythonist's mergesort, it's faster than sorted(self)
+   303 |         # when the lists' average length is greater than 512.
+   304 |         if len(self.lists) == 1:
+   305 |             self.lists[0].sort()
+   306 |         else:
+   307 |             for li in self.lists:
+   308 |                 li.sort()
+   309 |             tmp_sorted = sorted(chain.from_iterable(self.lists))
+   310 |             del self.lists[:]
+   311 |             self.lists.append(tmp_sorted)
+... [39 more lines; pass offset=312 for next page]

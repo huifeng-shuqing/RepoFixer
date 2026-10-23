@@ -1,0 +1,79 @@
+def _more_generic(type1, type2):
+    types = {
+        type(None): 0,
+        bool: 1,
+        int: 2,
+        float: 3,
+        bytes: 4,
+        str: 5,
+    }
+    invtypes = {
+        5: str,
+        4: bytes,
+        3: float,
+        2: int,
+        1: bool,
+        0: type(None),
+    }
+    moregeneric = max(types.get(type1, 5), types.get(type2, 5))
+    return invtypes[moregeneric]
+
+
+def _column_type(strings, has_invisible=True, numparse=True):
+    """The least generic type all column values are convertible to.
+
+    >>> _column_type([True, False]) is bool
+    True
+    >>> _column_type(["1", "2"]) is int
+    True
+    >>> _column_type(["1", "2.3"]) is float
+    True
+    >>> _column_type(["1", "2.3", "four"]) is str
+    True
+    >>> _column_type(["four", '\u043f\u044f\u0442\u044c']) is str
+    True
+    >>> _column_type([None, "brux"]) is str
+    True
+    >>> _column_type([1, 2, None]) is int
+    True
+        is_multiline = True
+    else:
+        is_multiline = False
+    width_fn = _choose_width_fn(has_invisible, enable_widechars, is_multiline)
+
+    # format rows and columns, convert numeric values to strings
+    cols = list(izip_longest(*list_of_lists))
+    numparses = _expand_numparse(disable_numparse, len(cols))
+    coltypes = [_column_type(col, numparse=np) for col, np in zip(cols, numparses)]
+    if isinstance(floatfmt, str):  # old version
+        float_formats = len(cols) * [floatfmt]  # just duplicate the string to use in each column
+    else:  # if floatfmt is list, tuple etc we have one per column
+        float_formats = list(floatfmt)
+        if len(float_formats) < len(cols):
+            float_formats.extend((len(cols) - len(float_formats)) * [_DEFAULT_FLOATFMT])
+    if isinstance(intfmt, str):  # old version
+        int_formats = len(cols) * [intfmt]  # just duplicate the string to use in each column
+    else:  # if intfmt is list, tuple etc we have one per column
+        int_formats = list(intfmt)
+        if len(int_formats) < len(cols):
+            int_formats.extend((len(cols) - len(int_formats)) * [_DEFAULT_INTFMT])
+    if isinstance(missingval, str):
+        missing_vals = len(cols) * [missingval]
+    else:
+        missing_vals = list(missingval)
+        if len(missing_vals) < len(cols):
+            missing_vals.extend((len(cols) - len(missing_vals)) * [_DEFAULT_MISSINGVAL])
+    cols = [
+        [_format(v, ct, fl_fmt, int_fmt, miss_v, has_invisible) for v in c]
+        for c, ct, fl_fmt, int_fmt, miss_v in zip(
+            cols, coltypes, float_formats, int_formats, missing_vals
+        )
+    ]
+
+    # align columns
+    # first set global alignment
+    if colglobalalign is not None:  # if global alignment provided
+        aligns = [colglobalalign] * len(cols)
+    else:  # default
+        aligns = [numalign if ct in [int, float] else stralign for ct in coltypes]
+    # then specific alignments

@@ -1,0 +1,91 @@
+2598:def _format_table(
+2599-    fmt, headers, headersaligns, rows, colwidths, colaligns, is_multiline, rowaligns
+2600-):
+2601-    """Produce a plain-text representation of the table."""
+2602-    lines = []
+2603-    hidden = fmt.with_header_hide if (headers and fmt.with_header_hide) else []
+2604-    pad = fmt.padding
+2605-    headerrow = fmt.headerrow
+2606-
+2607-    padded_widths = [(w + 2 * pad) for w in colwidths]
+2608-    if is_multiline:
+2609-        pad_row = lambda row, _: row  # noqa: E731 # do it later, in _append_multiline_row
+2610-        append_row = partial(_append_multiline_row, pad=pad)
+2611-    else:
+2612-        pad_row = _pad_row
+2613-        append_row = _append_basic_row
+2614-
+2615-    padded_headers = pad_row(headers, pad)
+2616-
+2617-    if fmt.lineabove and "lineabove" not in hidden:
+2618-        _append_line(lines, padded_widths, colaligns, fmt.lineabove)
+2619-
+2620-    if padded_headers:
+2621-        append_row(lines, padded_headers, padded_widths, headersaligns, headerrow)
+2622-        if fmt.linebelowheader and "linebelowheader" not in hidden:
+2623-            _append_line(lines, padded_widths, colaligns, fmt.linebelowheader)
+2624-
+2625-    if rows and fmt.linebetweenrows and "linebetweenrows" not in hidden:
+2626-        # initial rows with a line below
+2627-        for row, ralign in zip(rows[:-1], rowaligns):
+2628-            if row != SEPARATING_LINE:
+2629-                append_row(
+2630-                    lines,
+2631-                    pad_row(row, pad),
+2632-                    padded_widths,
+2633-                    colaligns,
+2634-                    fmt.datarow,
+2635-                    rowalign=ralign,
+2636-                )
+2637-            _append_line(lines, padded_widths, colaligns, fmt.linebetweenrows)
+2638-        # the last row without a line below
+2639-        append_row(
+2640-            lines,
+2641-            pad_row(rows[-1], pad),
+2642-            padded_widths,
+2643-            colaligns,
+2644-            fmt.datarow,
+2645-            rowalign=rowaligns[-1],
+2646-        )
+2647-    else:
+2648-        separating_line = (
+2649-            fmt.linebetweenrows
+2650-            or fmt.linebelowheader
+2651-            or fmt.linebelow
+2652-            or fmt.lineabove
+2653-            or Line("", "", "", "")
+2654-        )
+2655-        for row in rows:
+2656-            # test to see if either the 1st column or the 2nd column (account for showindex) has
+2657-            # the SEPARATING_LINE flag
+2658-            if _is_separating_line(row):
+2659-                _append_line(lines, padded_widths, colaligns, separating_line)
+2660-            else:
+2661-                append_row(lines, pad_row(row, pad), padded_widths, colaligns, fmt.datarow)
+2662-
+2663-    if fmt.linebelow and "linebelow" not in hidden:
+2664-        _append_line(lines, padded_widths, colaligns, fmt.linebelow)
+2665-
+2666-    if headers or rows:
+2667-        output = "\n".join(lines)
+2668-        if fmt.lineabove == _html_begin_table_without_header:
+2669-            return JupyterHTMLStr(output)
+2670-        else:
+2671-            return output
+2672-    else:  # a completely empty table
+2673-        return ""
+2674-
+2675-
+2676-class _CustomTextWrap(textwrap.TextWrapper):
+2677-    """A custom implementation of CPython's textwrap.TextWrapper. This supports
+2678-    both wide characters (Korea, Japanese, Chinese)  - including mixed string.
+2679-    For the most part, the `_handle_long_word` and `_wrap_chunks` functions were
+2680-    copy pasted out of the CPython baseline, and updated with our custom length
+2681-    and line appending logic.
+2682-    """
+2683-
+2684-    def __init__(self, *args, **kwargs):
+2685-        self._active_codes = []
+2686-        self.max_lines = None  # For python2 compatibility
+2687-        textwrap.TextWrapper.__init__(self, *args, **kwargs)
+2688-

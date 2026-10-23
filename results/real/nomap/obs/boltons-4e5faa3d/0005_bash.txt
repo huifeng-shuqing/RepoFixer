@@ -1,0 +1,60 @@
+E                   + \u2603b
+
+tests\test_ioutils.py:413: AssertionError
+____ TestSpooledStringIO.test_write_returns_character_count (rolled=False) ____
+
+self = <tests.test_ioutils.TestSpooledStringIO testMethod=test_write_returns_character_count>
+
+    def test_write_returns_character_count(self):
+        for rolled in (False, True):
+            with self.subTest(rolled=rolled):
+                with ioutils.SpooledStringIO() as stream:
+                    if rolled:
+                        stream.rollover()
+>                   self.assertEqual(stream.write('a\u2603b'), 3)
+E                   AssertionError: None != 3
+
+tests\test_ioutils.py:400: AssertionError
+____ TestSpooledStringIO.test_write_returns_character_count (rolled=True) _____
+
+self = <tests.test_ioutils.TestSpooledStringIO testMethod=test_write_returns_character_count>
+
+    def test_write_returns_character_count(self):
+        for rolled in (False, True):
+            with self.subTest(rolled=rolled):
+                with ioutils.SpooledStringIO() as stream:
+                    if rolled:
+                        stream.rollover()
+>                   self.assertEqual(stream.write('a\u2603b'), 3)
+E                   AssertionError: None != 3
+
+tests\test_ioutils.py:400: AssertionError
+============================== warnings summary ===============================
+tests/test_ioutils.py::TestMultiFileReader::test_open
+  C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\work\repos_nomap\boltons-4e5faa3d\tests\test_ioutils.py:561: DeprecationWarning: codecs.open() is deprecated. Use open() instead.
+    utf8_file_str = codecs.open(CUR_FILE_PATH, encoding='utf8').read()
+
+tests/test_ioutils.py::TestMultiFileReader::test_open
+  C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\work\repos_nomap\boltons-4e5faa3d\tests\test_ioutils.py:562: DeprecationWarning: codecs.open() is deprecated. Use open() instead.
+    f1, f2 = (codecs.open(CUR_FILE_PATH, encoding='utf8'),
+
+tests/test_ioutils.py::TestMultiFileReader::test_open
+  C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\work\repos_nomap\boltons-4e5faa3d\tests\test_ioutils.py:563: DeprecationWarning: codecs.open() is deprecated. Use open() instead.
+    codecs.open(CUR_FILE_PATH, encoding='utf8'))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_ioutils.py::TestSpooledBytesIO::test_buffer_write_rollover_uses_byte_count
+SUBFAILED(rolled=False) tests/test_ioutils.py::TestSpooledBytesIO::test_buffered_writer_flush
+SUBFAILED(rolled=True) tests/test_ioutils.py::TestSpooledBytesIO::test_buffered_writer_flush
+SUBFAILED(rolled=False) tests/test_ioutils.py::TestSpooledBytesIO::test_write_returns_byte_count
+SUBFAILED(rolled=True) tests/test_ioutils.py::TestSpooledBytesIO::test_write_returns_byte_count
+SUBFAILED(rolled=False, offset=-1, whence=0) tests/test_ioutils.py::TestSpooledStringIO::test_negative_destination_rejected_without_moving
+SUBFAILED(rolled=False, offset=-3, whence=1) tests/test_ioutils.py::TestSpooledStringIO::test_negative_destination_rejected_without_moving
+SUBFAILED(rolled=True, offset=-1, whence=0) tests/test_ioutils.py::TestSpooledStringIO::test_negative_destination_rejected_without_moving
+SUBFAILED(rolled=True, offset=-3, whence=1) tests/test_ioutils.py::TestSpooledStringIO::test_negative_destination_rejected_without_moving
+SUBFAILED(rolled=False) tests/test_ioutils.py::TestSpooledStringIO::test_relative_backwards_seek_uses_character_position
+SUBFAILED(rolled=True) tests/test_ioutils.py::TestSpooledStringIO::test_relative_backwards_seek_uses_character_position
+SUBFAILED(rolled=False) tests/test_ioutils.py::TestSpooledStringIO::test_write_returns_character_count
+SUBFAILED(rolled=True) tests/test_ioutils.py::TestSpooledStringIO::test_write_returns_character_count
+13 failed, 87 passed, 3 warnings in 0.50s

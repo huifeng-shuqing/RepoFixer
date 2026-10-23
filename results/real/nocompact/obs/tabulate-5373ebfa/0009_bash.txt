@@ -1,0 +1,40 @@
+test/test_internal.py:16:def test_align_column_decimal():
+test/test_internal.py:17:    "Internal: _align_column(..., 'decimal')"
+test/test_internal.py:19:    result = T._align_column(column, "decimal")
+test/test_internal.py:31:def test_align_column_decimal_with_thousand_separators():
+test/test_internal.py:32:    "Internal: _align_column(..., 'decimal')"
+test/test_internal.py:34:    output = T._align_column(column, "decimal")
+test/test_internal.py:46:def test_align_column_decimal_with_incorrect_thousand_separators():
+test/test_internal.py:47:    "Internal: _align_column(..., 'decimal')"
+test/test_internal.py:49:    output = T._align_column(column, "decimal")
+test/test_output.py:3:from decimal import Decimal
+test/test_output.py:12:#  - decimal point alignment of numbers
+test/test_output.py:2861:def test_floatfmt_decimal():
+test/test_output.py:2863:        [[Decimal("99999998999.999980"), 1234.5, 1.2345678, "inf"]],
+test/test_regression.py:237:def test_ansi_color_for_decimal_numbers():
+test/test_regression.py:238:    "Regression: ANSI colors for decimal numbers (issue #36)"
+test/test_regression.py:245:def test_alignment_of_decimal_numbers_with_ansi_color():
+test/test_regression.py:246:    "Regression: alignment for decimal numbers with ANSI color (issue #42)"
+test/test_regression.py:255:def test_alignment_of_decimal_numbers_with_commas():
+test/test_regression.py:256:    "Regression: alignment for decimal numbers with comma separators"
+tabulate/__init__.py:58:# default align will be overwritten by "left", "center" or "decimal"
+tabulate/__init__.py:140:    if align in ["right", "decimal"]:
+tabulate/__init__.py:187:        "decimal": 'style="text-align: right;"| ',
+tabulate/__init__.py:200:    alignment = {"left": "<.", "right": ">.", "center": "=.", "decimal": ">."}
+tabulate/__init__.py:215:        "decimal": ' style="text-align: right;"',
+tabulate/__init__.py:238:        "decimal": '<style="text-align: right;">',
+tabulate/__init__.py:248:    alignment = {"left": "l", "right": "r", "center": "c", "decimal": "r"}
+tabulate/__init__.py:266:        alignment = {"left": "<", "right": ">", "center": "^", "decimal": ">"}
+tabulate/__init__.py:1020:    """Symbols after a decimal point, -1 if the string lacks the decimal point.
+tabulate/__init__.py:1167:    elif alignment == "decimal":
+tabulate/__init__.py:1169:            decimals = [_afterpoint(_strip_ansi(s)) for s in strings]
+tabulate/__init__.py:1171:            decimals = [_afterpoint(s) for s in strings]
+tabulate/__init__.py:1172:        maxdecimals = max(decimals)
+tabulate/__init__.py:1173:        strings = [s + (maxdecimals - decs) * " " for s, decs in zip(strings, decimals)]
+tabulate/__init__.py:1779:    the values properly. By default it aligns decimal points of the
+tabulate/__init__.py:1782:    (`numalign`, `stralign`) are: "right", "center", "left", "decimal"
+tabulate/__init__.py:1787:        (defaults according to coltype), "right", "center", "decimal",
+tabulate/__init__.py:1791:        "center", "decimal", "left".
+tabulate/__init__.py:1807:    contain numeric data without a decimal point. This can also be
+tabulate/__init__.py:1811:    contain numeric data with a decimal point. This can also be
+tabulate/__init__.py:2306:        numalign = "decimal" if numalign == _DEFAULT_ALIGN else numalign

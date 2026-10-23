@@ -1,0 +1,81 @@
+-    from statsutils import pearson_type
+-
+-    def get_pt(dist):
+-        vals = [dist() for x in range(10000)]
+-        pt = pearson_type(vals)
+-        return pt
+-
+-    for x in range(3):
+-        # pt = get_pt(dist=lambda: random.normalvariate(15, 5))  # expect 0, normal
+-        # pt = get_pt(dist=lambda: random.weibullvariate(2, 3))  # gets 1, beta, weibull not specifically supported
+-        # pt = get_pt(dist=lambda: random.gammavariate(2, 3))  # expect 3, gamma
+-        # pt = get_pt(dist=lambda: random.betavariate(2, 3))  # expect 1, beta
+-        # pt = get_pt(dist=lambda: random.expovariate(0.2))  # expect 3, beta
+-        pt = get_pt(dist=lambda: random.uniform(0.0, 10.0))  # gets 2
+-        print('pearson type:', pt)
+-
+-        # import pdb;pdb.set_trace()
++def test_pearson_type_zero_denominator():
++    # Supply exact moments to exercise c0 == 0, c2 == 0, and the
++    # normal-distribution boundary without sampling noise.
++    for skewness, kurtosis, expected in ((2.0, 3.0, 1),
++                                         (2.0, 9.0, 3),
++                                         (0.0, 3.0, 0)):
++        stats = Stats([0])
++        stats.skewness = skewness
++        stats.kurtosis = kurtosis
++        assert stats.pearson_type == expected
+ 
+ 
+ def test_histogram_zero_interquartile_range():
+====
+commit 3913220988e1e7c80620796fdcb4f74eb598d179
+Merge: 346fc65 45a2511
+Author: Mahmoud Hashemi <mahmoud@hatnote.com>
+Date:   Mon Sep 7 03:31:37 2026 -0700
+
+    Merge current master into Pearson classification branch
+    
+    Retain both the new mode tests and the contributor Pearson regression before addressing the maintainer review.
+
+ .github/workflows/tests.yaml   |   2 +
+ CHANGELOG.md                   |  16 ++++++
+ boltons/dictutils.py           |   3 ++
+ boltons/ecoutils.py            |  22 ++++----
+ boltons/funcutils.py           |  28 ++++++++--
+ boltons/iterutils.py           |   5 +-
+ boltons/jsonutils.py           |  19 ++++---
+ boltons/listutils.py           |  50 ++++++++---------
+ boltons/mathutils.py           |  12 ++++-
+ boltons/namedutils.py          |  16 +++---
+ boltons/setutils.py            |  38 +++++++++----
+ boltons/statsutils.py          |  25 ++++++++-
+ boltons/strutils.py            |  74 +++++++++++++++++++++++--
+ boltons/tableutils.py          |  17 +++---
+ boltons/timeutils.py           | 120 +++++++++++++++++++++++++++++++----------
+ boltons/urlutils.py            |   7 ++-
+ tests/test_dictutils.py        |  20 +++++++
+ tests/test_ecoutils.py         |  39 ++++++++++++++
+ tests/test_funcutils_fb_py3.py |  50 +++++++++++++++++
+ tests/test_iterutils.py        |  39 ++++++++++++++
+ tests/test_jsonutils.py        |  60 +++++++++++++++++++++
+ tests/test_listutils.py        | 102 +++++++++++++++++++++++++++++++++++
+ tests/test_mathutils.py        |  35 ++++++++++++
+ tests/test_namedutils.py       |  28 ++++++++++
+ tests/test_setutils.py         |  62 ++++++++++++++++++++-
+ tests/test_statsutils.py       |  19 ++++++-
+ tests/test_strutils.py         |  82 ++++++++++++++++++++++++++++
+ tests/test_tableutils.py       |  33 ++++++++++++
+ tests/test_timeutils.py        | 100 +++++++++++++++++++++++++++++++++-
+ tests/test_urlutils.py         |  10 ++++
+ 30 files changed, 1018 insertions(+), 115 deletions(-)
+09d987d build: apply test patch + stub _version (source fix removed)
+4e5faa3 Fix spooled stream write compatibility and backwards text seeks (#513)
+961dcff add PR template asking for contributor motivation and AI-assistance disclosure
+78ec69c bump version to 26.2.1dev
+4332b35 boltons version 26.2.0
+1216b46 Complete September PR sweep for 26.2.0 (#481)
+8bb31ba statsutils: complete Pearson classification and maintainer review (#434)
+73e22c9 statsutils: finish Pearson zero-denominator review and regression coverage
+3913220 Merge current master into Pearson classification branch
+45a2511 strutils: recognize Unicode line separators without splitting dates (#475)

@@ -1,0 +1,81 @@
+  1130 |     r = range(1, len(seq) + 1)
+  1131 |     if reverse:
+  1132 |         r = reversed(r)
+  1133 |     return (
+  1134 |         (seq[i : i + L], i, i + L) for L in r for i in range(len(seq) - L + 1)
+  1135 |     )
+  1136 | 
+  1137 | 
+  1138 | class bucket:
+  1139 |     """Wrap *iterable* and return an object that buckets the iterable into
+  1140 |     child iterables based on a *key* function.
+  1141 | 
+  1142 |         >>> iterable = ['a1', 'b1', 'c1', 'a2', 'b2', 'c2', 'b3']
+  1143 |         >>> s = bucket(iterable, key=lambda x: x[0])  # Bucket by 1st character
+  1144 |         >>> sorted(list(s))  # Get the keys
+  1145 |         ['a', 'b', 'c']
+  1146 |         >>> a_iterable = s['a']
+  1147 |         >>> next(a_iterable)
+  1148 |         'a1'
+  1149 |         >>> next(a_iterable)
+  1150 |         'a2'
+  1151 |         >>> list(s['b'])
+  1152 |         ['b1', 'b2', 'b3']
+  1153 | 
+  1154 |     The original iterable will be advanced and its items will be cached until
+  1155 |     they are used by the child iterables. This may require significant storage.
+  1156 | 
+  1157 |     By default, attempting to select a bucket to which no items belong  will
+  1158 |     exhaust the iterable and cache all values.
+  1159 |     If you specify a *validator* function, selected buckets will instead be
+  1160 |     checked against it.
+  1161 | 
+  1162 |         >>> from itertools import count
+  1163 |         >>> it = count(1, 2)  # Infinite sequence of odd numbers
+  1164 |         >>> key = lambda x: x % 10  # Bucket by last digit
+  1165 |         >>> validator = lambda x: x in {1, 3, 5, 7, 9}  # Odd digits only
+  1166 |         >>> s = bucket(it, key=key, validator=validator)
+  1167 |         >>> 2 in s
+  1168 |         False
+  1169 |         >>> list(s[2])
+  1170 |         []
+  1171 | 
+  1172 |     .. seealso:: :func:`map_reduce`, :func:`groupby_transform`
+  1173 | 
+  1174 |     If storage is not a concern, :func:`map_reduce` returns a Python
+  1175 |     dictionary, which is generally easier to work with. If the elements
+  1176 |     with the same key are already adjacent, :func:`groupby_transform`
+  1177 |     or :func:`itertools.groupby` can be used without any caching overhead.
+  1178 | 
+  1179 |     """
+  1180 | 
+  1181 |     def __init__(self, iterable, key, validator=None):
+  1182 |         self._it = iter(iterable)
+  1183 |         self._key = key
+  1184 |         self._cache = defaultdict(deque)
+  1185 |         self._validator = validator or (lambda x: True)
+  1186 | 
+  1187 |     def __contains__(self, value):
+  1188 |         if not self._validator(value):
+  1189 |             return False
+  1190 | 
+  1191 |         try:
+  1192 |             item = next(self[value])
+  1193 |         except StopIteration:
+  1194 |             return False
+  1195 |         else:
+  1196 |             self._cache[value].appendleft(item)
+  1197 | 
+  1198 |         return True
+  1199 | 
+  1200 |     def _get_values(self, value):
+  1201 |         """
+  1202 |         Helper to yield items from the parent iterator that match *value*.
+  1203 |         Items that don't match are stored in the local cache as they
+  1204 |         are encountered.
+  1205 |         """
+  1206 |         while True:
+  1207 |             # If we've cached some items that match the target value, emit
+  1208 |             # the first one and evict it from the cache.
+  1209 |             if self._cache.get(value):
+... [4432 more lines; pass offset=1210 for next page]

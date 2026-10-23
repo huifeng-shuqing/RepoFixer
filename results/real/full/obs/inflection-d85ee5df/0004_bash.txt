@@ -1,0 +1,106 @@
+    ("newsletter", "newsletters"),
+
+    ("old_news", "old_news"),
+    ("news", "news"),
+
+    ("series", "series"),
+    ("species", "species"),
+
+    ("quiz", "quizzes"),
+
+    ("perspective", "perspectives"),
+
+    ("ox", "oxen"),
+    ("photo", "photos"),
+    ("buffalo", "buffaloes"),
+    ("tomato", "tomatoes"),
+    ("dwarf", "dwarves"),
+    ("elf", "elves"),
+    ("information", "information"),
+    ("equipment", "equipment"),
+    ("bus", "buses"),
+    ("status", "statuses"),
+    ("status_code", "status_codes"),
+    ("mouse", "mice"),
+
+    ("louse", "lice"),
+    ("house", "houses"),
+    ("octopus", "octopi"),
+    ("virus", "viri"),
+    ("alias", "aliases"),
+    ("portfolio", "portfolios"),
+
+    ("vertex", "vertices"),
+    ("matrix", "matrices"),
+    ("matrix_fu", "matrix_fus"),
+
+    ("axis", "axes"),
+    ("testis", "testes"),
+    ("crisis", "crises"),
+
+    ("rice", "rice"),
+    ("shoe", "shoes"),
+
+    ("horse", "horses"),
+    ("prize", "prizes"),
+    ("edge", "edges"),
+
+    ("cow", "kine"),
+    ("database", "databases"),
+    ("human", "humans")
+)
+
+CAMEL_TO_UNDERSCORE = (
+    ("Product",               "product"),
+    ("SpecialGuest",          "special_guest"),
+    ("ApplicationController", "application_controller"),
+    ("Area51Controller",      "area51_controller"),
+)
+
+CAMEL_TO_UNDERSCORE_WITHOUT_REVERSE = (
+    ("HTMLTidy",              "html_tidy"),
+    ("HTMLTidyGenerator",     "html_tidy_generator"),
+    ("FreeBSD",               "free_bsd"),
+    ("HTML",                  "html"),
+)
+
+STRING_TO_PARAMETERIZED = (
+    (u"Donald E. Knuth", "donald-e-knuth"),
+    (
+        u"Random text with *(bad)* characters",
+        "random-text-with-bad-characters"
+    ),
+    (u"Allow_Under_Scores", "allow_under_scores"),
+    (u"Trailing bad characters!@#", "trailing-bad-characters"),
+    (u"!@#Leading bad characters", "leading-bad-characters"),
+    (u"Squeeze   separators", "squeeze-separators"),
+    (u"Test with + sign", "test-with-sign"),
+    (u"Test with malformed utf8 \251", "test-with-malformed-utf8"),
+)
+
+STRING_TO_PARAMETERIZE_WITH_NO_SEPARATOR = (
+90:def _irregular(singular, plural):
+92:    A convenience function to add appropriate rules to plurals and singular
+96:    :param plural: irregular word in plural form
+101:    if singular[0].upper() == plural[0].upper():
+104:            r'\1' + plural[1:]
+107:            r"(?i)(%s)%s$" % (plural[0], plural[1:]),
+108:            r'\1' + plural[1:]
+111:            r"(?i)(%s)%s$" % (plural[0], plural[1:]),
+117:            plural[0].upper() + plural[1:]
+121:            plural[0].lower() + plural[1:]
+124:            r"%s%s$" % (plural[0].upper(), caseinsensitive(plural[1:])),
+125:            plural[0].upper() + plural[1:]
+128:            r"%s%s$" % (plural[0].lower(), caseinsensitive(plural[1:])),
+129:            plural[0].lower() + plural[1:]
+132:            r"%s%s$" % (plural[0].upper(), caseinsensitive(plural[1:])),
+136:            r"%s%s$" % (plural[0].lower(), caseinsensitive(plural[1:])),
+281:def pluralize(word):
+283:    Return the plural form of a word.
+287:        >>> pluralize("post")
+289:        >>> pluralize("octopus")
+291:        >>> pluralize("sheep")
+293:        >>> pluralize("CamelOctopus")
+308:    Return the singular form of a word, the reverse of :func:`pluralize`.
+337:    method uses the :func:`pluralize` method on the last word in the string.
+348:    return pluralize(underscore(word))

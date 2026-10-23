@@ -1,0 +1,91 @@
+    def _len(item):
+        """Custom len that gets console column width for wide
+        and non-wide characters as well as ignores color codes"""
+        stripped = _strip_ansi(item)
+        if wcwidth:
+            return wcwidth.wcswidth(stripped)
+        else:
+            return len(stripped)
+
+    def _update_lines(self, lines, new_line):
+        """Adds a new line to the list of lines the text is being wrapped into
+        This function will also track any ANSI color codes in this string as well
+        as add any colors from previous lines order to preserve the same formatting
+        as a single unwrapped string.
+        """
+        code_matches = list(_ansi_codes.finditer(new_line))
+        color_codes = [code.string[code.span()[0] : code.span()[1]] for code in code_matches]
+
+        # Add color codes from earlier in the unwrapped line, and then track any new ones we add.
+        new_line = "".join(self._active_codes) + new_line
+
+        for code in color_codes:
+            if code != _ansi_color_reset_code:
+                self._active_codes.append(code)
+            else:  # A single reset code resets everything
+                self._active_codes = []
+
+        # Always ensure each line is color terminated if any colors are
+        # still active, otherwise colors will bleed into other cells on the console
+        if len(self._active_codes) > 0:
+            new_line = new_line + _ansi_color_reset_code
+
+        lines.append(new_line)
+
+    def _handle_long_word(self, reversed_chunks, cur_line, cur_len, width):
+        """_handle_long_word(chunks : [string],
+                             cur_line : [string],
+                             cur_len : int, width : int)
+        Handle a chunk of text (most likely a word, not whitespace) that
+        is too long to fit in any line.
+        """
+        # Figure out when indent is larger than the specified width, and make
+        # sure at least one character is stripped off on every pass
+        if width < 1:
+            space_left = 1
+        else:
+            space_left = width - cur_len
+
+        # If we're allowed to break long words, then do so: put as much
+        # of the next chunk onto the current line as will fit.
+        if self.break_long_words and space_left > 0:
+            # Tabulate Custom: Build the string up piece-by-piece in order to
+            # take each charcter's width into account
+            chunk = reversed_chunks[-1]
+            i = 1
+            # Only count printable characters, so strip_ansi first, index later.
+            stripped_chunk = _strip_ansi(chunk)
+            while i <= len(stripped_chunk) and self._len(stripped_chunk[:i]) <= space_left:
+                i = i + 1
+            # Always consume at least one character so _wrap_chunks makes
+            # progress even when the first character is wider than space_left
+            # (e.g. a 2-column CJK char in a 1-column-wide slot).
+            i = max(i, 2)
+            # Consider escape codes when breaking words up
+            total_escape_len = 0
+            last_group = 0
+            if _ansi_codes.search(chunk) is not None:
+                for group, _, _, _ in _ansi_codes.findall(chunk):
+                    escape_len = len(group)
+                    if group in chunk[last_group : i + total_escape_len + escape_len - 1]:
+                        total_escape_len += escape_len
+                        found = _ansi_codes.search(chunk[last_group:])
+                        last_group += found.end()
+            cur_line.append(chunk[: i + total_escape_len - 1])
+            reversed_chunks[-1] = chunk[i + total_escape_len - 1 :]
+
+        # Otherwise, we have to preserve the long word intact.  Only add
+        # it to the current line if there's nothing already there --
+        # that minimizes how much we violate the width constraint.
+        elif not cur_line:
+            cur_line.append(reversed_chunks.pop())
+
+        # If we're not allowed to break long words, and there's already
+        # text on the current line, do nothing.  Next time through the
+        # main loop of _wrap_chunks(), we'll wind up here again, but
+        # cur_len will be zero, so the next line will be entirely
+        # devoted to the long word that we can't handle right now.
+
+    def _wrap_chunks(self, chunks):
+        """_wrap_chunks(chunks : [string]) -> [string]
+        Wrap a sequence of text chunks and return a list of lines of

@@ -1,0 +1,87 @@
+            ))
+        current_pos = self.tell()
+        if self.buffer.tell() + len(s.encode('utf-8')) >= self._max_size:
+            self.rollover()
+        self.buffer.write(s.encode('utf-8'))
+        self._tell = current_pos + len(s)
+
+    def _traverse_codepoints(self, current_position, n):
+        """Traverse from current position to the right n codepoints"""
+        dest = current_position + n
+        while True:
+            if current_position == dest:
+                # By chance we've landed on the right position, break
+                break
+
+            # If the read would take us past the intended position then
+            # seek only enough to cover the offset
+            if current_position + READ_CHUNK_SIZE > dest:
+                self.read(dest - current_position)
+                break
+            else:
+                ret = self.read(READ_CHUNK_SIZE)
+
+            # Increment our current position
+            current_position += READ_CHUNK_SIZE
+
+            # If we kept reading but there was nothing here, break
+            # as we are at the end of the file
+            if not ret:
+                break
+
+        return dest
+
+    def seek(self, pos, mode=0):
+        """Traverse from offset to the specified codepoint"""
+        self._checkClosed()
+        # Seek to position from the start of the file
+        if mode == os.SEEK_SET:
+            self.buffer.seek(0)
+            self._traverse_codepoints(0, pos)
+            self._tell = pos
+        self.buffer.seek(0)
+        total = 0
+        while True:
+            ret = self.read(READ_CHUNK_SIZE)
+            if not ret:
+                break
+            total += len(ret)
+        self.buffer.seek(pos)
+        return total
+
+
+def is_text_fileobj(fileobj):
+    if getattr(fileobj, 'encoding', False):
+        # codecs.open and io.TextIOBase
+        return True
+    if getattr(fileobj, 'getvalue', False):
+        # StringIO.StringIO / io.StringIO
+        try:
+            if isinstance(fileobj.getvalue(), str):
+                return True
+        except Exception:
+            pass
+    return False
+
+
+class MultiFileReader:
+    """Takes a list of open files or file-like objects and provides an
+    interface to read from them all contiguously. Like
+    :func:`itertools.chain()`, but for reading files.
+
+       >>> mfr = MultiFileReader(BytesIO(b'ab'), BytesIO(b'cd'), BytesIO(b'e'))
+       >>> mfr.read(3).decode('ascii')
+       u'abc'
+       >>> mfr.read(3).decode('ascii')
+       u'de'
+
+    The constructor takes as many fileobjs as you hand it, and will
+    raise a TypeError on non-file-like objects. A ValueError is raised
+    when file-like objects are a mix of bytes- and text-handling
+    objects (for instance, BytesIO and StringIO).
+    """
+
+    def __init__(self, *fileobjs):
+        if not all([callable(getattr(f, 'read', None)) and
+                    callable(getattr(f, 'seek', None)) for f in fileobjs]):
+            raise TypeError('MultiFileReader expected file-like objects'

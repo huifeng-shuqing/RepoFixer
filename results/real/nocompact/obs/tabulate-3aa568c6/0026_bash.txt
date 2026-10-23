@@ -1,0 +1,51 @@
+1212:def _align_column($
+1213-    strings,$
+1214-    alignment,$
+1215-    minwidth=0,$
+1216-    has_invisible=True,$
+1217-    enable_widechars=False,$
+1218-    is_multiline=False,$
+1219-    preserve_whitespace=False,$
+1220-):$
+1221-    """[string] -> [padded_string]"""$
+1222-    strings, padfn = _align_column_choose_padfn($
+1223-        strings, alignment, has_invisible, preserve_whitespace$
+1224-    )$
+1225-    width_fn = _align_column_choose_width_fn(has_invisible, enable_widechars, is_multiline)$
+1226-$
+1227-    s_widths = list(map(width_fn, strings))$
+1228-    maxwidth = max(max(_flat_list(s_widths)), minwidth)$
+1229-    # TODO: refactor column alignment in single-line and multiline modes$
+1230-    if is_multiline:$
+1231-        if not enable_widechars and not has_invisible:$
+1232-            padded_strings = [$
+1233-                "\n".join([padfn(maxwidth, s) for s in ms.splitlines()]) for ms in strings$
+1234-            ]$
+1235-        else:$
+1236-            # enable wide-character width corrections$
+1237-            s_lens = [[len(s) for s in re.split("[\r\n]", ms)] for ms in strings]$
+1238-            visible_widths = [$
+1239-                [maxwidth - (w - ln) for w, ln in zip(mw, ml)] for mw, ml in zip(s_widths, s_lens)$
+1240-            ]$
+1241-            # wcswidth and _visible_width don't count invisible characters;$
+1242-            # padfn doesn't need to apply another correction$
+1243-            padded_strings = [$
+1244-                "\n".join([padfn(w, s) for s, w in zip((ms.splitlines() or ms), mw)])$
+1245-                for ms, mw in zip(strings, visible_widths)$
+1246-            ]$
+1247-    else:  # single-line cell values$
+1248-        if not enable_widechars and not has_invisible:$
+1249-            padded_strings = [padfn(maxwidth, s) for s in strings]$
+1250-        else:$
+1251-            # enable wide-character width corrections$
+1252-            s_lens = list(map(len, strings))$
+1253-            visible_widths = [maxwidth - (w - ln) for w, ln in zip(s_widths, s_lens)]$
+1254-            # wcswidth and _visible_width don't count invisible characters;$
+1255-            # padfn doesn't need to apply another correction$
+1256-            padded_strings = [padfn(w, s) for s, w in zip(strings, visible_widths)]$
+1257-    return padded_strings$
+1258-$
+1259-$
+1260-def _more_generic(type1, type2):$
+1261-    types = {$
+1262-        type(None): 0,$

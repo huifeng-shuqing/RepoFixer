@@ -1,0 +1,86 @@
+        self._use_copy = use_copy
+        self._is_sorted = is_sorted
+        if use_copy:
+            self.data = list(data)
+        else:
+            self.data = data
+
+        self.default = default
+        cls = self.__class__
+        self._prop_attr_names = [a for a in dir(self)
+                                 if isinstance(getattr(cls, a, None),
+                                               _StatsProperty)]
+        self._pearson_precision = 0
+
+    def __len__(self):
+        return len(self.data)
+
+    def __iter__(self):
+        return iter(self.data)
+
+    def _get_sorted_data(self):
+        """When using a copy of the data, it's better to have that copy be
+        sorted, but we do it lazily using this method, in case no
+        sorted measures are used. I.e., if median is never called,
+        sorting would be a waste.
+
+        When not using a copy, it's presumed that all optimizations
+        are on the user.
+        """
+        if not self._use_copy:
+            return sorted(self.data)
+        elif not self._is_sorted:
+            self.data.sort()
+        return self.data
+
+    def clear_cache(self):
+        """``Stats`` objects automatically cache intermediary calculations
+        that can be reused. For instance, accessing the ``std_dev``
+        attribute after the ``variance`` attribute will be
+        significantly faster for medium-to-large datasets.
+
+        If you modify the object by adding additional data points,
+        call this function to have the cached statistics recomputed.
+
+        """
+        for attr_name in self._prop_attr_names:
+            attr_name = getattr(self.__class__, attr_name).internal_name
+            if not hasattr(self, attr_name):
+                continue
+            delattr(self, attr_name)
+        return
+
+    def _calc_count(self):
+        """The number of items in this Stats object. Returns the same as
+        :func:`len` on a Stats object, but provided for pandas terminology
+        parallelism.
+
+        >>> Stats(range(20)).count
+        20
+        """
+        return len(self.data)
+    count = _StatsProperty('count', _calc_count)
+
+    def _calc_mean(self):
+        """
+        The arithmetic mean, or "average". Sum of the values divided by
+        the number of values.
+
+        >>> mean(range(20))
+        9.5
+        >>> mean(list(range(19)) + [949])  # 949 is an arbitrary outlier
+        56.0
+        """
+        return sum(self.data, 0.0) / len(self.data)
+    mean = _StatsProperty('mean', _calc_mean)
+
+    def _calc_max(self):
+        """
+        The maximum value present in the data.
+
+        >>> Stats([2, 1, 3]).max
+        3
+        """
+        if self._is_sorted:
+            return self.data[-1]
+        return max(self.data)

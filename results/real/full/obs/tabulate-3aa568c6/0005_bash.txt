@@ -1,0 +1,85 @@
+    result = tabulate([["False"], ["1."]])
+    expected = "\n".join(["-----", "False", "    1", "-----"])
+    assert_equal(expected, result)
+
+
+def test_asciidoc_without_trailing_whitespace():
+    "Regression: asciidoc format output must not generate trailing whitespace (issue #408)"
+    result = tabulate([["foo"]], headers=("longheader",), tablefmt="asciidoc")
+    expected = '[cols="<14",options="header"]\n|====\n| longheader\n| foo\n|===='
+    assert_equal(expected, result)
+
+    result = tabulate([["longtext"]], headers=("bar",), tablefmt="asciidoc")
+    expected = '[cols="<10",options="header"]\n|====\n| bar\n| longtext\n|===='
+    assert_equal(expected, result)
+    expected = "\n".join(["| spam |  41.9999 |", "| eggs | 451      |"])
+    result = tabulate(_test_table, tablefmt="orgtbl")
+    assert_equal(expected, result)
+
+
+def test_asciidoc():
+    "Output: asciidoc with headers"
+    expected = "\n".join(
+        [
+            '[cols="<11,>11",options="header"]',
+            "|====",
+            "| strings   |   numbers",
+            "| spam      |   41.9999",
+            "| eggs      |  451",
+            "|====",
+        ]
+    )
+    result = tabulate(_test_table, _test_table_headers, tablefmt="asciidoc")
+    assert_equal(expected, result)
+
+
+def test_asciidoc_headerless():
+    "Output: asciidoc without headers"
+    expected = "\n".join(
+        [
+            '[cols="<6,>10"]',
+            "|====",
+            "| spam |  41.9999",
+            "| eggs | 451",
+            "|====",
+        ]
+    )
+    result = tabulate(_test_table, tablefmt="asciidoc")
+    assert_equal(expected, result)
+
+
+def test_psql():
+    "Output: psql with headers"
+    expected = "\n".join(
+        [
+            "+-----------+-----------+",
+            ]
+        )
+        result = tabulate(_test_table, _test_table_headers, tablefmt="asciidoc")
+>       assert_equal(expected, result)
+
+test\test_output.py:2098: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+expected = '[cols="<11,>11",options="header"]\n|====\n| strings   |   numbers\n| spam      |   41.9999\n| eggs      |  451\n|===='
+result = '[cols="<11,>11",options="header"]\n|====\n| strings   |   numbers \n| spam      |   41.9999 \n| eggs      |  451      \n|===='
+
+    def assert_equal(expected, result):
+        print("Expected:\n%r\n" % expected)
+        print("Got:\n%r\n" % result)
+>       assert expected == result
+               ^^^^^^^^^^^^^^^^^^
+E       AssertionError
+
+test\common.py:10: AssertionError
+---------------------------- Captured stdout call -----------------------------
+Expected:
+'[cols="<11,>11",options="header"]\n|====\n| strings   |   numbers\n| spam      |   41.9999\n| eggs      |  451\n|===='
+
+Got:
+'[cols="<11,>11",options="header"]\n|====\n| strings   |   numbers \n| spam      |   41.9999 \n| eggs      |  451      \n|===='
+
+=========================== short test summary info ===========================
+FAILED test\test_output.py::test_asciidoc - AssertionError
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 156 passed, 44 skipped in 1.89s

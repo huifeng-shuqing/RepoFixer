@@ -1,0 +1,81 @@
+inflection.py:186:    trailing ``"_id"``, if any. Like :func:`titleize`, this is meant for
+inflection.py-187-    creating pretty output.
+inflection.py-188-
+inflection.py-189-    Examples::
+inflection.py-190-
+inflection.py-191-        >>> humanize("employee_salary")
+inflection.py-192-        'Employee salary'
+inflection.py-193-        >>> humanize("author_id")
+inflection.py-194-        'Author'
+inflection.py-195-
+inflection.py-196-    """
+inflection.py-197-    word = re.sub(r"_id$", "", word)
+inflection.py-198-    word = word.replace('_', ' ')
+inflection.py-199-    word = re.sub(r"(?i)([a-z\d]*)", lambda m: m.group(1).lower(), word)
+inflection.py-200-    word = re.sub(r"^\w", lambda m: m.group(0).upper(), word)
+inflection.py-201-    return word
+inflection.py-202-
+inflection.py-203-
+inflection.py-204-def ordinal(number):
+inflection.py-205-    """
+inflection.py-206-    Return the suffix that should be added to a number to denote the position
+--
+inflection.py:354:def titleize(word):
+inflection.py-355-    """
+inflection.py-356-    Capitalize all the words and replace some characters in the string to
+inflection.py:357:    create a nicer looking title. :func:`titleize` is meant for creating pretty
+inflection.py-358-    output.
+inflection.py-359-
+inflection.py-360-    Examples::
+inflection.py-361-
+inflection.py:362:      >>> titleize("man from the boondocks")
+inflection.py-363-      'Man From The Boondocks'
+inflection.py:364:      >>> titleize("x-men: the last stand")
+inflection.py-365-      'X Men: The Last Stand'
+inflection.py:366:      >>> titleize("TheManWithoutAPast")
+inflection.py-367-      'The Man Without A Past'
+inflection.py:368:      >>> titleize("raiders_of_the_lost_ark")
+inflection.py-369-      'Raiders Of The Lost Ark'
+inflection.py-370-
+inflection.py-371-    """
+inflection.py-372-    return re.sub(
+inflection.py-373-        r"\b('?[a-z])",
+inflection.py-374-        lambda match: match.group(1).capitalize(),
+inflection.py-375-        humanize(underscore(word))
+inflection.py-376-    )
+inflection.py-377-
+inflection.py-378-
+inflection.py-379-def transliterate(string):
+inflection.py-380-    """
+inflection.py-381-    Replace non-ASCII characters with an ASCII approximation. If no
+inflection.py-382-    approximation exists, the non-ASCII character is ignored. The string must
+inflection.py-383-    be ``unicode``.
+inflection.py-384-
+inflection.py-385-    Examples::
+inflection.py-386-
+inflection.py-387-        >>> transliterate('älämölö')
+inflection.py-388-        'alamolo'
+--
+test_inflection.py:337:@pytest.mark.parametrize(("before", "titleized"), MIXTURE_TO_TITLEIZED)
+test_inflection.py:338:def test_titleize(before, titleized):
+test_inflection.py:339:    assert titleized == inflection.titleize(before)
+test_inflection.py-340-
+test_inflection.py-341-
+test_inflection.py-342-@pytest.mark.parametrize(("camel", "underscore"), CAMEL_TO_UNDERSCORE)
+test_inflection.py-343-def test_camelize(camel, underscore):
+test_inflection.py-344-    assert camel == inflection.camelize(underscore)
+test_inflection.py-345-
+test_inflection.py-346-
+test_inflection.py-347-def test_camelize_with_lower_downcases_the_first_letter():
+test_inflection.py-348-    assert 'capital' == inflection.camelize('Capital', False)
+test_inflection.py-349-
+test_inflection.py-350-
+test_inflection.py-351-def test_camelize_with_underscores():
+test_inflection.py-352-    assert "CamelCase" == inflection.camelize('Camel_Case')
+test_inflection.py-353-
+test_inflection.py-354-
+test_inflection.py-355-@pytest.mark.parametrize(
+test_inflection.py-356-    ("camel", "underscore"),
+test_inflection.py-357-    CAMEL_TO_UNDERSCORE + CAMEL_TO_UNDERSCORE_WITHOUT_REVERSE
+test_inflection.py-358-)
+test_inflection.py-359-def test_underscore(camel, underscore):

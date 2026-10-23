@@ -1,0 +1,173 @@
+"""Test validation Failure."""
+
+# standard
+from typing import Any, Callable
+
+# third-party
+import pytest
+
+# local
+from validators import ValidationError, between, slug, uuid
+
+
+@pytest.mark.parametrize("function,value", [(slug, "invalid_"), (uuid, "not-a-uuid")])
+def test_false_raise_validation_error_flag(
+    function: Callable[..., Any], value: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A false flag returns validation errors instead of raising them."""
+    monkeypatch.delenv("RAISE_VALIDATION_ERROR", raising=False)
+    result = function(value, r_ve=False)
+    assert isinstance(result, ValidationError)
+    assert not result
+
+
+@pytest.mark.parametrize("function,value", [(slug, "invalid_"), (uuid, "not-a-uuid")])
+def test_environment_still_enables_raise_validation_error(
+    function: Callable[..., Any], value: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The environment option enables raising even when the call flag is false."""
+    monkeypatch.setenv("RAISE_VALIDATION_ERROR", "True")
+    with pytest.raises(ValidationError):
+        function(value, r_ve=False)
+
+
+@pytest.mark.parametrize("function,value", [(slug, "invalid_"), (uuid, "not-a-uuid")])
+def test_true_raise_validation_error_flag(
+    function: Callable[..., Any], value: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A true call flag continues to raise validation errors."""
+    monkeypatch.delenv("RAISE_VALIDATION_ERROR", raising=False)
+    with pytest.raises(ValidationError):
+        function(value, r_ve=True)
+
+
+failed_obj_repr = "ValidationError(func=between"
+
+
+class TestValidationError:
+    """Test validation Failure."""
+
+    def setup_method(self):
+        """Setup Method."""
+        self.is_in_between = between(3, min_val=4, max_val=5)
+
+    def test_boolean_coerce(self):
+        """Test Boolean."""
+        assert not bool(self.is_in_between)
+        assert not self.is_in_between
+
+    def test_repr(self):
+        """Test Repr."""
+        assert failed_obj_repr in repr(self.is_in_between)
+
+    def test_string(self):
+        """Test Repr."""
+        assert failed_obj_repr in str(self.is_in_between)
+
+    def test_arguments_as_properties(self):
+        """Test argument properties."""
+        assert self.is_in_between.__dict__["value"] == 3
+        assert self.is_in_between.__dict__["min_val"] == 4
+        assert self.is_in_between.__dict__["max_val"] == 5
+"""Utils."""
+
+# standard
+from functools import wraps
+from inspect import getfullargspec
+from itertools import chain
+from os import environ
+from typing import Any, Callable, Dict
+
+
+class ValidationError(Exception):
+    """Exception class when validation failure occurs."""
+
+    def __init__(self, function: Callable[..., Any], arg_dict: Dict[str, Any], message: str = ""):
+        """Initialize Validation Failure."""
+        if message:
+            self.reason = message
+        self.func = function
+        self.__dict__.update(arg_dict)
+
+    def __repr__(self):
+        """Repr Validation Failure."""
+        return (
+            f"ValidationError(func={self.func.__name__}, "
+            + f"args={ ({k: v for (k, v) in self.__dict__.items() if k != 'func'}) })"
+        )
+
+    def __str__(self):
+        """Str Validation Failure."""
+        return repr(self)
+
+    def __bool__(self):
+        """Bool Validation Failure."""
+        return False
+
+
+def _func_args_as_dict(func: Callable[..., Any], *args: Any, **kwargs: Any):
+    """Return function's positional and key value arguments as an ordered dictionary."""
+    return dict(
+        list(zip(dict.fromkeys(chain(getfullargspec(func)[0], kwargs.keys())), args))
+        + list(kwargs.items())
+    )
+
+
+def validator(func: Callable[..., Any]):
+    """A decorator that makes given function validator.
+
+    Whenever the given `func` returns `False` this
+    decorator returns `ValidationError` object.
+
+    Examples:
+        >>> @validator
+        ... def even(value):
+        ...     return not (value % 2)
+        >>> even(4)
+        True
+        >>> even(5)
+        ValidationError(func=even, args={'value': 5})
+
+    Args:
+        func:
+            Function which is to be decorated.
+
+    Returns:
+        (Callable[..., ValidationError | Literal[True]]):
+            A decorator which returns either `ValidationError`
+            or `Literal[True]`.
+
+    Raises:
+        (ValidationError): If `r_ve` or `RAISE_VALIDATION_ERROR` is `True`
+    """
+
+    @wraps(func)
+    def wrapper(*args: Any, **kwargs: Any):
+        raise_validation_error = False
+        if "r_ve" in kwargs:
+            raise_validation_error = True
+            del kwargs["r_ve"]
+        if environ.get("RAISE_VALIDATION_ERROR", "False") == "True":
+            raise_validation_error = True
+
+        try:
+            if raise_validation_error:
+                if func(*args, **kwargs):
+                    return True
+                else:
+                    raise ValidationError(func, _func_args_as_dict(func, *args, **kwargs))
+            else:
+                return (
+                    True
+                    if func(*args, **kwargs)
+                    else ValidationError(func, _func_args_as_dict(func, *args, **kwargs))
+                )
+        except (ValueError, TypeError, UnicodeError) as exp:
+            if raise_validation_error:
+                raise ValidationError(
+                    func, _func_args_as_dict(func, *args, **kwargs), str(exp)
+                ) from exp
+            else:
+                return ValidationError(func, _func_args_as_dict(func, *args, **kwargs), str(exp))
+
+    return wrapper

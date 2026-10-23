@@ -1,0 +1,107 @@
+    if has_invisible and isinstance(string, (str, bytes)):
+        string = _strip_ansi(string)
+
+    if string is None or (isinstance(string, (bytes, str)) and not string):
+        return type(None)
+    elif hasattr(string, "isoformat"):  # datetime.datetime, date, and time
+        return str
+    elif _isbool(string):
+        return bool
+    elif numparse and (
+        _isint(string)
+        or (
+            isinstance(string, str)
+            and _isnumber_with_thousands_separator(string)
+            and "." not in string
+        )
+    ):
+        return int
+    elif numparse and (
+        _isnumber(string)
+        or (isinstance(string, str) and _isnumber_with_thousands_separator(string))
+    ):
+        return float
+    elif isinstance(string, bytes):
+        return bytes
+    else:
+        return str
+
+
+def _afterpoint(string):
+    """Symbols after a decimal point, -1 if the string lacks the decimal point.
+
+    >>> _afterpoint("123.45")
+    2
+    >>> _afterpoint("1001")
+    -1
+    >>> _afterpoint("eggs")
+    -1
+    >>> _afterpoint("123e45")
+    2
+    >>> _afterpoint("123,456.78")
+    2
+
+    """
+    if _isnumber(string) or _isnumber_with_thousands_separator(string):
+        if _isint(string):
+            return -1
+        else:
+            pos = string.rfind(".")
+            pos = string.lower().rfind("e") if pos < 0 else pos
+            if pos >= 0:
+                return len(string) - pos - 1
+            else:
+                return -1  # no point
+    else:
+        return -1  # not a number
+
+
+def _padleft(width, s):
+    """Flush right.
+
+    >>> _padleft(6, '\u044f\u0439\u0446\u0430') == '  \u044f\u0439\u0446\u0430'
+    True
+
+    """
+    fmt = "{0:>%ds}" % width
+    return fmt.format(s)
+
+
+def _padright(width, s):
+    """Flush left.
+            intfmt = ""
+        return format(val, intfmt)
+    elif valtype is bytes:
+        try:
+            return str(val, "ascii")
+        except (TypeError, UnicodeDecodeError):
+            return str(val)
+    elif valtype is float:
+        is_a_colored_number = has_invisible and isinstance(val, (str, bytes))
+        if is_a_colored_number:
+            raw_val = _strip_ansi(val)
+            try:
+                formatted_val = format(float(raw_val), floatfmt)
+            except (ValueError, TypeError):
+                return f"{val}"
+            return val.replace(raw_val, formatted_val)
+        else:
+            if isinstance(val, str) and "," in val:
+                val = val.replace(",", "")  # handle thousands-separators
+            try:
+                return format(float(val), floatfmt)
+            except (ValueError, TypeError):
+                return f"{val}"
+    else:
+        return f"{val}"
+
+
+def _align_header(header, alignment, width, visible_width, is_multiline=False, width_fn=None):
+    "Pad string header to width chars given known visible_width of the header."
+    if is_multiline:
+        header_lines = re.split(_multiline_codes, header)
+        padded_lines = [_align_header(h, alignment, width, width_fn(h)) for h in header_lines]
+        return "\n".join(padded_lines)
+    # else: not multiline
+    ninvisible = len(header) - visible_width
+    width += ninvisible

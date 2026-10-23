@@ -1,0 +1,161 @@
+
+def camelize(string, uppercase_first_letter=True):
+    """
+    Convert strings to CamelCase.
+
+    Examples::
+
+        >>> camelize("device_type")
+        "DeviceType"
+        >>> camelize("device_type", False)
+        "deviceType"
+
+    :func:`camelize` can be though as a inverse of :func:`underscore`, although
+    there are some cases where that does not hold::
+
+        >>> camelize(underscore("IOError"))
+        "IoError"
+
+    :param uppercase_first_letter: if set to `True` :func:`camelize` converts
+        strings to UpperCamelCase. If set to `False` :func:`camelize` produces
+        lowerCamelCase. Defaults to `True`.
+    """
+    if uppercase_first_letter:
+        return re.sub(r"(?:^|_)(.)", lambda m: m.group(1).upper(), string)
+    else:
+        return string[0].lower() + camelize(string)[1:]
+
+
+def dasherize(word):
+    """Replace underscores with dashes in the string.
+
+    Example::
+
+        >>> dasherize("puni_puni")
+        "puni-puni"
+
+    """
+    return word.replace('_', '-')
+
+
+def humanize(word):
+    """
+    Capitalize the first word and turn underscores into spaces and strip a
+    trailing ``"_id"``, if any. Like :func:`titleize`, this is meant for
+    creating pretty output.
+
+    Examples::
+
+        >>> humanize("employee_salary")
+        "Employee salary"
+        >>> humanize("author_id")
+        "Author"
+
+    """
+    word = re.sub(r"_id$", "", word)
+    word = word.replace('_', ' ')
+    word = re.sub(r"(?i)([a-z\d]*)", lambda m: m.group(1).lower(), word)
+    word = re.sub(r"^\w", lambda m: m.group(0).upper(), word)
+    return word
+
+
+def ordinal(number):
+    """
+    Return the suffix that should be added to a number to denote the position
+    in an ordered sequence such as 1st, 2nd, 3rd, 4th.
+
+    Examples::
+
+        >>> ordinal(1)
+        "st"
+        >>> ordinal(2)
+        "nd"
+        >>> ordinal(1002)
+        "nd"
+        >>> ordinal(1003)
+        "rd"
+        >>> ordinal(-11)
+        "th"
+        >>> ordinal(-1021)
+        "st"
+
+    """
+    number = abs(int(number))
+    if number % 100 in (11, 12, 13):
+        return "th"
+    else:
+        return {
+            1: "st",
+            2: "nd",
+            3: "rd",
+        }.get(number % 10, "th")
+
+
+def ordinalize(number):
+    """
+    Turn a number into an ordinal string used to denote the position in an
+    ordered sequence such as 1st, 2nd, 3rd, 4th.
+
+    Examples::
+
+        >>> ordinalize(1)
+        "1st"
+        >>> ordinalize(2)
+        "2nd"
+        >>> ordinalize(1002)
+        "1002nd"
+        >>> ordinalize(1003)
+        "1003rd"
+        >>> ordinalize(-11)
+        "-11th"
+        >>> ordinalize(-1021)
+        "-1021st"
+
+    """
+    return "%s%s" % (number, ordinal(number))
+
+
+def parameterize(string, separator='-'):
+    """
+    Replace special characters in a string so that it may be used as part of a
+    'pretty' URL.
+
+    Example::
+
+        >>> parameterize(u"Donald E. Knuth")
+        'donald-e-knuth'
+
+    """
+    string = transliterate(string)
+    # Turn unwanted chars into the separator
+    string = re.sub(r"(?i)[^a-z0-9\-_]+", separator, string)
+    if separator:
+        re_sep = re.escape(separator)
+        # No more than one of the separator in a row.
+        string = re.sub(r'%s{2,}' % re_sep, separator, string)
+        # Remove leading/trailing separator.
+        string = re.sub(r"(?i)^%(sep)s|%(sep)s$" % {'sep': re_sep}, '', string)
+
+    return string.lower()
+
+
+........................................................................ [ 96%]
+..................                                                       [100%]
+================================== FAILURES ===================================
+__________________ test_pluralize_singular[potato-potatoes] ___________________
+
+singular = 'potato', plural = 'potatoes'
+
+    @pytest.mark.parametrize(("singular", "plural"), SINGULAR_TO_PLURAL)
+    def test_pluralize_singular(singular, plural):
+>       assert plural == inflection.pluralize(singular)
+E       AssertionError: assert 'potatoes' == 'potatos'
+E         
+E         - potatos
+E         + potatoes
+E         ?       +
+
+test_inflection.py:318: AssertionError
+=========================== short test summary info ===========================
+FAILED test_inflection.py::test_pluralize_singular[potato-potatoes] - Asserti...
+1 failed, 449 passed in 0.42s

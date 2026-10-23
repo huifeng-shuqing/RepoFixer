@@ -1,0 +1,78 @@
+122:    return type(value) is str and value.strip() == SEPARATING_LINE
+192:    return (separator + colsep.join(values_with_attrs)).rstrip()
+224:    rowhtml = "<tr>{}</tr>".format("".join(values_with_attrs).rstrip())
+334:        if isinstance(val, (str, bytes)) and not val.strip():
+1158:            strings = [s.strip() for s in strings]
+1162:            strings = [s.strip() for s in strings]
+1176:            strings = [s.strip() for s in strings]
+1666:                    if line.strip() != ""
+2515:    return (begin + sep.join(padded_cells) + end).rstrip()
+2798:            if self._len(indent) + self._len(self.placeholder.lstrip()) > self.width:
+2822:            if self.drop_whitespace and chunks[-1].strip() == "" and lines:
+2844:            if self.drop_whitespace and cur_line and cur_line[-1].strip() == "":
+2856:                        and not chunks[0].strip()
+2865:                        if cur_line[-1].strip() and cur_len + self._len(self.placeholder) <= width:
+2873:                            prev_line = lines[-1].rstrip()
+2877:                        self._update_lines(lines, indent + self.placeholder.lstrip())
+2990:    table = [re.split(sep, r.rstrip()) for r in rows if r.strip()]
+2598:def _format_table(
+2599-    fmt, headers, headersaligns, rows, colwidths, colaligns, is_multiline, rowaligns
+2600-):
+2601-    """Produce a plain-text representation of the table."""
+2602-    lines = []
+2603-    hidden = fmt.with_header_hide if (headers and fmt.with_header_hide) else []
+2604-    pad = fmt.padding
+2605-    headerrow = fmt.headerrow
+2606-
+2607-    padded_widths = [(w + 2 * pad) for w in colwidths]
+2608-    if is_multiline:
+2609-        pad_row = lambda row, _: row  # noqa: E731 # do it later, in _append_multiline_row
+2610-        append_row = partial(_append_multiline_row, pad=pad)
+2611-    else:
+2612-        pad_row = _pad_row
+2613-        append_row = _append_basic_row
+2614-
+2615-    padded_headers = pad_row(headers, pad)
+2616-
+2617-    if fmt.lineabove and "lineabove" not in hidden:
+2618-        _append_line(lines, padded_widths, colaligns, fmt.lineabove)
+2619-
+2620-    if padded_headers:
+2621-        append_row(lines, padded_headers, padded_widths, headersaligns, headerrow)
+2622-        if fmt.linebelowheader and "linebelowheader" not in hidden:
+2623-            _append_line(lines, padded_widths, colaligns, fmt.linebelowheader)
+2624-
+2625-    if rows and fmt.linebetweenrows and "linebetweenrows" not in hidden:
+2626-        # initial rows with a line below
+2627-        for row, ralign in zip(rows[:-1], rowaligns):
+2628-            if row != SEPARATING_LINE:
+2629-                append_row(
+2630-                    lines,
+2631-                    pad_row(row, pad),
+2632-                    padded_widths,
+2633-                    colaligns,
+2634-                    fmt.datarow,
+2635-                    rowalign=ralign,
+2636-                )
+2637-            _append_line(lines, padded_widths, colaligns, fmt.linebetweenrows)
+2638-        # the last row without a line below
+2639-        append_row(
+2640-            lines,
+2641-            pad_row(rows[-1], pad),
+2642-            padded_widths,
+2643-            colaligns,
+2644-            fmt.datarow,
+2645-            rowalign=rowaligns[-1],
+2646-        )
+2647-    else:
+2648-        separating_line = (
+2649-            fmt.linebetweenrows
+2650-            or fmt.linebelowheader
+2651-            or fmt.linebelow
+2652-            or fmt.lineabove
+2653-            or Line("", "", "", "")
+2654-        )
+2655-        for row in rows:
+2656-            # test to see if either the 1st column or the 2nd column (account for showindex) has
+2657-            # the SEPARATING_LINE flag
+2658-            if _is_separating_line(row):

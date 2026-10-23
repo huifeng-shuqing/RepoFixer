@@ -1,0 +1,50 @@
+....                                            [100%]
+================================== FAILURES ===================================
+____ BracketSlashTest.test_negated_rule (line='a[!x]b', backend='simple') _____
+
+self = <tests.test_08_gitignore_bracket_slash.BracketSlashTest testMethod=test_negated_rule>
+
+    def test_negated_rule(self):
+    	for backend in ('simple', 're2', 'hyperscan'):
+    		with self.subTest(backend=backend):
+    			require_backend(backend)
+    			for line in ('a[!x]b', 'a[.-0]b', 'a[[:punct:]]b'):
+    				with self.subTest(line=line):
+    					spec = GitIgnoreSpec.from_lines(['*', '!' + line], backend=backend)
+    					self.assertFalse(spec.match_file('a.b'))
+>   					self.assertTrue(spec.match_file('a/b'))
+E        AssertionError: False is not true
+
+tests\test_08_gitignore_bracket_slash.py:82: AssertionError
+____ BracketSlashTest.test_negated_rule (line='a[.-0]b', backend='simple') ____
+
+self = <tests.test_08_gitignore_bracket_slash.BracketSlashTest testMethod=test_negated_rule>
+
+    def test_negated_rule(self):
+    	for backend in ('simple', 're2', 'hyperscan'):
+    		with self.subTest(backend=backend):
+    			require_backend(backend)
+    			for line in ('a[!x]b', 'a[.-0]b', 'a[[:punct:]]b'):
+    				with self.subTest(line=line):
+    					spec = GitIgnoreSpec.from_lines(['*', '!' + line], backend=backend)
+    					self.assertFalse(spec.match_file('a.b'))
+>   					self.assertTrue(spec.match_file('a/b'))
+E        AssertionError: False is not true
+
+tests\test_08_gitignore_bracket_slash.py:82: AssertionError
+_ BracketSlashTest.test_negated_rule (line='a[[:punct:]]b', backend='simple') _
+
+self = <tests.test_08_gitignore_bracket_slash.BracketSlashTest testMethod=test_negated_rule>
+
+    def test_negated_rule(self):
+    	for backend in ('simple', 're2', 'hyperscan'):
+    		with self.subTest(backend=backend):
+    			require_backend(backend)
+    			for line in ('a[!x]b', 'a[.-0]b', 'a[[:punct:]]b'):
+    				with self.subTest(line=line):
+    					spec = GitIgnoreSpec.from_lines(['*', '!' + line], backend=backend)
+    					self.assertFalse(spec.match_file('a.b'))
+>   					self.assertTrue(spec.match_file('a/b'))
+E        AssertionError: False is not true
+
+tests\test_08_gitignore_bracket_slash.py:82: AssertionError

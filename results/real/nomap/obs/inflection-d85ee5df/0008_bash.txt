@@ -1,0 +1,71 @@
+    'information',
+    'jeans',
+    'money',
+    'rice',
+    'series',
+    'sheep',
+    'species',
+])
+
+
+def _irregular(singular, plural):
+    """
+    A convenience function to add appropriate rules to plurals and singular
+    for irregular words.
+
+    :param singular: irregular word in singular form
+    :param plural: irregular word in plural form
+    """
+    def caseinsensitive(string):
+        return ''.join('[' + char + char.upper() + ']' for char in string)
+
+    if singular[0].upper() == plural[0].upper():
+        PLURALS.insert(0, (
+            r"(?i)(%s)%s$" % (singular[0], singular[1:]),
+            r'\1' + plural[1:]
+        ))
+        PLURALS.insert(0, (
+            r"(?i)(%s)%s$" % (plural[0], plural[1:]),
+            r'\1' + plural[1:]
+        ))
+        SINGULARS.insert(0, (
+            r"(?i)(%s)%s$" % (plural[0], plural[1:]),
+            r'\1' + singular[1:]
+        ))
+    else:
+        PLURALS.insert(0, (
+            r"%s%s$" % (singular[0].upper(), caseinsensitive(singular[1:])),
+            plural[0].upper() + plural[1:]
+        ))
+        PLURALS.insert(0, (
+            r"%s%s$" % (singular[0].lower(), caseinsensitive(singular[1:])),
+            plural[0].lower() + plural[1:]
+        ))
+        PLURALS.insert(0, (
+            r"%s%s$" % (plural[0].upper(), caseinsensitive(plural[1:])),
+            plural[0].upper() + plural[1:]
+        ))
+        PLURALS.insert(0, (
+            r"%s%s$" % (plural[0].lower(), caseinsensitive(plural[1:])),
+            plural[0].lower() + plural[1:]
+        ))
+........................................................................ [ 80%]
+........................................................................ [ 96%]
+...............                                                          [100%]
+================================== FAILURES ===================================
+____________________ test_pluralize_singular[human-humans] ____________________
+
+singular = 'human', plural = 'humans'
+
+    @pytest.mark.parametrize(("singular", "plural"), SINGULAR_TO_PLURAL)
+    def test_pluralize_singular(singular, plural):
+>       assert plural == inflection.pluralize(singular)
+E       AssertionError: assert 'humans' == 'humen'
+E         
+E         - humen
+E         + humans
+
+test_inflection.py:317: AssertionError
+=========================== short test summary info ===========================
+FAILED test_inflection.py::test_pluralize_singular[human-humans] - AssertionE...
+1 failed, 446 passed in 0.48s

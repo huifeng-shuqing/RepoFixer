@@ -1,0 +1,148 @@
+     1 | """URI."""
+     2 | 
+     3 | # Read: https://stackoverflow.com/questions/176264
+     4 | # https://www.rfc-editor.org/rfc/rfc3986#section-3
+     5 | 
+     6 | # standard
+     7 | from urllib.parse import urlsplit
+     8 | 
+     9 | # local
+    10 | from .email import email
+    11 | from .hostname import hostname
+    12 | from .url import url
+    13 | from .utils import validator
+    14 | 
+    15 | 
+    16 | def _file_url(value: str):
+    17 |     if not value.startswith("file:///"):
+    18 |         return False
+    19 |     return True
+    20 | 
+    21 | 
+    22 | def _ipfs_url(value: str):
+    23 |     if not value.startswith("ipfs://"):
+    24 |         return False
+    25 |     return True
+    26 | 
+    27 | 
+    28 | def _telnet_url(value: str):
+    29 |     """Validate a telnet URL per RFC 4248.
+    30 | 
+    31 |     Ref: https://www.rfc-editor.org/rfc/rfc4248"
+    32 |     Examples:
+    33 |     >>> _telnet_url('telnet://example.com')
+    34 |     True
+    35 |     >>> _telnet_url('telnet://example.com:23')
+    36 |     True
+    37 |     >>> _telnet_url('telnet://example.com:23/')
+    38 |     True
+    39 | 
+    40 |     Args:
+    41 |         value:
+    42 |             Telnet URL to validate.
+    43 | 
+    44 |     Returns:
+    45 |         (Literal[True]): If `value` is a Telnet URI.
+    46 |         (ValidationError): If `value` is an invalid URI.
+    47 |     """
+    48 |     try:
+    49 |         scheme, netloc, path, query, fragment = urlsplit(value)
+    50 |     except ValueError:
+    51 |         return False
+    52 | 
+    53 |     if scheme != "telnet":
+    54 |         return False
+    55 |     if not netloc:
+    56 |         return False
+    57 |     if query or fragment:
+    58 |         return False
+    59 |     if path and path != "/":
+    60 |         return False
+    61 | 
+    62 |     # handling any additional checks user/pass
+    63 |     if "@" in netloc:
+    64 |         netloc = netloc.rsplit("@", 1)[1]
+    65 |     return hostname(netloc, may_have_port=True)
+    66 | 
+    67 | 
+    68 | @validator
+    69 | def uri(value: str, /):
+    70 |     """Return whether or not given value is a valid URI.
+    71 | 
+    72 |     Examples:
+    73 |         >>> uri('mailto:example@domain.com')
+    74 |         True
+    75 |         >>> uri('file:path.txt')
+    76 |         ValidationError(func=uri, args={'value': 'file:path.txt'})
+    77 | 
+    78 |     Args:
+    79 |         value:
+    80 |             URI to validate.
+    81 | 
+    82 |     Returns:
+    83 |         (Literal[True]): If `value` is a valid URI.
+    84 |         (ValidationError): If `value` is an invalid URI.
+    85 |     """
+    86 |     if not value:
+    87 |         return False
+    88 | 
+    89 |     # TODO: work on various validations
+    90 | 
+    91 |     # url
+    92 |     if any(
+    93 |         # fmt: off
+    94 |         value.startswith(item)
+    95 |         for item in {
+    96 |             "ftp",
+    97 |             "ftps",
+    98 |             "git",
+    99 |             "http",
+   100 |             "https",
+   101 |             "irc",
+   102 |             "rtmp",
+   103 |             "rtmps",
+   104 |             "rtsp",
+   105 |             "sftp",
+   106 |             "ssh",
+   107 |         }
+   108 |         # fmt: on
+   109 |     ):
+   110 |         return url(value)
+   111 | 
+   112 |     # email
+   113 |     if value.startswith("mailto:"):
+   114 |         return email(value[len("mailto:") :])
+   115 | 
+   116 |     # file
+   117 |     if value.startswith("file:"):
+   118 |         return _file_url(value)
+   119 | 
+   120 |     # ipfs
+   121 |     if value.startswith("ipfs:"):
+   122 |         return _ipfs_url(value)
+   123 | 
+   124 |     # magnet
+   125 |     if value.startswith("magnet:?"):
+   126 |         return True
+   127 | 
+   128 |     # telephone
+   129 |     if value.startswith("tel:"):
+   130 |         return True
+   131 | 
+   132 |     # data
+   133 |     if value.startswith("data:"):
+   134 |         return True
+   135 | 
+   136 |     # urn
+   137 |     if value.startswith("urn:"):
+   138 |         return True
+   139 | 
+   140 |     # urc
+   141 |     if value.startswith("urc:"):
+   142 |         return True
+   143 | 
+   144 |     # telnet
+   145 |     if value.startswith("telnet:"):
+   146 |         return _telnet_url(value)
+   147 | 
+   148 |     return False

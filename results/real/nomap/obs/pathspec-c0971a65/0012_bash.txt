@@ -1,0 +1,85 @@
+							raise
+						else:
+							# Treat the whole bracket expression as a literal.
+							regex += re.escape(pattern[bracket_start:j])
+							i = j
+							continue
+
+					if is_expr_negated:
+						# Negated expressions must also exclude the directory separator.
+						# Preserve literal ']' and '-' when inserting '/' ahead of them.
+						if body.startswith((']', '-')):
+							body = '\\' + body
+						expr += '/'
+
+					expr += body + ']'
+
+					if errors == 'raise':
+						try:
+							re.compile(expr)
+						except re.error as e:  # Renamed to `re.PatternError` in 3.13.
+							raise _RangeNotationError((
+								f"Invalid range notation={pattern[i:j]!r} found in "
+								f"pattern={pattern!r}."
+							)) from e
+
+					# Add regex bracket expression to regex result.
+					regex += expr
+
+					# Set i to one past the closing bracket.
+					i = j
+
+				else:
+					# Failed to find closing bracket.
+					if errors == 'raise':
+						# Treat invalid range notation as an error.
+						raise _RangeNotationError((
+							f"Invalid range notation={pattern[i:j]!r} found in {pattern=!r}."
+						))
+					else:
+						# Treat opening bracket as a bracket literal instead of as an
+						# expression.
+						regex += '\\['
+
+			else:
+				# Regular character, escape it for regex.
+				regex += re.escape(char)
+
+		if escape:
+			# Trailing backslash found. According to the gitignore docs, this "is an
+			# invalid pattern that never matches".
+			raise _TrailingBackslashError()
+
+		return regex
+
+
+class GitIgnorePatternError(ValueError):
+	"""
+	The :class:`GitIgnorePatternError` class indicates an invalid gitignore
+	pattern.
+	"""
+	pass
+
+
+class _PosixClassError(GitIgnorePatternError):
+	"""
+	Raised internally when a bracket expression contains an unknown or negated
+	POSIX character class name. Git treats such a pattern as malformed.
+	"""
+	pass
+
+
+class _RangeNotationError(GitIgnorePatternError):
+	"""
+	Raised internally when an invalid range notation was found in a gitignore
+	pattern.
+	"""
+	pass
+
+
+class _TrailingBackslashError(GitIgnorePatternError):
+	"""
+	Raised internally when a trailing backslash is found at the end of a gitignore
+	pattern.
+	"""
+	pass

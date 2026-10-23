@@ -1,0 +1,82 @@
+79:def enumerate_patterns(
+80-	patterns: Iterable[TPattern],
+81-	filter: bool,
+82-	reverse: bool,
+83-) -> list[tuple[int, TPattern]]:
+84-	"""
+85-	Enumerate the patterns.
+86-
+87-	*patterns* (:class:`Iterable` of :class:`.Pattern`) contains the patterns.
+88-
+89-	*filter* (:class:`bool`) is whether to remove no-op patterns (:data:`True`),
+90-	or keep them (:data:`False`).
+91-
+92-	*reverse* (:class:`bool`) is whether to reverse the pattern order
+93-	(:data:`True`), or keep the order (:data:`True`).
+94-
+95-	Returns the enumerated patterns (:class:`list` of :class:`tuple`).
+96-	"""
+97-	out_patterns = [
+98-		(__i, __pat)
+99-		for __i, __pat in enumerate(patterns)
+100-		if not filter or __pat.include is not None
+101-	]
+102-	if reverse:
+103-		out_patterns.reverse()
+104-
+105-	return out_patterns
+106-
+107-
+108-def get_regex_flags(regex: Union[re.Pattern, str, bytes, None]) -> int:
+109-	"""
+110-	Get the compile flags of a pattern's regular expression.
+111-
+112-	*regex* (:class:`re.Pattern`, :class:`bytes`, :class:`str`, or
+113-	:data:`None`) is the regular expression of a :class:`.RegexPattern`.
+114-
+115-	Returns the flags (:class:`int`) of a regular expression compiled by
+116-	Python's *re* module, or zero (:class:`int`) for anything else (a native
+117-	backend only ever sees the expression of a foreign pattern).
+118-	"""
+119-	if isinstance(regex, re.Pattern):
+88:def check_match_file(
+89-	patterns: Iterable[tuple[int, Pattern]],
+90-	file: str,
+91-	is_reversed: Optional[bool] = None,
+92-) -> tuple[Optional[bool], Optional[int]]:
+93-	"""
+94-	Check the file against the patterns.
+95-
+96-	*patterns* (:class:`~collections.abc.Iterable`) yields each indexed pattern
+97-	(:class:`tuple`) which contains the pattern index (:class:`int`) and actua
+98-	pattern (:class:`.Pattern`).
+99-
+100-	*file* (:class:`str`) is the normalized file path to be matched against
+101-	*patterns*.
+102-
+103-	*is_reversed* (:class:`bool` or :data:`None`) is whether the order of the
+104-	patterns has been reversed. Default is :data:`None` for :data:`False`.
+105-	Reversing the order of the patterns is an optimization.
+106-
+107-	Returns a :class:`tuple` containing whether to include *file* (:class:`bool`
+108-	or :data:`None`), and the index of the last matched pattern (:class:`int` or
+109-	:data:`None`).
+110-	"""
+111-	if is_reversed:
+112-		# Check patterns in reverse order. The first pattern that matches takes
+113-		# precedence.
+114-		for index, pattern in patterns:
+115-			if pattern.include is not None and pattern.match_file(file) is not None:
+116-				return pattern.include, index
+117-
+118-		return None, None
+119-
+120-	else:
+121-		# Check all patterns. The last pattern that matches takes precedence.
+122-		out_include: Optional[bool] = None
+123-		out_index: Optional[int] = None
+124-		for index, pattern in patterns:
+125-			if pattern.include is not None and pattern.match_file(file) is not None:
+126-				out_include = pattern.include
+127-				out_index = index
+128-

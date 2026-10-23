@@ -1,0 +1,127 @@
+
+        self.assertIn(10, D)
+        self.assertNotIn(40, D)
+        self.assertIn(20, D)
+        self.assertNotIn(21, D)
+
+        # Checking in-ness shouldn't advance the iterator
+        self.assertEqual(next(D[10]), 10)
+
+    def test_validator(self):
+        iterable = count(0)
+        key = lambda x: int(str(x)[0])  # First digit of each number
+        validator = lambda x: 0 < x < 10  # No leading zeros
+        D = mi.bucket(iterable, key, validator=validator)
+        self.assertEqual(mi.take(3, D[1]), [1, 10, 11])
+        self.assertNotIn(0, D)  # Non-valid entries don't return True
+        self.assertNotIn(0, D._cache)  # Don't store non-valid entries
+        self.assertEqual(list(D[0]), [])
+
+    def test_list(self):
+        iterable = [10, 20, 30, 11, 21, 31, 12, 22, 23, 33]
+        D = mi.bucket(iterable, key=lambda x: 10 * (x // 10))
+        self.assertEqual(list(D[10]), [10, 11, 12])
+        self.assertEqual(list(D[20]), [20, 21, 22, 23])
+        self.assertEqual(list(D[30]), [30, 31, 33])
+        self.assertEqual(set(D), {10, 20, 30})
+
+    def test_list_validator(self):
+        iterable = [10, 20, 30, 11, 21, 31, 12, 22, 23, 33]
+        key = lambda x: 10 * (x // 10)
+        validator = lambda x: x != 20
+        D = mi.bucket(iterable, key, validator=validator)
+        self.assertEqual(set(D), {10, 30})
+        self.assertEqual(list(D[10]), [10, 11, 12])
+        self.assertEqual(list(D[20]), [])
+        self.assertEqual(list(D[30]), [30, 31, 33])
+
+    def test_falsey_validator_is_honoured(self):
+        # A falsey callable is still a valid validator and must not be
+        # replaced by the default (see #1308).
+        class AllowedKeys(set):
+            def __call__(self, key):
+                return key in self
+
+        allowed = AllowedKeys()
+        self.assertFalse(allowed)  # Sanity: the validator itself is falsey
+        D = mi.bucket(
+            iter([10, 20, 11, 21]), key=lambda x: x, validator=allowed
+        )
+        self.assertEqual(list(D[10]), [])
+        self.assertNotIn(10, D)
+        self.assertEqual(set(D), set())
+
+    def test_in_does_not_add_key(self):
+        # A failed membership test must not invent a key (see #1284)
+        iterable = [10, 20, 11, 21]
+        D = mi.bucket(iterable, key=lambda x: 10 * (x // 10))
+        self.assertFalse(30 in D)
+        self.assertEqual(set(D), {10, 20})
+        self.assertEqual(list(D[30]), [])
+
+    def test_getitem_miss_does_not_add_key(self):
+        # Selecting an absent bucket must not invent a key either
+        iterable = [10, 20, 11, 21]
+        D = mi.bucket(iterable, key=lambda x: 10 * (x // 10))
+        self.assertEqual(list(D[30]), [])
+        self.assertEqual(set(D), {10, 20})
+
+    def test_in_does_not_add_key_with_validator(self):
+        # A key the validator accepts but the iterable never produces
+        iterable = [10, 20, 11, 21]
+        key = lambda x: 10 * (x // 10)
+        validator = lambda x: x in {10, 20, 30}
+        D = mi.bucket(iterable, key, validator=validator)
+        self.assertFalse(30 in D)
+        self.assertEqual(set(D), {10, 20})
+
+    def test_keys_are_only_those_seen(self):
+        # Every reported key must have had at least one matching item
+        iterable = [10, 20, 11]
+        D = mi.bucket(iterable, key=lambda x: 10 * (x // 10))
+        for missing in (30, 40, 50):
+            self.assertFalse(missing in D)
+        self.assertEqual(set(D), {10, 20})
+
+
+class SpyTests(TestCase):
+    """Tests for ``spy()``"""
+
+    def test_basic(self):
+        original_iterable = iter('abcdefg')
+                    elif self._validator(item_value):
+                        self._cache[item_value].append(item)
+
+    def __iter__(self):
+        for item in self._it:
+            item_value = self._key(item)
+            if self._validator(item_value):
+                self._cache[item_value].append(item)
+
+        return iter(self._cache)
+
+    def __getitem__(self, value):
+        if not self._validator(value):
+            return iter(())
+
+        return self._get_values(value)
+
+
+def spy(iterable, n=1):
+    """Return a 2-tuple with a list containing the first *n* elements of
+    *iterable*, and an iterator with the same items as *iterable*.
+    This allows you to "look ahead" at the items in the iterable without
+    advancing it.
+
+    There is one item in the list by default:
+
+        >>> iterable = 'abcdefg'
+        >>> head, iterable = spy(iterable)
+        >>> head
+        ['a']
+        >>> list(iterable)
+        ['a', 'b', 'c', 'd', 'e', 'f', 'g']
+
+    You may use unpacking to retrieve items instead of lists:
+
+        >>> (head,), iterable = spy('abcdefg')

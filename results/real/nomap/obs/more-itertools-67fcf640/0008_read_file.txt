@@ -1,0 +1,46 @@
+  1110 |         self.assertEqual(list(D[30]), [30, 31, 33])
+  1111 | 
+  1112 |     def test_falsey_validator_is_honoured(self):
+  1113 |         # A falsey callable is still a valid validator and must not be
+  1114 |         # replaced by the default (see #1308).
+  1115 |         class AllowedKeys(set):
+  1116 |             def __call__(self, key):
+  1117 |                 return key in self
+  1118 | 
+  1119 |         allowed = AllowedKeys()
+  1120 |         self.assertFalse(allowed)  # Sanity: the validator itself is falsey
+  1121 |         D = mi.bucket(iter([10, 20, 11, 21]), key=lambda x: x, validator=allowed)
+  1122 |         self.assertEqual(list(D[10]), [])
+  1123 |         self.assertNotIn(10, D)
+  1124 |         self.assertEqual(set(D), set())
+  1125 | 
+  1126 |     def test_in_does_not_add_key(self):
+  1127 |         # A failed membership test must not invent a key (see #1284)
+  1128 |         iterable = [10, 20, 11, 21]
+  1129 |         D = mi.bucket(iterable, key=lambda x: 10 * (x // 10))
+  1130 |         self.assertFalse(30 in D)
+  1131 |         self.assertEqual(set(D), {10, 20})
+  1132 |         self.assertEqual(list(D[30]), [])
+  1133 | 
+  1134 |     def test_getitem_miss_does_not_add_key(self):
+  1135 |         # Selecting an absent bucket must not invent a key either
+  1136 |         iterable = [10, 20, 11, 21]
+  1137 |         D = mi.bucket(iterable, key=lambda x: 10 * (x // 10))
+  1138 |         self.assertEqual(list(D[30]), [])
+  1139 |         self.assertEqual(set(D), {10, 20})
+  1140 | 
+  1141 |     def test_in_does_not_add_key_with_validator(self):
+  1142 |         # A key the validator accepts but the iterable never produces
+  1143 |         iterable = [10, 20, 11, 21]
+  1144 |         key = lambda x: 10 * (x // 10)
+  1145 |         validator = lambda x: x in {10, 20, 30}
+  1146 |         D = mi.bucket(iterable, key, validator=validator)
+  1147 |         self.assertFalse(30 in D)
+  1148 |         self.assertEqual(set(D), {10, 20})
+  1149 | 
+  1150 |     def test_keys_are_only_those_seen(self):
+  1151 |         # Every reported key must have had at least one matching item
+  1152 |         iterable = [10, 20, 11]
+  1153 |         D = mi.bucket(iterable, key=lambda x: 10 * (x // 10))
+  1154 |         for missing in (30, 40, 50):
+... [6288 more lines; pass offset=1155 for next page]

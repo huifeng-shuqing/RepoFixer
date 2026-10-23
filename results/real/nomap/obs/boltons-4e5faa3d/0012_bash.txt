@@ -1,0 +1,115 @@
+
+    @property
+    def buffer(self):
+        try:
+            return self._buffer
+        except AttributeError:
+            self._buffer = BytesIO()
+        return self._buffer
+
+    @property
+    def len(self):
+        """Determine the length of the file"""
+        pos = self.tell()
+        if self._rolled:
+            self.seek(0)
+            val = os.fstat(self.fileno()).st_size
+        else:
+            self.seek(0, os.SEEK_END)
+            val = self.tell()
+        self.seek(pos)
+        return val
+
+    def tell(self):
+        self._checkClosed()
+        return self.buffer.tell()
+
+
+class SpooledStringIO(SpooledIOBase):
+    """
+    SpooledStringIO is a spooled file-like-object that only accepts unicode
+    values. On Python 2.x this means the 'unicode' type and on Python 3.x this
+    means the 'str' type. Values are accepted as unicode and then coerced into
+    utf-8 encoded bytes for storage. On retrieval, the values are returned as
+    unicode.
+
+    Example::
+
+        >>> from boltons import ioutils
+        >>> with ioutils.SpooledStringIO() as f:
+        ...     f.write(u"\u2014 Hey, an emdash!")
+        ...     _ = f.seek(0)
+        ...     isinstance(f.read(), str)
+        True
+
+    """
+    def __init__(self, *args, **kwargs):
+        self._tell = 0
+        super().__init__(*args, **kwargs)
+
+    def read(self, n=-1):
+        self._checkClosed()
+        ret = self.buffer.reader.read(n, n)
+        self._tell = self.tell() + len(ret)
+        return ret
+
+    def write(self, s):
+        self._checkClosed()
+        if not isinstance(s, str):
+            raise TypeError("str expected, got {}".format(
+                type(s).__name__
+            ))
+        current_pos = self.tell()
+        if self.buffer.tell() + len(s.encode('utf-8')) >= self._max_size:
+            self.rollover()
+        self.buffer.write(s.encode('utf-8'))
+        self._tell = current_pos + len(s)
+
+    def _traverse_codepoints(self, current_position, n):
+        """Traverse from current position to the right n codepoints"""
+        dest = current_position + n
+        while True:
+            if current_position == dest:
+                # By chance we've landed on the right position, break
+                break
+
+            # If the read would take us past the intended position then
+            # seek only enough to cover the offset
+            if current_position + READ_CHUNK_SIZE > dest:
+                self.read(dest - current_position)
+                break
+            else:
+----
+            self._joiner = b''
+        self._fileobjs = fileobjs
+        self._index = 0
+
+    def read(self, amt=None):
+        """Read up to the specified *amt*, seamlessly bridging across
+        files. Returns the appropriate type of string (bytes or text)
+        for the input, and returns an empty string when the files are
+        exhausted.
+        """
+        if not amt:
+            return self._joiner.join(f.read() for f in self._fileobjs)
+        parts = []
+        while amt > 0 and self._index < len(self._fileobjs):
+            parts.append(self._fileobjs[self._index].read(amt))
+            got = len(parts[-1])
+            if got < amt:
+                self._index += 1
+            amt -= got
+        return self._joiner.join(parts)
+
+    def seek(self, offset, whence=os.SEEK_SET):
+        """Enables setting position of the file cursor to a given
+        *offset*. Currently only supports ``offset=0``.
+        """
+        if whence != os.SEEK_SET:
+            raise NotImplementedError(
+                'MultiFileReader.seek() only supports os.SEEK_SET')
+        if offset != 0:
+            raise NotImplementedError(
+                'MultiFileReader only supports seeking to start at this time')
+        for f in self._fileobjs:
+            f.seek(0)

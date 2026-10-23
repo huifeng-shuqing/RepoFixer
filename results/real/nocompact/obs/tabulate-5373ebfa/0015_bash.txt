@@ -1,0 +1,72 @@
+1215:def _align_column(
+1216-    strings,
+1217-    alignment,
+1218-    minwidth=0,
+1219-    has_invisible=True,
+1220-    enable_widechars=False,
+1221-    is_multiline=False,
+1222-    preserve_whitespace=False,
+1223-):
+1224-    """[string] -> [padded_string]"""
+1225-    strings, padfn = _align_column_choose_padfn(
+1226-        strings, alignment, has_invisible, preserve_whitespace
+1227-    )
+1228-    width_fn = _align_column_choose_width_fn(has_invisible, enable_widechars, is_multiline)
+1229-
+1230-    s_widths = list(map(width_fn, strings))
+1231-    maxwidth = max(max(_flat_list(s_widths)), minwidth)
+1232-    # TODO: refactor column alignment in single-line and multiline modes
+1233-    if is_multiline:
+1234-        if not enable_widechars and not has_invisible:
+1235-            padded_strings = [
+1236-                "\n".join([padfn(maxwidth, s) for s in ms.splitlines()]) for ms in strings
+1237-            ]
+1238-        else:
+1239-            # enable wide-character width corrections
+1240-            s_lens = [[len(s) for s in re.split("[\r\n]", ms)] for ms in strings]
+1241-            visible_widths = [
+1242-                [maxwidth - (w - ln) for w, ln in zip(mw, ml)] for mw, ml in zip(s_widths, s_lens)
+1243-            ]
+1244-            # wcswidth and _visible_width don't count invisible characters;
+1245-            # padfn doesn't need to apply another correction
+1246-            padded_strings = [
+1247-                "\n".join([padfn(w, s) for s, w in zip((ms.splitlines() or ms), mw)])
+1248-                for ms, mw in zip(strings, visible_widths)
+1249-            ]
+1250-    else:  # single-line cell values
+1251-        if not enable_widechars and not has_invisible:
+1252-            padded_strings = [padfn(maxwidth, s) for s in strings]
+1253-        else:
+1254-            # enable wide-character width corrections
+1255-            s_lens = list(map(len, strings))
+1263:def _more_generic(type1, type2):
+1264-    types = {
+1265-        type(None): 0,
+1266-        bool: 1,
+1267-        int: 2,
+1268-        float: 3,
+1269-        bytes: 4,
+1270-        str: 5,
+1271-    }
+1272-    invtypes = {
+1273-        5: str,
+1274-        4: bytes,
+1275-        3: float,
+1276-        2: int,
+1277-        1: bool,
+1278-        0: type(None),
+1279-    }
+1280-    moregeneric = max(types.get(type1, 5), types.get(type2, 5))
+1281-    return invtypes[moregeneric]
+1282-
+1283-
+1284-def _column_type(strings, has_invisible=True, numparse=True):
+1285-    """The least generic type all column values are convertible to.
+1286-
+1287-    >>> _column_type([True, False]) is bool
+1288-    True
+1289-    >>> _column_type(["1", "2"]) is int
+1290-    True
+1291-    >>> _column_type(["1", "2.3"]) is float
+1292-    True
+1293-    >>> _column_type(["1", "2.3", "four"]) is str

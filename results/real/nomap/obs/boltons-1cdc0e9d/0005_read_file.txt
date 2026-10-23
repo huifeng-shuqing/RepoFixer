@@ -1,0 +1,61 @@
+   520 |         Args:
+   521 |             amount (float): A value between 0.0 and 0.5 to trim off of
+   522 |                 each side of the data.
+   523 | 
+   524 |         .. note:
+   525 | 
+   526 |             This operation modifies the data in-place. It does not
+   527 |             make or return a copy.
+   528 | 
+   529 |         """
+   530 |         trim = float(amount)
+   531 |         if not 0.0 <= trim < 0.5:
+   532 |             raise ValueError('expected amount between 0.0 and 0.5, not %r'
+   533 |                              % trim)
+   534 |         size = len(self.data)
+   535 |         size_diff = int(size * trim)
+   536 |         if size_diff == 0.0:
+   537 |             return
+   538 |         self.data = self._get_sorted_data()[size_diff:-size_diff]
+   539 |         self.clear_cache()
+   540 | 
+   541 |     def _get_pow_diffs(self, power):
+   542 |         """
+   543 |         A utility function used for calculating statistical moments.
+   544 |         """
+   545 |         m = self.mean
+   546 |         return [(v - m) ** power for v in self.data]
+   547 | 
+   548 |     def _get_bin_bounds(self, count=None, with_max=False):
+   549 |         if not self.data:
+   550 |             return [0.0]  # TODO: raise?
+   551 | 
+   552 |         data = self.data
+   553 |         len_data, min_data, max_data = len(data), min(data), max(data)
+   554 | 
+   555 |         if len_data < 4:
+   556 |             if not count:
+   557 |                 count = len_data
+   558 |             dx = (max_data - min_data) / float(count)
+   559 |             bins = [min_data + (dx * i) for i in range(count)]
+   560 |         elif count is None:
+   561 |             # freedman algorithm for fixed-width bin selection
+   562 |             q25, q75 = self.get_quantile(0.25), self.get_quantile(0.75)
+   563 |             dx = 2 * (q75 - q25) / (len_data ** (1 / 3.0))
+   564 |             bin_count = max(1, int(ceil((max_data - min_data) / dx)))
+   565 |             bins = [min_data + (dx * i) for i in range(bin_count + 1)]
+   566 |             bins = [b for b in bins if b < max_data]
+   567 |         else:
+   568 |             dx = (max_data - min_data) / float(count)
+   569 |             bins = [min_data + (dx * i) for i in range(count)]
+   570 | 
+   571 |         if with_max:
+   572 |             bins.append(float(max_data))
+   573 | 
+   574 |         return bins
+   575 | 
+   576 |     def get_histogram_counts(self, bins=None, **kw):
+   577 |         """Produces a list of ``(bin, count)`` pairs comprising a histogram of
+   578 |         the Stats object's data, using fixed-width bins. See
+   579 |         :meth:`Stats.format_histogram` for more details.
+... [256 more lines; pass offset=580 for next page]

@@ -1,0 +1,103 @@
+commit d1c7851e4a545e3a2532be34d1e8230277a2722f
+Author: dataset <dataset@local>
+Date:   Fri Oct 23 15:57:45 2026 +0800
+
+    build: apply test patch + stub _version (source fix removed)
+
+ tabulate/_version.py |  2 ++
+ test/test_output.py  | 47 +++++++++++++++++++++++++++++++++++++++++++----
+ 2 files changed, 45 insertions(+), 4 deletions(-)
+commit d1c7851e4a545e3a2532be34d1e8230277a2722f
+Author: dataset <dataset@local>
+Date:   Fri Oct 23 15:57:45 2026 +0800
+
+    build: apply test patch + stub _version (source fix removed)
+
+diff --git a/tabulate/_version.py b/tabulate/_version.py
+new file mode 100644
+index 0000000..f7c3ae1
+--- /dev/null
++++ b/tabulate/_version.py
+@@ -0,0 +1,2 @@
++__version__ = version = "0.0.0"
++__version_tuple__ = version_tuple = (0, 0, 0)
+diff --git a/test/test_output.py b/test/test_output.py
+index e49674f..ea3da87 100644
+--- a/test/test_output.py
++++ b/test/test_output.py
+@@ -369,9 +369,9 @@ def test_simple_headerless_with_sep_line_with_padding_in_tablefmt():
+     "Output: simple without headers with sep line with padding in tablefmt"
+     expected = "\n".join(
+         [
+-            "|------|----------|",
++            "|:-----|---------:|",
+             "| spam |  41.9999 |",
+-            "|------|----------|",
++            "|:-----|---------:|",
+             "| eggs | 451      |",
+         ]
+     )
+@@ -489,7 +489,7 @@ def test_github():
+     expected = "\n".join(
+         [
+             "| strings   |   numbers |",
+-            "|-----------|-----------|",
++            "|:----------|----------:|",
+             "| spam      |   41.9999 |",
+             "| eggs      |  451      |",
+         ]
+@@ -506,7 +506,7 @@ def test_github_multiline():
+         [
+             "|        more | more spam   |",
+             "|   spam eggs | & eggs      |",
+-            "|-------------|-------------|",
++            "|------------:|:------------|",
+             "|           2 | foo         |",
+             "|             | bar         |",
+         ]
+@@ -515,6 +515,45 @@ def test_github_multiline():
+     assert_equal(expected, result)
+ 
+ 
++def test_github_with_colalign():
++    "Output: github with explicit column alignment"
++    expected = "\n".join(
++        [
++            "| Name   |   Age |",
++            "|:-------|------:|",
++            "| Alice  |    24 |",
++            "| Bob    |    19 |",
++        ]
++    )
++    result = tabulate(
++        [["Alice", 24], ["Bob", 19]],
++        ["Name", "Age"],
++        tablefmt="github",
++        colalign=("left", "right"),
++    )
++    assert_equal(expected, result)
++
++
++def test_github_no_alignment():
++    "Output: github without alignment hints when numalign/stralign are disabled"
++    expected = "\n".join(
++        [
++            "| strings | numbers |",
++            "|-----------|-----------|",
++            "| spam | 41.9999 |",
++            "| eggs | 451 |",
++        ]
++    )
++    result = tabulate(
++        _test_table,
++        _test_table_headers,
++        tablefmt="github",
++        numalign=None,
++        stralign=None,
++    )
++    assert_equal(expected, result)
++
++
+ def test_grid():
+     "Output: grid with headers"
+     expected = "\n".join(

@@ -1,0 +1,101 @@
+   160 | 			should never match, a null-operation will be returned.
+   161 | 
+   162 | 		-	``'null'``: Invalid notation will result in a null-operation.
+   163 | 
+   164 | 		-	``'raise'``: Invalid notation will raise a :exc:`GitIgnorePatternError`.
+   165 | 		"""
+   166 | 		super().__init__(pattern, include, errors=errors)
+   167 | 
+   168 | 	@staticmethod
+   169 | 	def escape(s: AnyStr) -> AnyStr:
+   170 | 		"""
+   171 | 		Escape special characters in the given string.
+   172 | 
+   173 | 		*s* (:class:`str` or :class:`bytes`) a filename or a string that you want to
+   174 | 		escape, usually before adding it to a ".gitignore".
+   175 | 
+   176 | 		Returns the escaped string (:class:`str` or :class:`bytes`).
+   177 | 		"""
+   178 | 		if isinstance(s, str):
+   179 | 			return_type = str
+   180 | 			string = s
+   181 | 		elif isinstance(s, bytes):
+   182 | 			return_type = bytes
+   183 | 			string = s.decode(_BYTES_ENCODING)
+   184 | 		else:
+   185 | 			raise TypeError(f"s:{s!r} is not a unicode or byte string.")
+   186 | 
+   187 | 		# Reference: https://git-scm.com/docs/gitignore#_pattern_format
+   188 | 		out_string = ''.join((f"\\{x}" if x in '\\[]!*#?' else x) for x in string)
+   189 | 
+   190 | 		# EDGE CASE: Git strips trailing spaces from a pattern unless they are
+   191 | 		# escaped with a backslash. Escape them so an escaped filename that ends
+   192 | 		# with a space still matches that file.
+   193 | 		stripped = out_string.rstrip(' ')
+   194 | 		trailing = len(out_string) - len(stripped)
+   195 | 		if trailing:
+   196 | 			out_string = stripped + '\\ ' * trailing
+   197 | 
+   198 | 		if return_type is bytes:
+   199 | 			out_bytes = out_string.encode(_BYTES_ENCODING)
+   200 | 			return out_bytes  # type: ignore[return-value]
+   201 | 		else:
+   202 | 			return out_string  # type: ignore[return-value]
+   203 | 
+   204 | 	@staticmethod
+   205 | 	def _translate_segment_glob(
+   206 | 		pattern: str,
+   207 | 		errors: Literal['literal', 'raise'],
+   208 | 	) -> str:
+   209 | 		"""
+   210 | 		Translates the glob pattern to a regular expression. This is used in the
+   211 | 		constructor to translate a path segment glob pattern to its corresponding
+   212 | 		regular expression.
+   213 | 
+   214 | 		*pattern* (:class:`str`) is the glob pattern.
+   215 | 
+   216 | 		*errors* (:class:`str`) is how to handle invalid pattern notation in the
+   217 | 		pattern:
+   218 | 
+   219 | 		-	``'literal'``: Invalid notation will be treated as a literal string.
+   220 | 
+   221 | 		-	``'raise'``: Invalid notation will raise an exception.
+   222 | 
+   223 | 		Raises :exc:`._PosixClassError` when an invalid POXIS class is found and
+   224 | 		*errors* is ``'raise'``.
+   225 | 
+   226 | 		Raises :exc:`._RangeNotationError` when an invalid range notation is found
+   227 | 		and *errors* is ``'raise'``.
+   228 | 
+   229 | 		Raises :exc:`._TrailingBackslashError` when a trailing backslash is found at
+   230 | 		the end of the pattern, regardless of the value of *errors*.
+   231 | 
+   232 | 		Returns the regular expression (:class:`str`).
+   233 | 		"""
+   234 | 		# NOTE: This is derived from `fnmatch.translate()` and is similar to the
+   235 | 		# POSIX function `fnmatch()` with the `FNM_PATHNAME` flag set.
+   236 | 
+   237 | 		escape = False
+   238 | 		regex = ''
+   239 | 		i, end = 0, len(pattern)
+   240 | 		while i < end:
+   241 | 			# Get next character.
+   242 | 			char = pattern[i]
+   243 | 			i += 1
+   244 | 
+   245 | 			if escape:
+   246 | 				# Escape the character.
+   247 | 				escape = False
+   248 | 				regex += re.escape(char)
+   249 | 
+   250 | 			elif char == '\\':
+   251 | 				# Escape character, escape next character.
+   252 | 				escape = True
+   253 | 
+   254 | 			elif char == '*':
+   255 | 				# Multi-character wildcard. Match any string (except slashes), including
+   256 | 				# an empty string.
+   257 | 				regex += '[^/]*'
+   258 | 
+   259 | 			elif char == '?':
+... [159 more lines; pass offset=260 for next page]

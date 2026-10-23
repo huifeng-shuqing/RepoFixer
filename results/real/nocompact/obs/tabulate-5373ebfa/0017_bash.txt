@@ -1,0 +1,50 @@
+2471:def _expand_numparse(disable_numparse, column_count):
+2472-    """
+2473-    Return a list of bools of length `column_count` which indicates whether
+2474-    number parsing should be used on each column.
+2475-    If `disable_numparse` is a list of indices, each of those indices are False,
+2476-    and everything else is True.
+2477-    If `disable_numparse` is a bool, then the returned list is all the same.
+2478-    """
+2479-    if isinstance(disable_numparse, Iterable):
+2480-        numparses = [True] * column_count
+2481-        for index in disable_numparse:
+2482-            numparses[index] = False
+2483-        return numparses
+2484-    else:
+2485-        return [not disable_numparse] * column_count
+2486-
+2487-
+2488-def _expand_iterable(original, num_desired, default):
+2489-    """
+2490-    Expands the `original` argument to return a return a list of
+2491-    length `num_desired`. If `original` is shorter than `num_desired`, it will
+969:def _type(string, has_invisible=True, numparse=True):
+999:    elif numparse and (
+1008:    elif numparse and (
+1284:def _column_type(strings, has_invisible=True, numparse=True):
+1306:    types = [_type(s, has_invisible, numparse) for s in strings]
+1625:    numparses=True,
+1634:    numparses = _expand_iterable(numparses, num_cols, True)
+1640:        for cell, width, numparse in zip(row, colwidths, numparses):
+1641:            if _isnumber(cell) and numparse:
+1661:                        else str(_type(cell, numparse)(cell))
+1712:    disable_numparse=False,
+2211:    `disable_numparse=True`. For more fine grained control, a list column
+2213:    e.g. `disable_numparse=[0, 2]` would disable number parsing only on the
+2263:        numparses = _expand_numparse(disable_numparse, num_cols)
+2267:            numparses=numparses,
+2280:        numparses = _expand_numparse(disable_numparse, num_cols)
+2284:            numparses=numparses,
+2302:        disable_numparse = True
+2347:    numparses = _expand_numparse(disable_numparse, len(cols))
+2348:    coltypes = [_column_type(col, numparse=np) for col, np in zip(cols, numparses)]
+2471:def _expand_numparse(disable_numparse, column_count):
+2475:    If `disable_numparse` is a list of indices, each of those indices are False,
+2477:    If `disable_numparse` is a bool, then the returned list is all the same.
+2479:    if isinstance(disable_numparse, Iterable):
+2480:        numparses = [True] * column_count
+2481:        for index in disable_numparse:
+2482:            numparses[index] = False
+2483:        return numparses
+2485:        return [not disable_numparse] * column_count

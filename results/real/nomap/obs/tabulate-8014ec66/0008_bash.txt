@@ -1,0 +1,79 @@
+148-    """Return a horizontal line with optional colons to indicate column's
+149-    alignment (as in `pipe` output format)."""
+150:    if not colaligns:  # e.g. printing an empty data frame (github issue #15)
+151-        colaligns = [""] * len(colwidths)
+152-    segments = "|".join(_pipe_segment_with_colons(a, w) for a, w in zip(colaligns, colwidths))
+153-    return f"|{segments}|"
+154-
+155-
+156-def _grid_segment_with_colons(colwidth, align):
+157-    """Return a segment of a horizontal line with optional colons which indicate
+158-    column's alignment in a grid table."""
+159-    width = colwidth
+160-    if align == "right":
+161-        return ("=" * (width - 1)) + ":"
+162-    elif align == "center":
+--
+523-        with_header_hide=None,
+524-    ),
+525:    "github": TableFormat(
+526-        lineabove=Line("|", "-", "|", "|"),
+527-        linebelowheader=Line("|", "-", "|", "|"),
+528-        linebetweenrows=None,
+529-        linebelow=None,
+530-        headerrow=DataRow("|", "|", "|"),
+531-        datarow=DataRow("|", "|", "|"),
+532-        padding=1,
+533-        with_header_hide=["lineabove"],
+534-    ),
+535-    "pipe": TableFormat(
+536-        lineabove=_pipe_line_with_colons,
+537-        linebelowheader=_pipe_line_with_colons,
+--
+744-    "psql": "psql",
+745-    "rst": "rst",
+746:    "github": "github",
+747-    "outline": "outline",
+748-    "simple_outline": "simple_outline",
+749-    "rounded_outline": "rounded_outline",
+750-    "heavy_outline": "heavy_outline",
+751-    "mixed_outline": "mixed_outline",
+752-    "double_outline": "double_outline",
+753-    "fancy_outline": "fancy_outline",
+754-}
+755-
+756-# TODO: Add multiline support for the remaining table formats:
+757-#       - mediawiki: Replace \n with <br>
+758-#       - moinmoin: TBD
+--
+778-#
+779-# Also include the terminal hyperlink sequences as described here:
+780:# https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda
+781-#
+782-# OSC 8 ; params ; uri ST display_text OSC 8 ;; ST
+783-#
+784-# Example: \x1b]8;;https://example.com\x5ctext to show\x1b]8;;\x5c
+785-#
+786-# Where:
+787-# OSC: ESC followed by the ']' character (0x5d)
+788-# params: 0..n optional key value pairs separated by ':' (e.g. foo=bar:baz=qux:abc=123)
+789-# URI: the actual URI with protocol scheme (e.g. https://, file://, ftp://)
+790-# ST: ESC followed by the '\' character (0x5c)
+791-_esc = r"\x1b"
+792-_csi = rf"{_esc}\["
+--
+2889-
+2890-    Pretty-print tabular data.
+2891:    See also https://github.com/astanin/python-tabulate
+2892-
+2893-    FILE                      a filename of the file with tabular data;
+2894-                              if "-" or missing, read data from stdin.
+2895-
+2896-    Options:
+2897-
+2898-    -h, --help                show this message
+2899-    -1, --header              use the first row of data as a table header
+2900-    -o FILE, --output FILE    print table to FILE (default: stdout)
+2901-    -s REGEXP, --sep REGEXP   use a custom column separator (default: whitespace)
+2902-    -F FPFMT, --float FPFMT   floating point number format (default: g)
+2903-    -I INTFMT, --int INTFMT   integer point number format (default: "")

@@ -1,0 +1,201 @@
+    55 | 	'print': '\\x20-\\x2e\\x30-\\x7e',
+    56 | 	'punct': '!-.:-@\\[-`{-~',
+    57 | 	'space': '\\t\\n\\r ',
+    58 | 	'upper': 'A-Z',
+    59 | 	'xdigit': '0-9A-Fa-f',
+    60 | }
+    61 | """
+    62 | Maps each POSIX bracket character class name to ASCII regex ranges, excluding
+    63 | the directory separator as required by git's wildmatch behavior.
+    64 | """
+    65 | 
+    66 | 
+    67 | def _strip_trailing_ws(pattern: str) -> str:
+    68 | 	"""
+    69 | 	Strip trailing spaces and line endings from the pattern while considering
+    70 | 	that they can be escaped. Other whitespace is part of the filename.
+    71 | 
+    72 | 	*pattern* (:class:`str`) is the pattern.
+    73 | 
+    74 | 	Returns the modified pattern (:class:`str`).
+    75 | 	"""
+    76 | 	i = len(pattern) - 1
+    77 | 	if i == -1 or pattern[i] not in ' \r\n':
+    78 | 		# Fast path: pattern does not end with a space or line ending.
+    79 | 		return pattern
+    80 | 
+    81 | 	# Scan past spaces and line endings.
+    82 | 	i -= 1
+    83 | 	while i >= 0 and pattern[i] in ' \r\n':
+    84 | 		i -= 1
+    85 | 
+    86 | 	last_ws = i + 1
+    87 | 
+    88 | 	# Count backslashes.
+    89 | 	while i >= 0 and pattern[i] == '\\':
+    90 | 		i -= 1
+    91 | 
+    92 | 	bs_count = last_ws - i - 1
+    93 | 	if bs_count % 2 == 1:
+    94 | 		# Odd count, first whitespace character is escaped, strip the rest.
+    95 | 		last_ws += 1
+    96 | 
+    97 | 	# Strip trailing whitespace.
+    98 | 	return pattern[:last_ws]
+    99 | 
+   100 | 
+   101 | def _sub_bracket_token(match: re.Match[str]) -> str:
+   102 | 	"""
+   103 | 	Translate a single token matched by :data:`_BRACKET_TOKEN_REGEX`. A token can
+   104 | 	be a range (groups 1 and 2), a backslash escaped character (group 3), or a
+   105 | 	POSIX bracket character class (groups 4 and 5).
+   106 | 
+   107 | 	*match* (:class:`re.Match`) is the match object.
+   108 | 
+   109 | 	Returns the replacement string (:class:`str`).
+   110 | 	"""
+   111 | 	range_start, range_end, escape_char, class_negated, class_name = match.groups()
+   112 | 
+   113 | 	# Character range. A bracket expression cannot match a directory separator.
+   114 | 	if range_start is not None:
+   115 | 		range_start, range_end = range_start[-1], range_end[-1]
+   116 | 		if range_start < '/' < range_end:
+   117 | 			return re.escape(range_start) + '-.0-' + re.escape(range_end)
+   118 | 		return re.escape(range_start) + '-' + re.escape(range_end)
+   119 | 
+   120 | 	# Backslash escaped character.
+   121 | 	if escape_char:
+   122 | 		return re.escape(escape_char)
+   123 | 
+   124 | 	# POSIX bracket character class.
+   125 | 	class_regex = _POSIX_CLASS_TO_REGEX.get(class_name)
+   126 | 	if class_regex is not None and not class_negated:
+   127 | 		return class_regex
+   128 | 
+   129 | 	raise _PosixClassError((
+   130 | 		f"Invalid character class={match.group(0)!r} found in pattern="
+   131 | 		f"{match.string!r}."
+   132 | 	))  # _PosixClassError
+   133 | 
+   134 | 
+   135 | class _GitIgnoreBasePattern(RegexPattern):
+   136 | 	"""
+   137 | 	.. warning:: This class is not part of the public API. It is subject to
+   138 | 		change.
+   139 | 
+   140 | 	The :class:`_GitIgnoreBasePattern` class is the base implementation for a
+   141 | 	compiled gitignore pattern.
+   142 | 	"""
+   143 | 
+   144 | 	# Keep the dict-less class hierarchy.
+   145 | 	__slots__ = ()
+   146 | 
+   147 | 	def __init__(
+   148 | 		self,
+   149 | 		pattern: Union[AnyStr, re.Pattern, None],
+   150 | 		include: Optional[bool] = None,
+   151 | 		*,
+   152 | 		errors: Optional[Literal['literal', 'null', 'raise']] = None,
+   153 | 	) -> None:
+   154 | 		"""
+   155 | 		Initializes the :class:`_GitIgnoreBasePattern` instance.
+   156 | 
+   157 | 		*pattern* (:class:`str`, :class:`bytes`, :class:`re.Pattern`, or
+   158 | 		:data:`None`) is the pattern to compile into a regular expression.
+   159 | 
+   160 | 		*include* (:class:`bool` or :data:`None`) must be :data:`None` unless
+   161 | 		*pattern* is a precompiled regular expression (:class:`re.Pattern`) in which
+   162 | 		case it is whether matched files should be included (:data:`True`), excluded
+   163 | 		(:data:`False`), or is a null operation (:data:`None`).
+   164 | 
+   165 | 		*errors* (:class:`str` :data:`None`) is how to handle invalid notation in
+   166 | 		the pattern. Default is :data:`None` for ``'null'`` because that is the
+   167 | 		behavior of Git.
+   168 | 
+   169 | 		-	``'literal'``: Most invalid notation will be treated as a literal string.
+   170 | 			In cases where the gitignore documentation clearly states the pattern
+   171 | 			should never match, a null-operation will be returned.
+   172 | 
+   173 | 		-	``'null'``: Invalid notation will result in a null-operation.
+   174 | 
+   175 | 		-	``'raise'``: Invalid notation will raise a :exc:`GitIgnorePatternError`.
+   176 | 		"""
+   177 | 		super().__init__(pattern, include, errors=errors)
+   178 | 
+   179 | 	@staticmethod
+   180 | 	def escape(s: AnyStr) -> AnyStr:
+   181 | 		"""
+   182 | 		Escape special characters in the given string.
+   183 | 
+   184 | 		*s* (:class:`str` or :class:`bytes`) a filename or a string that you want to
+   185 | 		escape, usually before adding it to a ".gitignore".
+   186 | 
+   187 | 		Returns the escaped string (:class:`str` or :class:`bytes`).
+   188 | 		"""
+   189 | 		if isinstance(s, str):
+   190 | 			return_type = str
+   191 | 			string = s
+   192 | 		elif isinstance(s, bytes):
+   193 | 			return_type = bytes
+   194 | 			string = s.decode(_BYTES_ENCODING)
+   195 | 		else:
+   196 | 			raise TypeError(f"s:{s!r} is not a unicode or byte string.")
+   197 | 
+   198 | 		# Reference: https://git-scm.com/docs/gitignore#_pattern_format
+   199 | 		out_string = ''.join((f"\\{x}" if x in '\\[]!*#?' else x) for x in string)
+   200 | 
+   201 | 		# EDGE CASE: Git strips trailing spaces from a pattern unless they are
+   202 | 		# escaped with a backslash. Escape them so an escaped filename that ends
+   203 | 		# with a space still matches that file.
+   204 | 		stripped = out_string.rstrip(' ')
+   205 | 		trailing = len(out_string) - len(stripped)
+   206 | 		if trailing:
+   207 | 			out_string = stripped + '\\ ' * trailing
+   208 | 
+   209 | 		if return_type is bytes:
+   210 | 			out_bytes = out_string.encode(_BYTES_ENCODING)
+   211 | 			return out_bytes  # type: ignore[return-value]
+   212 | 		else:
+   213 | 			return out_string  # type: ignore[return-value]
+   214 | 
+   215 | 	@staticmethod
+   216 | 	def _translate_segment_glob(
+   217 | 		pattern: str,
+   218 | 		errors: Literal['literal', 'raise'],
+   219 | 	) -> str:
+   220 | 		"""
+   221 | 		Translates the glob pattern to a regular expression. This is used in the
+   222 | 		constructor to translate a path segment glob pattern to its corresponding
+   223 | 		regular expression.
+   224 | 
+   225 | 		*pattern* (:class:`str`) is the glob pattern.
+   226 | 
+   227 | 		*errors* (:class:`str`) is how to handle invalid pattern notation in the
+   228 | 		pattern:
+   229 | 
+   230 | 		-	``'literal'``: Invalid notation will be treated as a literal string.
+   231 | 
+   232 | 		-	``'raise'``: Invalid notation will raise an exception.
+   233 | 
+   234 | 		Raises :exc:`._PosixClassError` when an invalid POXIS class is found and
+   235 | 		*errors* is ``'raise'``.
+   236 | 
+   237 | 		Raises :exc:`._RangeNotationError` when an invalid range notation is found
+   238 | 		and *errors* is ``'raise'``.
+   239 | 
+   240 | 		Raises :exc:`._TrailingBackslashError` when a trailing backslash is found at
+   241 | 		the end of the pattern, regardless of the value of *errors*.
+   242 | 
+   243 | 		Returns the regular expression (:class:`str`).
+   244 | 		"""
+   245 | 		# NOTE: This is derived from `fnmatch.translate()` and is similar to the
+   246 | 		# POSIX function `fnmatch()` with the `FNM_PATHNAME` flag set.
+   247 | 
+   248 | 		escape = False
+   249 | 		regex = ''
+   250 | 		i, end = 0, len(pattern)
+   251 | 		while i < end:
+   252 | 			# Get next character.
+   253 | 			char = pattern[i]
+   254 | 			i += 1
+... [185 more lines; pass offset=255 for next page]

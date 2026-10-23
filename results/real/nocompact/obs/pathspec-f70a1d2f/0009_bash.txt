@@ -1,0 +1,415 @@
+"""
+This module provides the simple backend for :class:`~pathspec.gitignore.GitIgnoreSpec`.
+
+WARNING: The *pathspec._backends.simple* package is not part of the public API.
+Its contents and structure are likely to change.
+"""
+
+from collections.abc import (
+	Sequence)
+from typing import (
+	Optional)  # Replaced by `X | None` in 3.10.
+
+from pathspec.pattern import (
+	RegexPattern)
+from pathspec.patterns.gitignore.spec import (
+	_DIR_MARK)
+from pathspec._typing import (
+	override)  # Added in 3.12.
+
+from .pathspec import (
+	SimplePsBackend)
+
+
+class SimpleGiBackend(SimplePsBackend):
+	"""
+	The :class:`SimpleGiBackend` class is the default (or simple) implementation
+	used by :class:`~pathspec.gitignore.GitIgnoreSpec` for matching files.
+	"""
+
+	# Change type hint.
+	_patterns: list[tuple[int, RegexPattern]]  # type: ignore[assignment]
+
+	def __init__(
+		self,
+		patterns: Sequence[RegexPattern],
+		*,
+		no_filter: Optional[bool] = None,
+		no_reverse: Optional[bool] = None,
+	) -> None:
+		"""
+		Initialize the :class:`SimpleGiBackend` instance.
+
+		*patterns* (:class:`Sequence` of :class:`.RegexPattern`) contains the
+		compiled patterns.
+
+		*no_filter* (:class:`bool`) is whether to keep no-op patterns (:data:`True`),
+		or remove them (:data:`False`).
+
+		*no_reverse* (:class:`bool`) is whether to keep the pattern order
+		(:data:`True`), or reverse the order (:data:`True`).
+		"""
+		super().__init__(patterns, no_filter=no_filter, no_reverse=no_reverse)
+
+	@override
+	def match_file(self, file: str) -> tuple[Optional[bool], Optional[int]]:
+		"""
+		Check the file against the patterns.
+
+		*file* (:class:`str`) is the normalized file path to check.
+
+		Returns a :class:`tuple` containing whether to include *file* (:class:`bool`
+		or :data:`None`), and the index of the last matched pattern (:class:`int` or
+		:data:`None`).
+		"""
+		return self._match(file, check_ancestors=True)
+
+	def _match(
+		self, file: str, check_ancestors: bool,
+	) -> tuple[Optional[bool], Optional[int]]:
+		"""
+		Implements :meth:`match_file`. *check_ancestors* (:class:`bool`) is
+		whether to ask if an ancestor directory of *file* is excluded; see
+		:meth:`_ancestor_excluded` for why it can be skipped.
+		"""
+		is_reversed = self._is_reversed
+
+		# Resolve the ancestor directory and the file separately: a file negation
+		# only applies while no ancestor directory is excluded.
+		dir_include: Optional[bool] = None
+		dir_index: Optional[int] = None
+		file_include: Optional[bool] = None
+		file_index: Optional[int] = None
+
+		for index, pattern in self._patterns:
+			if (
+				(include := pattern.include) is not None
+				and (match := pattern.match_file(file)) is not None
+			):
+				# Pattern matched.
+				if match.match.groupdict().get(_DIR_MARK):
+					# A pattern can match both a strict ancestor of the file and the
+					# file itself. For anchored patterns there is only one match, but
+					# `**/` compiles to the unanchored `(?P<ps_d>/)`: on "a/b/" it
+					# matches at "a/" and at "b/", and `match` only returns the first.
+					is_ancestor = is_self = False
+					assert pattern.regex is not None, pattern
+					for dir_match in pattern.regex.finditer(file):
+						if dir_match.end(_DIR_MARK) < len(file):
+							is_ancestor = True
+						else:
+							is_self = True
+
+					if is_ancestor and (dir_include is None or not is_reversed):
+						dir_include = include
+						dir_index = index
+
+					if is_self and (file_include is None or not is_reversed):
+						file_include = include
+						file_index = index
+				elif file_include is None or not is_reversed:
+					# Pattern matched by a file pattern.
+					file_include = include
+					file_index = index
+
+		if dir_include and check_ancestors and self._ancestor_excluded(file):
+			return (dir_include, dir_index)
+		elif file_include is not None:
+			return (file_include, file_index)
+		elif dir_include:
+			# An ancestor matched an exclude pattern, but the spec as a whole
+			# re-includes that ancestor, so the rule does not apply.
+			return (None, None)
+		else:
+			return (dir_include, dir_index)
+
+	def _ancestor_excluded(self, file: str) -> bool:
+		"""
+		Whether any strict ancestor directory of *file* is excluded. Git stops
+		descending at the first excluded directory, so the ancestors are asked
+		outermost first, each as a directory query (trailing slash included).
+		By the time an ancestor is asked, every ancestor above it is known not to
+		be excluded, so it is matched without checking its own ancestors again;
+		otherwise each level re-asks all the levels above it and the work grows
+		exponentially with depth.
+		"""
+		index = file.find('/')
+		while index != -1 and index + 1 < len(file):
+			ancestor_include, _ancestor_index = self._match(
+				file[:index + 1], check_ancestors=False,
+			)
+			if ancestor_include:
+				return True
+			index = file.find('/', index + 1)
+
+		return False
+
+"""
+This module provides private utility functions for backends.
+
+WARNING: The *pathspec._backends* package is not part of the public API. Its
+contents and structure are likely to change.
+"""
+
+import operator
+import re
+from collections.abc import (
+	Iterable)
+from functools import (
+	reduce)
+from typing import (
+	Union,  # Replaced by `X | Y` in 3.10.
+	TypeVar,
+	overload)
+
+from pathspec.pattern import (
+	Pattern,
+	RegexPattern)
+
+_END_ANCHOR_BYTES = re.compile(rb'\\.', re.DOTALL)
+"""
+Regular expression to match an escaped character.
+"""
+
+_END_ANCHOR_STR = re.compile(r'\\.', re.DOTALL)
+"""
+Regular expression to match an escaped character.
+"""
+
+_ASCII_FLAGS = int(re.ASCII)
+"""
+The compile flags that both engines satisfy by default because their character
+classes and word boundaries are ASCII-only.
+
+`re.ASCII` cannot be relied upon this way when it is combined with
+`re.IGNORECASE`: the engines fold the case of Unicode characters that Python
+would leave alone.
+"""
+
+_NOOP_FLAGS = int(re.UNICODE | re.DEBUG)
+r"""
+The compile flags that need no translation.
+
+-	`re.UNICODE` is implied for str patterns, and both engines match `\w`, `\d`,
+	`\s`, and `\b` as ASCII regardless.
+
+-	`re.DEBUG` only affects how Python compiles the expression.
+"""
+
+_TRANSLATABLE_FLAGS = [
+	(int(re.IGNORECASE), 'i'),
+	(int(re.MULTILINE), 'm'),
+	(int(re.DOTALL), 's'),
+]
+"""
+The compile flags that both RE2 and Hyperscan understand as global inline flags
+at the start of an expression (`(?ims)`).
+
+RE2 rejects `(?x)` (it has no verbose mode), and both engines reject `(?a)`,
+`(?u)`, `(?U)`, and `(?L)`. Note that RE2 reads `(?U)` as *non-greedy*, which
+is not what Python's `re.UNICODE` means.
+"""
+
+_INCOMPATIBLE_FLAGS = ~(
+	_ASCII_FLAGS
+	| _NOOP_FLAGS
+	| reduce(operator.or_, [flag for flag, _letter in _TRANSLATABLE_FLAGS])
+)
+"""
+The compile flags that the Hyperscan and RE2 backends do not support.
+"""
+
+TPattern = TypeVar("TPattern", bound=Pattern)
+
+
+def enumerate_patterns(
+	patterns: Iterable[TPattern],
+	filter: bool,
+	reverse: bool,
+) -> list[tuple[int, TPattern]]:
+	"""
+	Enumerate the patterns.
+
+	*patterns* (:class:`Iterable` of :class:`.Pattern`) contains the patterns.
+
+	*filter* (:class:`bool`) is whether to remove no-op patterns (:data:`True`),
+	or keep them (:data:`False`).
+
+	*reverse* (:class:`bool`) is whether to reverse the pattern order
+	(:data:`True`), or keep the order (:data:`True`).
+
+	Returns the enumerated patterns (:class:`list` of :class:`tuple`).
+	"""
+	out_patterns = [
+		(__i, __pat)
+		for __i, __pat in enumerate(patterns)
+		if not filter or __pat.include is not None
+	]
+	if reverse:
+		out_patterns.reverse()
+
+	return out_patterns
+
+
+def get_regex_flags(regex: Union[re.Pattern, str, bytes, None]) -> int:
+	"""
+	Get the compile flags of a pattern's regular expression.
+
+	*regex* (:class:`re.Pattern`, :class:`bytes`, :class:`str`, or
+	:data:`None`) is the regular expression of a :class:`.RegexPattern`.
+
+	Returns the flags (:class:`int`) of a regular expression compiled by
+	Python's *re* module, or zero (:class:`int`) for anything else (a native
+	backend only ever sees the expression of a foreign pattern).
+	"""
+	if isinstance(regex, re.Pattern):
+		return int(regex.flags)
+
+	return 0
+
+
+def has_unsupported_flags(patterns: Iterable[Pattern]) -> bool:
+	"""
+	Check for active patterns with compile flags a native backend can't keep.
+
+	*patterns* (:class:`Iterable` of :class:`.Pattern`) contains the patterns.
+
+	Returns the answer (:class:`bool`).
+	"""
+	for pattern in patterns:
+		if pattern.include is None or not isinstance(pattern, RegexPattern):
+			continue
+
+		regex = pattern.regex
+		if not isinstance(regex, re.Pattern):
+			# The pattern was not compiled by Python's *re* module. Its flags are
+			# unknown, and only the simple backend can use it faithfully.
+			continue
+
+		if not supports_regex_flags(regex.flags):
+			return True
+
+	return False
+
+
+@overload
+def translate_end_anchor(regex: str) -> str:
+	...
+
+
+@overload
+def translate_end_anchor(regex: bytes) -> bytes:
+	...
+
+
+@overload
+def translate_end_anchor(regex: Union[str, bytes]) -> Union[str, bytes]:
+	...
+
+
+def translate_end_anchor(regex: Union[str, bytes]) -> Union[str, bytes]:
+	"""
+	Translate Python's strict end anchor to the RE2 and Hyperscan spelling.
+
+	*regex* (:class:`bytes` or :class:`str`) is the regular expression.
+
+	Returns the translated regular expression (:class:`bytes` or :class:`str`).
+	"""
+	# Escaped backslashes are consumed as pairs, keeping literal `\Z` names
+	# intact.
+	if isinstance(regex, bytes):
+		return _END_ANCHOR_BYTES.sub(_sub_end_anchor_bytes, regex)
+	else:
+		return _END_ANCHOR_STR.sub(_sub_end_anchor_str, regex)
+
+
+def _sub_end_anchor_bytes(match: re.Match) -> bytes:
+	"""
+	Replaces Python's strict end anchor to the RE2 and Hyperscan spelling.
+
+	*match* (:class:`re.Match`) is the match object.
+
+	Returns the string replacement (:class:`bytes`).
+	"""
+	val = match[0]
+	if val == rb'\Z':
+		return rb'\z'
+	else:
+		return val
+
+
+def _sub_end_anchor_str(match: re.Match) -> str:
+	"""
+	Replaces Python's strict end anchor to the RE2 and Hyperscan spelling.
+
+	*match* (:class:`re.Match`) is the match object.
+
+	Returns the string replacement (:class:`str`).
+	"""
+	val = match[0]
+	if val == r'\Z':
+		return r'\z'
+	else:
+		return val
+
+
+def supports_regex_flags(flags: int) -> bool:
+	"""
+	Check whether a native backend can preserve the compile *flags*.
+
+	*flags* (:class:`int`) is the flags of a compiled :class:`re.Pattern`.
+
+	Returns the answer (:class:`bool`).
+	"""
+	if flags & _INCOMPATIBLE_FLAGS:
+		return False
+
+	if flags & re.ASCII and flags & re.IGNORECASE:
+		return False
+
+	return True
+
+
+@overload
+def translate_regex_flags(regex: str, flags: int) -> str:
+	...
+
+
+@overload
+def translate_regex_flags(regex: bytes, flags: int) -> bytes:
+	...
+
+
+@overload
+def translate_regex_flags(regex: Union[str, bytes], flags: int) -> Union[str, bytes]:
+	...
+
+
+def translate_regex_flags(
+	regex: Union[str, bytes],
+	flags: int,
+) -> Union[str, bytes]:
+	"""
+	Prepend the global inline flags that a native backend understands.
+
+	*regex* (:class:`bytes` or :class:`str`) is the regular expression.
+
+	*flags* (:class:`int`) is the flags of the compiled :class:`re.Pattern`
+	that *regex* came from. Only flags accepted by
+	:func:`supports_regex_flags` may be translated.
+
+	Returns the regular expression (:class:`bytes` or :class:`str`).
+	"""
+	letters = ''.join(
+		letter
+		for flag, letter in _TRANSLATABLE_FLAGS
+		if flags & flag
+	)
+	if not letters:
+		return regex
+
+	prefix = f'(?{letters})'
+	if isinstance(regex, bytes):
+		return prefix.encode('ascii') + regex
+
+	return prefix + regex

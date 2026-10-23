@@ -1,0 +1,121 @@
+			# - NOTE: Use specified *include*.
+			regex = pattern
+
+		elif pattern is None:
+			# NOTE: Make sure to allow a null pattern to be passed for a null
+			# operation.
+			assert include is None, (
+				f"{include=!r} must be null when {pattern=!r} is null."
+			)
+
+		else:
+			raise TypeError(f"{pattern=!r} is not a string, re.Pattern, or None.")
+
+		super(RegexPattern, self).__init__(include)
+
+		self.pattern: Union[str, bytes, re.Pattern, None] = pattern
+		"""
+		*pattern* (:class:`str`, :class:`bytes`, :class:`re.Pattern`, or
+		:data:`None`) is the uncompiled, input pattern. This is for reference.
+		"""
+
+		self.regex: Optional[re.Pattern] = regex
+		"""
+		*regex* (:class:`re.Pattern` or :data:`None`) is the compiled regular
+		expression for the pattern.
+		"""
+
+	def __repr__(self) -> str:
+		"""
+		Returns a debug representation of this regex pattern.
+		"""
+		return f"{self.__class__.__name__}(pattern={self.pattern!r}, include={self.include!r})"
+
+	def __str__(self) -> str:
+		"""
+		Returns a string representation of this regex pattern. Equivalent to uncompiled pattern.
+
+		The string representation is the uncompiled pattern if it is not
+		:data:`None`; otherwise, an empty string.
+		"""
+		return str(self.pattern or "")
+
+	def __copy__(self: RegexPatternSelf) -> RegexPatternSelf:
+		"""
+		Performa a shallow copy of the pattern.
+
+		Returns the copy (:class:`RegexPattern`).
+		"""
+		other = self.__class__(self.regex, self.include)
+		other.pattern = self.pattern
+		return other
+
+	def __eq__(self, other: object) -> bool:
+		"""
+		Tests the equality of this regex pattern with *other* (:class:`RegexPattern`)
+		by comparing their :attr:`~Pattern.include` and :attr:`~RegexPattern.regex`
+		attributes.
+		"""
+		if isinstance(other, RegexPattern):
+			return self.include == other.include and self.regex == other.regex
+		else:
+			return NotImplemented
+
+	@override
+	def match_file(self, file: AnyStr) -> Optional[RegexMatchResult]:
+		"""
+		Matches this pattern against the specified file.
+
+		*file* (:class:`str` or :class:`bytes`) is the file path relative to the
+		root directory (e.g., "relative/path/to/file").
+
+		Returns the match result (:class:`.RegexMatchResult`) if *file* matched;
+		otherwise, :data:`None`.
+		"""
+		if (
+			(regex := self.regex) is not None
+			and (match := regex.search(file)) is not None
+		):
+			return RegexMatchResult(match)
+
+		return None
+
+	@classmethod
+	def pattern_to_regex(
+		cls,
+		pattern: AnyStr,
+	) -> tuple[Optional[AnyStr], Optional[bool]]:
+		"""
+		Convert the pattern into an uncompiled regular expression.
+
+		*pattern* (:class:`str` or :class:`bytes`) is the pattern to convert into a
+		regular expression.
+
+		Returns a :class:`tuple` containing:
+
+			-	*pattern* (:class:`str`, :class:`bytes` or :data:`None`) is the
+				uncompiled regular expression.
+
+			-	*include* (:class:`bool` or :data:`None`) is whether matched files
+				should be included (:data:`True`), excluded (:data:`False`), or is a
+				null-operation (:data:`None`).
+
+			.. note:: The default implementation simply returns *pattern* and
+			   :data:`True`.
+		"""
+		return (pattern, True)
+
+
+@dataclass()
+class RegexMatchResult(object):
+	"""
+	The :class:`RegexMatchResult` data class is used to return information about
+	the matched regular expression.
+	"""
+
+	# Keep the class dict-less.
+	__slots__ = (
+		'match',
+	)
+
+	match: re.Match

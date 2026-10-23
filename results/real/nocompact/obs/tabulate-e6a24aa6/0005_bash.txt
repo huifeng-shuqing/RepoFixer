@@ -1,0 +1,106 @@
+# depending on the formatter
+_DEFAULT_ALIGN = "default"
+
+
+# if True, enable wide-character (CJK) support
+WIDE_CHARS_MODE = wcwidth is not None
+
+# Constant that can be used as part of passed rows to generate a separating line
+# It is purposely an unprintable character, very unlikely to be used in a table
+SEPARATING_LINE = "\001"
+
+Line = namedtuple("Line", ["begin", "hline", "sep", "end"])
+
+
+@dataclass
+class DataRow:
+    begin: str
+    sep: str
+    end: str
+    escape_map: dict = None
+
+
+# A table structure is supposed to be:
+#
+#     --- lineabove ---------
+#         headerrow
+#     --- linebelowheader ---
+#         datarow
+#     --- linebetweenrows ---
+#     ... (more datarows) ...
+#     --- linebetweenrows ---
+#         last datarow
+#     --- linebelow ---------
+#
+# TableFormat's line* elements can be
+#
+#   - either None, if the element is not used,
+#   - or a Line tuple,
+#   - or a function: [col_widths], [col_alignments] -> string.
+#
+# TableFormat's *row elements can be
+#
+#   - either None, if the element is not used,
+#   - or a DataRow tuple,
+#   - or a function: [cell_values], [col_widths], [col_alignments] -> string.
+#
+# padding (an integer) is the amount of white space around data values.
+#
+# with_header_hide:
+#
+#   - either None, to display all table elements unconditionally,
+    r"$": r"\$",
+    r"#": r"\#",
+    r"_": r"\_",
+    r"^": r"\^{}",
+    r"{": r"\{",
+    r"}": r"\}",
+    r"~": r"\textasciitilde{}",
+    "\\": r"\textbackslash{}",
+    r"<": r"\ensuremath{<}",
+    r">": r"\ensuremath{>}",
+}
+
+
+_latex_row = DataRow("", "&", "\\\\", LATEX_ESCAPE_RULES)
+
+
+def _rst_escape_first_column(rows, headers):
+    def escape_empty(val):
+        if isinstance(val, (str, bytes)) and not val.strip():
+            return ".."
+        else:
+        linebelow=Line("╘", "═", "╧", "╛"),
+        headerrow=DataRow("│", "│", "│"),
+        datarow=DataRow("│", "│", "│"),
+        padding=1,
+        with_header_hide=None,
+    ),
+    "pipe": TableFormat(
+        lineabove=_pipe_line_with_colons,
+        linebelowheader=_pipe_line_with_colons,
+        linebetweenrows=None,
+        linebelow=None,
+        headerrow=DataRow("|", "|", "|"),
+        datarow=DataRow("|", "|", "|"),
+        padding=1,
+        with_header_hide=["lineabove"],
+    ),
+    "orgtbl": TableFormat(
+        lineabove=None,
+        linebelowheader=Line("|", "-", "+", "|"),
+        linebetweenrows=None,
+        linebelow=None,
+        headerrow=DataRow("|", "|", "|"),
+        datarow=DataRow("|", "|", "|"),
+        padding=1,
+        with_header_hide=None,
+    ),
+79:    escape_map: dict = None
+1210:def _align_column(
+2515:    escape_map: dict = rowfmt.escape_map
+2517:    if escape_map:
+2519:            return escape_map.get(c, c)
+2527:def _build_row(padded_cells: list[list], colwidths: list[int], colaligns: list[str], rowfmt: Union[DataRow, Callable]) -> str:
+2539:    lines.append(_build_row(padded_cells, colwidths, colaligns, rowfmt))
+2608:def _format_table(

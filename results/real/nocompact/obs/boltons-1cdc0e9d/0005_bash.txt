@@ -1,0 +1,203 @@
+
+        idxs = [bisect.bisect(bins, d) - 1 for d in self.data]
+        count_map = Counter(idxs)
+
+        bin_counts = [(b, count_map.get(i, 0)) for i, b in enumerate(bins)]
+
+        return bin_counts
+
+    def format_histogram(self, bins=None, **kw):
+        """Produces a textual histogram of the data, using fixed-width bins,
+        allowing for simple visualization, even in console environments.
+
+        >>> data = list(range(20)) + list(range(5, 15)) + [10]
+        >>> print(Stats(data).format_histogram(width=30))
+         0.0:  5 #########
+         4.4:  8 ###############
+         8.9: 11 ####################
+        13.3:  5 #########
+        17.8:  2 ####
+
+        In this histogram, five values are between 0.0 and 4.4, eight
+        are between 4.4 and 8.9, and two values lie between 17.8 and
+        the max.
+
+        You can specify the number of bins, or provide a list of
+        bin boundaries themselves. If no bins are provided, as in the
+        example above, `Freedman's algorithm`_ for bin selection is
+        used.
+
+        Args:
+            bins (int): Maximum number of bins for the
+                histogram. Also accepts a list of floating-point
+                bin boundaries. If the minimum boundary is still
+                greater than the minimum value in the data, that
+                boundary will be implicitly added. Defaults to the bin
+                boundaries returned by `Freedman's algorithm`_.
+            bin_digits (int): Number of digits to round each bin
+                to. Note that bins are always rounded down to avoid
+                clipping any data. Defaults to 1.
+            width (int): integer number of columns in the longest line
+               in the histogram. Defaults to console width on Python
+               3.3+, or 80 if that is not available.
+            format_bin (callable): Called on each bin to create a
+               label for the final output. Use this function to add
+               units, such as "ms" for milliseconds.
+
+        Should you want something more programmatically reusable, see
+        the :meth:`~Stats.get_histogram_counts` method, the output of
+        is used by format_histogram. The :meth:`~Stats.describe`
+        method is another useful summarization method, albeit less
+        visual.
+
+        .. _Freedman's algorithm: https://en.wikipedia.org/wiki/Freedman%E2%80%93Diaconis_rule
+        """
+        width = kw.pop('width', None)
+        format_bin = kw.pop('format_bin', None)
+        bin_counts = self.get_histogram_counts(bins=bins, **kw)
+        return format_histogram_counts(bin_counts,
+                                       width=width,
+                                       format_bin=format_bin)
+
+    def describe(self, quantiles=None, format=None):
+        """Provides standard summary statistics for the data in the Stats
+        object, in one of several convenient formats.
+
+        Args:
+            quantiles (list): A list of numeric values to use as
+                quantiles in the resulting summary. All values must be
+                0.0-1.0, with 0.5 representing the median. Defaults to
+                ``[0.25, 0.5, 0.75]``, representing the standard
+                quartiles.
+            format (str): Controls the return type of the function,
+                with one of three valid values: ``"dict"`` gives back
+                a :class:`dict` with the appropriate keys and
+                values. ``"list"`` is a list of key-value pairs in an
+                order suitable to pass to an OrderedDict or HTML
+                table. ``"text"`` converts the values to text suitable
+                for printing, as seen below.
+
+        Here is the information returned by a default ``describe``, as
+        presented in the ``"text"`` format:
+
+        >>> stats = Stats(range(1, 8))
+        >>> print(stats.describe(format='text'))
+        count:    7
+        mean:     4.0
+        std_dev:  2.0
+        mad:      2.0
+        min:      1
+        0.25:     2.5
+        0.5:      4
+        0.75:     5.5
+        max:      7
+
+        For more advanced descriptive statistics, check out my blog
+        post on the topic `Statistics for Software
+        <https://www.paypal-engineering.com/2016/04/11/statistics-for-software/>`_.
+
+        """
+        if format is None:
+            format = 'dict'
+        elif format not in ('dict', 'list', 'text'):
+            raise ValueError('invalid format for describe,'
+                             ' expected one of "dict"/"list"/"text", not %r'
+                             % format)
+        quantiles = quantiles or [0.25, 0.5, 0.75]
+        q_items = []
+        for q in quantiles:
+            q_val = self.get_quantile(q)
+            q_items.append((str(q), q_val))
+
+        items = [('count', self.count),
+                 ('mean', self.mean),
+                 ('std_dev', self.std_dev),
+                 ('mad', self.mad),
+                 ('min', self.min)]
+
+        items.extend(q_items)
+        items.append(('max', self.max))
+        if format == 'dict':
+            ret = dict(items)
+        elif format == 'list':
+            ret = items
+        elif format == 'text':
+            ret = '\n'.join(['{}{}'.format((label + ':').ljust(10), val)
+                             for label, val in items])
+        return ret
+
+
+def describe(data, quantiles=None, format=None):
+    """A convenience function to get standard summary statistics useful
+    for describing most data. See :meth:`Stats.describe` for more
+    details.
+
+    >>> print(describe(range(7), format='text'))
+    count:    7
+    mean:     3.0
+    std_dev:  2.0
+    mad:      2.0
+    min:      0
+    0.25:     1.5
+    0.5:      3
+    0.75:     4.5
+548:    def _get_bin_bounds(self, count=None, with_max=False):
+549-        if not self.data:
+550-            return [0.0]  # TODO: raise?
+551-
+552-        data = self.data
+553-        len_data, min_data, max_data = len(data), min(data), max(data)
+554-
+555-        if len_data < 4:
+556-            if not count:
+557-                count = len_data
+558-            dx = (max_data - min_data) / float(count)
+559-            bins = [min_data + (dx * i) for i in range(count)]
+560-        elif count is None:
+561-            # freedman algorithm for fixed-width bin selection
+562-            q25, q75 = self.get_quantile(0.25), self.get_quantile(0.75)
+563-            dx = 2 * (q75 - q25) / (len_data ** (1 / 3.0))
+564-            bin_count = max(1, int(ceil((max_data - min_data) / dx)))
+565-            bins = [min_data + (dx * i) for i in range(bin_count + 1)]
+566-            bins = [b for b in bins if b < max_data]
+567-        else:
+568-            dx = (max_data - min_data) / float(count)
+569-            bins = [min_data + (dx * i) for i in range(count)]
+570-
+571-        if with_max:
+572-            bins.append(float(max_data))
+573-
+574-        return bins
+575-
+576-    def get_histogram_counts(self, bins=None, **kw):
+577-        """Produces a list of ``(bin, count)`` pairs comprising a histogram of
+578-        the Stats object's data, using fixed-width bins. See
+579-        :meth:`Stats.format_histogram` for more details.
+580-
+581-        Args:
+582-            bins (int): maximum number of bins, or list of
+583-                floating-point bin boundaries. Defaults to the output of
+584-                Freedman's algorithm.
+585-            bin_digits (int): Number of digits used to round down the
+586-                bin boundaries. Defaults to 1.
+587-
+588-        The output of this method can be stored and/or modified, and
+--
+599:            bins = self._get_bin_bounds()
+600-        else:
+601-            try:
+602-                bin_count = int(bins)
+603-            except TypeError:
+604-                try:
+605-                    bins = [float(x) for x in bins]
+606-                except Exception:
+607-                    raise ValueError('bins expected integer bin count or list'
+608-                                     ' of float bin boundaries, not %r' % bins)
+609-                if self.min < bins[0]:
+610-                    bins = [self.min] + bins
+611-            else:
+612:                bins = self._get_bin_bounds(bin_count)
+613-
+614-        # floor and ceil really should have taken ndigits, like round()
+615-        round_factor = 10.0 ** bin_digits
+616-        bins = [floor(b * round_factor) / round_factor for b in bins]

@@ -1,0 +1,181 @@
+   876 | def _isconvertible(conv, string):
+   877 |     try:
+   878 |         conv(string)
+   879 |         return True
+   880 |     except (ValueError, TypeError):
+   881 |         return False
+   882 | 
+   883 | 
+   884 | def _isnumber(string):
+   885 |     """Detects if something *could* be considered a numeric value, vs. just a string.
+   886 | 
+   887 |     This promotes types convertible to both int and float to be considered
+   888 |     a float.  Note that, iff *all* values appear to be some form of numeric
+   889 |     value such as eg. "1e2", they would be considered numbers!
+   890 | 
+   891 |     The exception is things that appear to be numbers but overflow to
+   892 |     +/-inf, eg. "1e23456"; we'll have to exclude them explicitly.
+   893 | 
+   894 |     >>> _isnumber(123)
+   895 |     True
+   896 |     >>> _isnumber(123.45)
+   897 |     True
+   898 |     >>> _isnumber("123.45")
+   899 |     True
+   900 |     >>> _isnumber("123")
+   901 |     True
+   902 |     >>> _isnumber("spam")
+   903 |     False
+   904 |     >>> _isnumber("123e45")
+   905 |     True
+   906 |     >>> _isnumber("123e45678")  # evaluates equal to 'inf', but ... isn't
+   907 |     False
+   908 |     >>> _isnumber("inf")
+   909 |     True
+   910 |     >>> from fractions import Fraction
+   911 |     >>> _isnumber(Fraction(1,3))
+   912 |     True
+   913 | 
+   914 |     """
+   915 |     return (
+   916 |         # fast path
+   917 |         type(string) in (float, int)
+   918 |         # covers 'NaN', +/- 'inf', and eg. '1e2', as well as any type
+   919 |         # convertible to int/float.
+   920 |         or (
+   921 |             _isconvertible(float, string)
+   922 |             and (
+   923 |                 # some other type convertible to float
+   924 |                 not isinstance(string, (str, bytes))
+   925 |                 # or, a numeric string eg. "1e1...", "NaN", ..., but isn't
+   926 |                 # just an over/underflow
+   927 |                 or (
+   928 |                     not (math.isinf(float(string)) or math.isnan(float(string)))
+   929 |                     or string.lower() in ["inf", "-inf", "nan"]
+   930 |                 )
+   931 |             )
+   932 |         )
+   933 |     )
+   934 | 
+   935 | 
+   936 | def _isint(string, inttype=int):
+   937 |     """
+   938 |     >>> _isint("123")
+   939 |     True
+   940 |     >>> _isint("123.45")
+   941 |     False
+   942 |     """
+   943 |     return (
+   944 |         type(string) is inttype
+   945 |         or (
+   946 |             (hasattr(string, "is_integer") or hasattr(string, "__array__"))
+   947 |             and str(type(string)).startswith("<class 'numpy.int")
+   948 |         )  # numpy.int64 and similar
+   949 |         or (
+   950 |             isinstance(string, (bytes, str)) and _isconvertible(inttype, string)
+   951 |         )  # integer as string
+   952 |     )
+   953 | 
+   954 | 
+   955 | def _isbool(string):
+   956 |     """
+   957 |     >>> _isbool(True)
+   958 |     True
+   959 |     >>> _isbool("False")
+   960 |     True
+   961 |     >>> _isbool(1)
+   962 |     False
+   963 |     """
+   964 |     return type(string) is bool or (
+   965 |         isinstance(string, (bytes, str)) and string in ("True", "False")
+   966 |     )
+   967 | 
+   968 | 
+   969 | def _type(string, has_invisible=True, numparse=True):
+   970 |     """The least generic type (type(None), int, float, str, unicode).
+   971 | 
+   972 |     Treats empty string as missing for the purposes of type deduction, so as to not influence
+   973 |     the type of an otherwise complete column; does *not* result in missingval replacement!
+   974 | 
+   975 |     >>> _type(None) is type(None)
+   976 |     True
+   977 |     >>> _type("") is type(None)
+   978 |     True
+   979 |     >>> _type("foo") is type("")
+   980 |     True
+   981 |     >>> _type("1") is type(1)
+   982 |     True
+   983 |     >>> _type('\x1b[31m42\x1b[0m') is type(42)
+   984 |     True
+   985 |     >>> _type('\x1b[31m42\x1b[0m') is type(42)
+   986 |     True
+   987 | 
+   988 |     """
+   989 | 
+   990 |     if has_invisible and isinstance(string, (str, bytes)):
+   991 |         string = _strip_ansi(string)
+   992 | 
+   993 |     if string is None or (isinstance(string, (bytes, str)) and not string):
+   994 |         return type(None)
+   995 |     elif hasattr(string, "isoformat"):  # datetime.datetime, date, and time
+   996 |         return str
+   997 |     elif _isbool(string):
+   998 |         return bool
+   999 |     elif numparse and (
+  1000 |         _isint(string)
+  1001 |         or (
+  1002 |             isinstance(string, str)
+  1003 |             and _isnumber_with_thousands_separator(string)
+  1004 |             and "." not in string
+  1005 |         )
+  1006 |     ):
+  1007 |         return int
+  1008 |     elif numparse and (
+  1009 |         _isnumber(string)
+  1010 |         or (isinstance(string, str) and _isnumber_with_thousands_separator(string))
+  1011 |     ):
+  1012 |         return float
+  1013 |     elif isinstance(string, bytes):
+  1014 |         return bytes
+  1015 |     else:
+  1016 |         return str
+  1017 | 
+  1018 | 
+  1019 | def _afterpoint(string):
+  1020 |     """Symbols after a decimal point, -1 if the string lacks the decimal point.
+  1021 | 
+  1022 |     >>> _afterpoint("123.45")
+  1023 |     2
+  1024 |     >>> _afterpoint("1001")
+  1025 |     -1
+  1026 |     >>> _afterpoint("eggs")
+  1027 |     -1
+  1028 |     >>> _afterpoint("123e45")
+  1029 |     2
+  1030 |     >>> _afterpoint("123,456.78")
+  1031 |     2
+  1032 | 
+  1033 |     """
+  1034 |     if _isnumber(string) or _isnumber_with_thousands_separator(string):
+  1035 |         if _isint(string):
+  1036 |             return -1
+  1037 |         else:
+  1038 |             pos = string.rfind(".")
+  1039 |             pos = string.lower().rfind("e") if pos < 0 else pos
+  1040 |             if pos >= 0:
+  1041 |                 return len(string) - pos - 1
+  1042 |             else:
+  1043 |                 return -1  # no point
+  1044 |     else:
+  1045 |         return -1  # not a number
+  1046 | 
+  1047 | 
+  1048 | def _padleft(width, s):
+  1049 |     """Flush right.
+  1050 | 
+  1051 |     >>> _padleft(6, '\u044f\u0439\u0446\u0430') == '  \u044f\u0439\u0446\u0430'
+  1052 |     True
+  1053 | 
+  1054 |     """
+  1055 |     fmt = "{0:>%ds}" % width
+... [1951 more lines; pass offset=1056 for next page]

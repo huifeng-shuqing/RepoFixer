@@ -1,0 +1,201 @@
+   110 | 	"""
+   111 | 	range_start, range_end, escape_char, class_negated, class_name = match.groups()
+   112 | 
+   113 | 	# Character range. A bracket expression cannot match a directory separator.
+   114 | 	if range_start is not None:
+   115 | 		range_start, range_end = range_start[-1], range_end[-1]
+   116 | 		if range_start < '/' < range_end:
+   117 | 			return re.escape(range_start) + '-.0-' + re.escape(range_end)
+   118 | 		return re.escape(range_start) + '-' + re.escape(range_end)
+   119 | 
+   120 | 	# Backslash escaped character.
+   121 | 	if escape_char:
+   122 | 		return re.escape(escape_char)
+   123 | 
+   124 | 	# POSIX bracket character class.
+   125 | 	class_regex = _POSIX_CLASS_TO_REGEX.get(class_name)
+   126 | 	if class_regex is not None and not class_negated:
+   127 | 		return class_regex
+   128 | 
+   129 | 	raise _PosixClassError((
+   130 | 		f"Invalid character class={match.group(0)!r} found in pattern="
+   131 | 		f"{match.string!r}."
+   132 | 	))  # _PosixClassError
+   133 | 
+   134 | 
+   135 | class _GitIgnoreBasePattern(RegexPattern):
+   136 | 	"""
+   137 | 	.. warning:: This class is not part of the public API. It is subject to
+   138 | 		change.
+   139 | 
+   140 | 	The :class:`_GitIgnoreBasePattern` class is the base implementation for a
+   141 | 	compiled gitignore pattern.
+   142 | 	"""
+   143 | 
+   144 | 	# Keep the dict-less class hierarchy.
+   145 | 	__slots__ = ()
+   146 | 
+   147 | 	def __init__(
+   148 | 		self,
+   149 | 		pattern: Union[AnyStr, re.Pattern, None],
+   150 | 		include: Optional[bool] = None,
+   151 | 		*,
+   152 | 		errors: Optional[Literal['literal', 'null', 'raise']] = None,
+   153 | 	) -> None:
+   154 | 		"""
+   155 | 		Initializes the :class:`_GitIgnoreBasePattern` instance.
+   156 | 
+   157 | 		*pattern* (:class:`str`, :class:`bytes`, :class:`re.Pattern`, or
+   158 | 		:data:`None`) is the pattern to compile into a regular expression.
+   159 | 
+   160 | 		*include* (:class:`bool` or :data:`None`) must be :data:`None` unless
+   161 | 		*pattern* is a precompiled regular expression (:class:`re.Pattern`) in which
+   162 | 		case it is whether matched files should be included (:data:`True`), excluded
+   163 | 		(:data:`False`), or is a null operation (:data:`None`).
+   164 | 
+   165 | 		*errors* (:class:`str` :data:`None`) is how to handle invalid notation in
+   166 | 		the pattern. Default is :data:`None` for ``'null'`` because that is the
+   167 | 		behavior of Git.
+   168 | 
+   169 | 		-	``'literal'``: Most invalid notation will be treated as a literal string.
+   170 | 			In cases where the gitignore documentation clearly states the pattern
+   171 | 			should never match, a null-operation will be returned.
+   172 | 
+   173 | 		-	``'null'``: Invalid notation will result in a null-operation.
+   174 | 
+   175 | 		-	``'raise'``: Invalid notation will raise a :exc:`GitIgnorePatternError`.
+   176 | 		"""
+   177 | 		super().__init__(pattern, include, errors=errors)
+   178 | 
+   179 | 	@staticmethod
+   180 | 	def escape(s: AnyStr) -> AnyStr:
+   181 | 		"""
+   182 | 		Escape special characters in the given string.
+   183 | 
+   184 | 		*s* (:class:`str` or :class:`bytes`) a filename or a string that you want to
+   185 | 		escape, usually before adding it to a ".gitignore".
+   186 | 
+   187 | 		Returns the escaped string (:class:`str` or :class:`bytes`).
+   188 | 		"""
+   189 | 		if isinstance(s, str):
+   190 | 			return_type = str
+   191 | 			string = s
+   192 | 		elif isinstance(s, bytes):
+   193 | 			return_type = bytes
+   194 | 			string = s.decode(_BYTES_ENCODING)
+   195 | 		else:
+   196 | 			raise TypeError(f"s:{s!r} is not a unicode or byte string.")
+   197 | 
+   198 | 		# Reference: https://git-scm.com/docs/gitignore#_pattern_format
+   199 | 		out_string = ''.join((f"\\{x}" if x in '\\[]!*#?' else x) for x in string)
+   200 | 
+   201 | 		# EDGE CASE: Git strips trailing spaces from a pattern unless they are
+   202 | 		# escaped with a backslash. Escape them so an escaped filename that ends
+   203 | 		# with a space still matches that file.
+   204 | 		stripped = out_string.rstrip(' ')
+   205 | 		trailing = len(out_string) - len(stripped)
+   206 | 		if trailing:
+   207 | 			out_string = stripped + '\\ ' * trailing
+   208 | 
+   209 | 		if return_type is bytes:
+   210 | 			out_bytes = out_string.encode(_BYTES_ENCODING)
+   211 | 			return out_bytes  # type: ignore[return-value]
+   212 | 		else:
+   213 | 			return out_string  # type: ignore[return-value]
+   214 | 
+   215 | 	@staticmethod
+   216 | 	def _translate_segment_glob(
+   217 | 		pattern: str,
+   218 | 		errors: Literal['literal', 'raise'],
+   219 | 	) -> str:
+   220 | 		"""
+   221 | 		Translates the glob pattern to a regular expression. This is used in the
+   222 | 		constructor to translate a path segment glob pattern to its corresponding
+   223 | 		regular expression.
+   224 | 
+   225 | 		*pattern* (:class:`str`) is the glob pattern.
+   226 | 
+   227 | 		*errors* (:class:`str`) is how to handle invalid pattern notation in the
+   228 | 		pattern:
+   229 | 
+   230 | 		-	``'literal'``: Invalid notation will be treated as a literal string.
+   231 | 
+   232 | 		-	``'raise'``: Invalid notation will raise an exception.
+   233 | 
+   234 | 		Raises :exc:`._PosixClassError` when an invalid POXIS class is found and
+   235 | 		*errors* is ``'raise'``.
+   236 | 
+   237 | 		Raises :exc:`._RangeNotationError` when an invalid range notation is found
+   238 | 		and *errors* is ``'raise'``.
+   239 | 
+   240 | 		Raises :exc:`._TrailingBackslashError` when a trailing backslash is found at
+   241 | 		the end of the pattern, regardless of the value of *errors*.
+   242 | 
+   243 | 		Returns the regular expression (:class:`str`).
+   244 | 		"""
+   245 | 		# NOTE: This is derived from `fnmatch.translate()` and is similar to the
+   246 | 		# POSIX function `fnmatch()` with the `FNM_PATHNAME` flag set.
+   247 | 
+   248 | 		escape = False
+   249 | 		regex = ''
+   250 | 		i, end = 0, len(pattern)
+   251 | 		while i < end:
+   252 | 			# Get next character.
+   253 | 			char = pattern[i]
+   254 | 			i += 1
+   255 | 
+   256 | 			if escape:
+   257 | 				# Escape the character.
+   258 | 				escape = False
+   259 | 				regex += re.escape(char)
+   260 | 
+   261 | 			elif char == '\\':
+   262 | 				# Escape character, escape next character.
+   263 | 				escape = True
+   264 | 
+   265 | 			elif char == '*':
+   266 | 				# Multi-character wildcard. Match any string (except slashes), including
+   267 | 				# an empty string.
+   268 | 				regex += '[^/]*'
+   269 | 
+   270 | 			elif char == '?':
+   271 | 				# Single-character wildcard. Match any single character (except a
+   272 | 				# slash).
+   273 | 				regex += '[^/]'
+   274 | 
+   275 | 			elif char == '[':
+   276 | 				# Bracket expression (range notation) wildcard. Except for the beginning
+   277 | 				# exclamation mark, the whole bracket expression can be used directly as
+   278 | 				# regex, but we have to find where the expression ends.
+   279 | 				# - "[][!]" matches ']', '[' and '!'.
+   280 | 				# - "[]-]" matches ']' and '-'.
+   281 | 				# - "[!]a-]" matches any character except ']', 'a' and '-'.
+   282 | 				bracket_start = i - 1
+   283 | 				j = i
+   284 | 
+   285 | 				# Pass bracket expression negation.
+   286 | 				if j < end and (pattern[j] == '!' or pattern[j] == '^'):
+   287 | 					j += 1
+   288 | 
+   289 | 				# Pass first closing bracket if it is at the beginning of the
+   290 | 				# expression.
+   291 | 				if j < end and pattern[j] == ']':
+   292 | 					j += 1
+   293 | 
+   294 | 				# Find closing bracket. Stop once we reach the end or find it.
+   295 | 				while j < end and pattern[j] != ']':
+   296 | 					if pattern[j] == '\\':
+   297 | 						# Skip over an escaped character so an escaped closing bracket
+   298 | 						# ("\]") does not end the bracket expression.
+   299 | 						j += 2
+   300 | 					elif pattern[j:j+2] == '[:':
+   301 | 						# Skip over a POSIX character class token ("[:name:]") so its
+   302 | 						# internal closing bracket is not mistaken for the end of the whole
+   303 | 						# bracket expression.
+   304 | 						close = pattern.find(':]', j + 2)
+   305 | 						if close == -1:
+   306 | 							j = end
+   307 | 							break
+   308 | 						j = close + 2
+   309 | 					else:
+... [130 more lines; pass offset=310 for next page]

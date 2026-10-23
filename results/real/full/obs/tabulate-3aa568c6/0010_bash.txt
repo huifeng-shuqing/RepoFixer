@@ -1,0 +1,67 @@
+    copy pasted out of the CPython baseline, and updated with our custom length
+    and line appending logic.
+    """
+
+    def __init__(self, *args, **kwargs):
+        self._active_codes = []
+        self.max_lines = None  # For python2 compatibility
+        textwrap.TextWrapper.__init__(self, *args, **kwargs)
+
+    @staticmethod
+    def _len(item):
+        """Custom len that gets console column width for wide
+        and non-wide characters as well as ignores color codes"""
+        stripped = _strip_ansi(item)
+        if wcwidth:
+            return wcwidth.wcswidth(stripped)
+        else:
+            return len(stripped)
+
+    def _update_lines(self, lines, new_line):
+        """Adds a new line to the list of lines the text is being wrapped into
+        This function will also track any ANSI color codes in this string as well
+        as add any colors from previous lines order to preserve the same formatting
+        as a single unwrapped string.
+        """
+        code_matches = [x for x in _ansi_codes.finditer(new_line)]
+        color_codes = [code.string[code.span()[0] : code.span()[1]] for code in code_matches]
+
+        # Add color codes from earlier in the unwrapped line, and then track any new ones we add.
+        new_line = "".join(self._active_codes) + new_line
+
+        for code in color_codes:
+            if code != _ansi_color_reset_code:
+                self._active_codes.append(code)
+            else:  # A single reset code resets everything
+                self._active_codes = []
+
+        # Always ensure each line is color terminated if any colors are
+        # still active, otherwise colors will bleed into other cells on the console
+        if len(self._active_codes) > 0:
+            new_line = new_line + _ansi_color_reset_code
+2528:def _append_basic_row(lines, padded_cells, colwidths, colaligns, rowfmt, rowalign=None):
+2529-    # NOTE: rowalign is ignored and exists for api compatibility with _append_multiline_row
+2530-    lines.append(_build_row(padded_cells, colwidths, colaligns, rowfmt))
+2531-    return lines
+2532-
+2533-
+2534-def _align_cell_veritically(text_lines, num_lines, column_width, row_alignment):
+2535-    delta_lines = num_lines - len(text_lines)
+2536-    blank = [" " * column_width]
+2537-    if row_alignment == "bottom":
+2538-        return blank * delta_lines + text_lines
+2539-    elif row_alignment == "center":
+2540-        top_delta = delta_lines // 2
+2541-        bottom_delta = delta_lines - top_delta
+2542-        return top_delta * blank + text_lines + bottom_delta * blank
+2543-    else:
+2544-        return text_lines + blank * delta_lines
+2545-
+2546-
+2547-def _append_multiline_row(
+2548-    lines, padded_multiline_cells, padded_widths, colaligns, rowfmt, pad, rowalign=None
+2549-):
+2550-    colwidths = [w - 2 * pad for w in padded_widths]
+2551-    cells_lines = [c.splitlines() for c in padded_multiline_cells]
+2552-    nlines = max(map(len, cells_lines))  # number of lines in the row
+2553-    # vertically pad cells where some lines are missing

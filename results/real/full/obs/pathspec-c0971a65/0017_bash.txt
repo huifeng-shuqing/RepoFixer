@@ -1,0 +1,41 @@
+[[]draft].md ^(?s:.+/)?[[]draft\]\.md(?:/|\Z)
+[a&&b].pdf ^(?s:.+/)?[a&&b]\.pdf(?:/|\Z)
+[a||b].pdf ^(?s:.+/)?[a||b]\.pdf(?:/|\Z)
+[a~~b].pdf ^(?s:.+/)?[a~~b]\.pdf(?:/|\Z)
+[![]draft].md ^(?s:.+/)?[^/[]draft\]\.md(?:/|\Z)
+[!a&&b].pdf ^(?s:.+/)?[^/a&&b]\.pdf(?:/|\Z)
+[^a||b].pdf ^(?s:.+/)?[^/a||b]\.pdf(?:/|\Z)
+[!a~~b].pdf ^(?s:.+/)?[^/a~~b]\.pdf(?:/|\Z)
+[[:digit:]&&a-c].pdf ^(?s:.+/)?[0-9&&a-c]\.pdf(?:/|\Z)
+[\[\&\|\~].pdf ^(?s:.+/)?[\[\&\|\~]\.pdf(?:/|\Z)
+[--0].pdf ^(?s:.+/)?[\--.0-0]\.pdf(?:/|\Z)
+
+[stderr]
+C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\pathspec-c0971a65\pathspec\patterns\gitignore\base.py:373: FutureWarning: Possible nested set at position 1
+  re.compile(expr)
+C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\pathspec-c0971a65\pathspec\pattern.py:136: FutureWarning: Possible nested set at position 11
+  regex = re.compile(raw_regex)
+C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\pathspec-c0971a65\pathspec\patterns\gitignore\base.py:373: FutureWarning: Possible set intersection at position 2
+  re.compile(expr)
+C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\pathspec-c0971a65\pathspec\pattern.py:136: FutureWarning: Possible set intersection at position 12
+  regex = re.compile(raw_regex)
+C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\pathspec-c0971a65\pathspec\patterns\gitignore\base.py:373: FutureWarning: Possible set union at position 2
+  re.compile(expr)
+C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\pathspec-c0971a65\pathspec\pattern.py:136: FutureWarning: Possible set union at position 12
+  regex = re.compile(raw_regex)
+C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\pathspec-c0971a65\pathspec\patterns\gitignore\base.py:373: FutureWarning: Possible set symmetric difference at position 2
+  re.compile(expr)
+C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\pathspec-c0971a65\pathspec\pattern.py:136: FutureWarning: Possible set symmetric difference at position 12
+  regex = re.compile(raw_regex)
+C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\pathspec-c0971a65\pathspec\patterns\gitignore\base.py:373: FutureWarning: Possible set intersection at position 4
+  re.compile(expr)
+C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\pathspec-c0971a65\pathspec\pattern.py:136: FutureWarning: Possible set intersection at position 14
+  regex = re.compile(raw_regex)
+C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\pathspec-c0971a65\pathspec\patterns\gitignore\base.py:373: FutureWarning: Possible set union at position 4
+  re.compile(expr)
+C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\pathspec-c0971a65\pathspec\pattern.py:136: FutureWarning: Possible set union at position 14
+  regex = re.compile(raw_regex)
+C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\pathspec-c0971a65\pathspec\patterns\gitignore\base.py:373: FutureWarning: Possible set symmetric difference at position 4
+  re.compile(expr)
+C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\pathspec-c0971a65\pathspec\pattern.py:136: FutureWarning: Possible set symmetric difference at position 14
+  regex = re.compile(raw_regex)

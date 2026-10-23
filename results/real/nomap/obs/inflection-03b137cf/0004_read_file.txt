@@ -1,0 +1,101 @@
+     1 | # -*- coding: utf-8 -*-
+     2 | import pytest
+     3 | 
+     4 | import inflection
+     5 | 
+     6 | SINGULAR_TO_PLURAL = (
+     7 |     ("search", "searches"),
+     8 |     ("switch", "switches"),
+     9 |     ("fix", "fixes"),
+    10 |     ("box", "boxes"),
+    11 |     ("process", "processes"),
+    12 |     ("address", "addresses"),
+    13 |     ("case", "cases"),
+    14 |     ("stack", "stacks"),
+    15 |     ("wish", "wishes"),
+    16 |     ("fish", "fish"),
+    17 |     ("jeans", "jeans"),
+    18 |     ("funky jeans", "funky jeans"),
+    19 | 
+    20 |     ("category", "categories"),
+    21 |     ("query", "queries"),
+    22 |     ("ability", "abilities"),
+    23 |     ("agency", "agencies"),
+    24 |     ("movie", "movies"),
+    25 | 
+    26 |     ("archive", "archives"),
+    27 | 
+    28 |     ("index", "indices"),
+    29 | 
+    30 |     ("wife", "wives"),
+    31 |     ("safe", "saves"),
+    32 |     ("half", "halves"),
+    33 | 
+    34 |     ("move", "moves"),
+    35 | 
+    36 |     ("salesperson", "salespeople"),
+    37 |     ("person", "people"),
+    38 | 
+    39 |     ("spokesman", "spokesmen"),
+    40 |     ("man", "men"),
+    41 |     ("woman", "women"),
+    42 | 
+    43 |     ("basis", "bases"),
+    44 |     ("diagnosis", "diagnoses"),
+    45 |     ("diagnosis_a", "diagnosis_as"),
+    46 | 
+    47 |     ("datum", "data"),
+    48 |     ("medium", "media"),
+    49 |     ("stadium", "stadia"),
+    50 |     ("analysis", "analyses"),
+    51 | 
+    52 |     ("node_child", "node_children"),
+    53 |     ("child", "children"),
+    54 | 
+    55 |     ("experience", "experiences"),
+    56 |     ("day", "days"),
+    57 | 
+    58 |     ("comment", "comments"),
+    59 |     ("foobar", "foobars"),
+    60 |     ("newsletter", "newsletters"),
+    61 | 
+    62 |     ("old_news", "old_news"),
+    63 |     ("news", "news"),
+    64 | 
+    65 |     ("series", "series"),
+    66 |     ("species", "species"),
+    67 | 
+    68 |     ("quiz", "quizzes"),
+    69 | 
+    70 |     ("perspective", "perspectives"),
+    71 | 
+    72 |     ("ox", "oxen"),
+    73 |     ("photo", "photos"),
+    74 |     ("buffalo", "buffaloes"),
+    75 |     ("tomato", "tomatoes"),
+    76 |     ("potato", "potatoes"),
+    77 |     ("dwarf", "dwarves"),
+    78 |     ("elf", "elves"),
+    79 |     ("information", "information"),
+    80 |     ("equipment", "equipment"),
+    81 |     ("bus", "buses"),
+    82 |     ("status", "statuses"),
+    83 |     ("status_code", "status_codes"),
+    84 |     ("mouse", "mice"),
+    85 | 
+    86 |     ("louse", "lice"),
+    87 |     ("house", "houses"),
+    88 |     ("octopus", "octopi"),
+    89 |     ("virus", "viri"),
+    90 |     ("alias", "aliases"),
+    91 |     ("portfolio", "portfolios"),
+    92 | 
+    93 |     ("vertex", "vertices"),
+    94 |     ("matrix", "matrices"),
+    95 |     ("matrix_fu", "matrix_fus"),
+    96 | 
+    97 |     ("axis", "axes"),
+    98 |     ("testis", "testes"),
+    99 |     ("crisis", "crises"),
+   100 | 
+... [328 more lines; pass offset=101 for next page]

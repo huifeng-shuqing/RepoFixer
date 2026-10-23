@@ -1,0 +1,59 @@
+..s..s.............s.............F......FFF..s......s......s......s..... [ 41%]
+.s......s......s.......s....s..s..s..s..s..s..s......................... [ 62%]
+................................s..................ssss................. [ 83%]
+..............ss.s.........s...s.......sss.....s.....ss                  [100%]
+================================== FAILURES ===================================
+________ test_simple_headerless_with_sep_line_with_padding_in_tablefmt ________
+
+    def test_simple_headerless_with_sep_line_with_padding_in_tablefmt():
+        "Output: simple without headers with sep line with padding in tablefmt"
+        expected = "\n".join(
+            [
+                "|:-----|---------:|",
+                "| spam |  41.9999 |",
+                "|:-----|---------:|",
+                "| eggs | 451      |",
+            ]
+        )
+        result = tabulate(_test_table_with_sep_line, tablefmt="github")
+>       assert_equal(expected, result)
+
+test\test_output.py:379: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+expected = '|:-----|---------:|\n| spam |  41.9999 |\n|:-----|---------:|\n| eggs | 451      |'
+result = '|------|----------|\n| spam |  41.9999 |\n|------|----------|\n| eggs | 451      |'
+
+    def assert_equal(expected, result):
+        print("Expected:\n%r\n" % expected)
+        print("Got:\n%r\n" % result)
+>       assert expected == result
+               ^^^^^^^^^^^^^^^^^^
+E       AssertionError
+
+test\common.py:10: AssertionError
+---------------------------- Captured stdout call -----------------------------
+Expected:
+'|:-----|---------:|\n| spam |  41.9999 |\n|:-----|---------:|\n| eggs | 451      |'
+
+Got:
+'|------|----------|\n| spam |  41.9999 |\n|------|----------|\n| eggs | 451      |'
+
+_________________________________ test_github _________________________________
+
+    def test_github():
+        "Output: github with headers"
+        expected = "\n".join(
+            [
+                "| strings   |   numbers |",
+--
+
+Got:
+'| Name   |   Age |\n|--------|-------|\n| Alice  |    24 |\n| Bob    |    19 |'
+
+=========================== short test summary info ===========================
+FAILED test\test_output.py::test_simple_headerless_with_sep_line_with_padding_in_tablefmt
+FAILED test\test_output.py::test_github - AssertionError
+FAILED test\test_output.py::test_github_multiline - AssertionError
+FAILED test\test_output.py::test_github_with_colalign - AssertionError
+4 failed, 279 passed, 60 skipped in 2.34s

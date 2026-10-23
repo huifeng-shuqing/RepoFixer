@@ -1,0 +1,20 @@
+E       - [(False, 1), (False, 1)]
+E       + [(True, 0), (True, 0)] : (['*', '!*.txt'], [CheckResult(file='a/top.txt', include=False, index=1), CheckResult(file='a/b/file.txt', include=False, index=1)])
+
+tests\test_09_gitignore_ancestor_negation.py:26: AssertionError
+=========================== short test summary info ===========================
+SUBFAILED[simple (unopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (minopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (unopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (minopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (unopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (minopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (unopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (minopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (unopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (minopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (unopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (minopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (unopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (minopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+14 failed, 3 passed, 90 skipped, 16 subtests passed in 0.15s

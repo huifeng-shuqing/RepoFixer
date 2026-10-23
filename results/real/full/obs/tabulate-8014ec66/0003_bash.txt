@@ -1,0 +1,32 @@
+__pycache__
+common.py
+test_api.py
+test_cli.py
+test_grapheme_clusters.py
+test_input.py
+test_internal.py
+test_output.py
+test_regression.py
+test_textwrapper.py
+test/test_output.py:378:    result = tabulate(_test_table_with_sep_line, tablefmt="github")
+test/test_output.py:487:def test_github():
+test/test_output.py:488:    "Output: github with headers"
+test/test_output.py:497:    result = tabulate(_test_table, _test_table_headers, tablefmt="github")
+test/test_output.py:501:def test_github_multiline():
+test/test_output.py:502:    "Output: github with multiline cells with headers"
+test/test_output.py:514:    result = tabulate(table, headers, tablefmt="github")
+test/test_output.py:518:def test_github_with_colalign():
+test/test_output.py:519:    "Output: github with explicit column alignment"
+test/test_output.py:531:        tablefmt="github",
+test/test_output.py:537:def test_github_no_alignment():
+test/test_output.py:538:    "Output: github without alignment hints when numalign/stralign are disabled"
+test/test_output.py:550:        tablefmt="github",
+test/test_regression.py:323:    "Regression: multiline tables with varying number of wide characters (github issue #28)"
+test/test_regression.py:424:    "Regression: allow empty pipe tables with columns, like empty dataframes (github issue #15)"
+test/test_regression.py:433:    "Regression: allow custom TableFormat that specifies with_header_hide (github issue #20)"
+test/test_regression.py:451:    "Regression: accept commas in numbers-as-text when grouping is not defined (github issue #110)"
+test/test_regression.py:459:    "Regression: accept 'infinite' row indices (github issue #175)"
+test/test_regression.py:492:    "Regression: preserve line breaks when using maxcolwidths (github issue #190)"
+test/test_regression.py:508:    "Regression: maxcolwidths can accept a list or a tuple (github issue #214)"
+test/test_regression.py:529:    "Regression: exception on empty data when using maxcolwidths (github issue #180)"
+test/test_regression.py:535:    "Regression: format numpy.int64 as integer (github issue #18)"

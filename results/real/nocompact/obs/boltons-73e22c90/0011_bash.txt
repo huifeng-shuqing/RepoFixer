@@ -1,0 +1,59 @@
+# Copyright (c) 2013, Mahmoud Hashemi
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#
+#    * Redistributions of source code must retain the above copyright
+#      notice, this list of conditions and the following disclaimer.
+#
+#    * Redistributions in binary form must reproduce the above
+#      copyright notice, this list of conditions and the following
+#      disclaimer in the documentation and/or other materials provided
+#      with the distribution.
+#
+#    * The names of the contributors may not be used to endorse or
+#      promote products derived from this software without specific
+#      prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+"""``statsutils`` provides tools aimed primarily at descriptive
+statistics for data analysis, such as :func:`mean` (average),
+:func:`median`, :func:`mode`, :func:`variance`, and many others,
+
+The :class:`Stats` type provides all the main functionality of the
+``statsutils`` module. A :class:`Stats` object wraps a given dataset,
+providing all statistical measures as property attributes. These
+attributes cache their results, which allows efficient computation of
+multiple measures, as many measures rely on other measures. For
+example, relative standard deviation (:attr:`Stats.rel_std_dev`)
+relies on both the mean and standard deviation. The Stats object
+caches those results so no rework is done.
+
+The :class:`Stats` type's attributes have module-level counterparts for
+convenience when the computation reuse advantages do not apply.
+
+>>> stats = Stats(range(42))
+>>> stats.mean
+20.5
+>>> mean(range(42))
+20.5
+
+Statistics is a large field, and ``statsutils`` is focused on a few
+basic techniques that are useful in software. The following is a brief
+introduction to those techniques. For a more in-depth introduction,
+`Statistics for Software
+<https://www.paypal-engineering.com/2016/04/11/statistics-for-software/>`_,
+an article I wrote on the topic. It introduces key terminology vital
+to effective usage of statistics.

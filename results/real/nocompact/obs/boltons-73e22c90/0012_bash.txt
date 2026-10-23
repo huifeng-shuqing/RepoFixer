@@ -1,0 +1,116 @@
+
+Statistical moments
+-------------------
+
+Python programmers are probably familiar with the concept of the
+*mean* or *average*, which gives a rough quantitiative middle value by
+which a sample can be can be generalized. However, the mean is just
+the first of four `moment`_-based measures by which a sample or
+distribution can be measured.
+
+The four `Standardized moments`_ are:
+
+  1. `Mean`_ - :func:`mean` - theoretical middle value
+  2. `Variance`_ - :func:`variance` - width of value dispersion
+  3. `Skewness`_ - :func:`skewness` - symmetry of distribution
+  4. `Kurtosis`_ - :func:`kurtosis` - "peakiness" or "long-tailed"-ness
+
+For more information check out `the Moment article on Wikipedia`_.
+
+.. _moment: https://en.wikipedia.org/wiki/Moment_(mathematics)
+.. _Standardized moments: https://en.wikipedia.org/wiki/Standardized_moment
+.. _Mean: https://en.wikipedia.org/wiki/Mean
+.. _Variance: https://en.wikipedia.org/wiki/Variance
+.. _Skewness: https://en.wikipedia.org/wiki/Skewness
+.. _Kurtosis: https://en.wikipedia.org/wiki/Kurtosis
+.. _the Moment article on Wikipedia: https://en.wikipedia.org/wiki/Moment_(mathematics)
+
+Keep in mind that while these moments can give a bit more insight into
+the shape and distribution of data, they do not guarantee a complete
+picture. Wildly different datasets can have the same values for all
+four moments, so generalize wisely.
+
+Robust statistics
+-----------------
+
+Moment-based statistics are notorious for being easily skewed by
+outliers. The whole field of robust statistics aims to mitigate this
+dilemma. ``statsutils`` also includes several robust statistical methods:
+
+  * `Median`_ - The middle value of a sorted dataset
+  * `Trimean`_ - Another robust measure of the data's central tendency
+  * `Median Absolute Deviation`_ (MAD) - A robust measure of
+    variability, a natural counterpart to :func:`variance`.
+  * `Trimming`_ - Reducing a dataset to only the middle majority of
+    data is a simple way of making other estimators more robust.
+
+.. _Median: https://en.wikipedia.org/wiki/Median
+.. _Trimean: https://en.wikipedia.org/wiki/Trimean
+.. _Median Absolute Deviation: https://en.wikipedia.org/wiki/Median_absolute_deviation
+.. _Trimming: https://en.wikipedia.org/wiki/Trimmed_estimator
+
+
+Online and Offline Statistics
+-----------------------------
+
+Unrelated to computer networking, `online`_ statistics involve
+calculating statistics in a `streaming`_ fashion, without all the data
+being available. The :class:`Stats` type is meant for the more
+traditional offline statistics when all the data is available. For
+pure-Python online statistics accumulators, look at the `Lithoxyl`_
+system instrumentation package.
+
+.. _Online: https://en.wikipedia.org/wiki/Online_algorithm
+.. _streaming: https://en.wikipedia.org/wiki/Streaming_algorithm
+.. _Lithoxyl: https://github.com/mahmoud/lithoxyl
+
+"""
+
+
+import bisect
+from math import floor, ceil
+from collections import Counter
+
+
+class _StatsProperty:
+    def __init__(self, name, func):
+        self.name = name
+        self.func = func
+        self.internal_name = '_' + name
+
+        doc = func.__doc__ or ''
+        pre_doctest_doc, _, _ = doc.partition('>>>')
+        self.__doc__ = pre_doctest_doc
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self
+        if not obj.data:
+            return obj.default
+        try:
+            return getattr(obj, self.internal_name)
+        except AttributeError:
+            setattr(obj, self.internal_name, self.func(obj))
+            return getattr(obj, self.internal_name)
+
+
+class Stats:
+    """The ``Stats`` type is used to represent a group of unordered
+    statistical datapoints for calculations such as mean, median, and
+    variance.
+
+    Args:
+
+        data (list): List or other iterable containing numeric values.
+        default (float): A value to be returned when a given
+            statistical measure is not defined. 0.0 by default, but
+            ``float('nan')`` is appropriate for stricter applications.
+        use_copy (bool): By default Stats objects copy the initial
+            data into a new list to avoid issues with
+            modifications. Pass ``False`` to disable this behavior.
+        is_sorted (bool): Presorted data can skip an extra sorting
+            step for a little speed boost. Defaults to False.
+
+    """
+    def __init__(self, data, default=0.0, use_copy=True, is_sorted=False):
+        self._use_copy = use_copy

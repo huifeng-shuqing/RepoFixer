@@ -1,0 +1,100 @@
+1530-    assert_equal(expected, result)
+1531-
+1532-
+1533:def test_colon_grid():
+1534:    "Output: colon_grid with two columns aligned left and center"
+1535-    expected = "\n".join(
+1536-        [
+1537-            "+------+------+",
+--
+1544-    result = tabulate(
+1545-        [[3, 4]],
+1546-        headers=("H1", "H2"),
+1547:        tablefmt="colon_grid",
+1548-        colalign=["right", "center"],
+1549-    )
+1550-    assert_equal(expected, result)
+1551-
+1552-
+1553:def test_colon_grid_wide_characters():
+1554:    "Output: colon_grid with wide chars in header"
+1555-    try:
+1556-        import wcwidth  # noqa: F401
+1557-    except ImportError:
+1558:        skip("test_colon_grid_wide_characters is skipped")
+1559-    headers = list(_test_table_headers)
+1560-    headers[1] = "配列"
+1561-    expected = "\n".join(
+--
+1569-            "+-----------+---------+",
+1570-        ]
+1571-    )
+1572:    result = tabulate(_test_table, headers, tablefmt="colon_grid", colalign=["left", "right"])
+1573-    assert_equal(expected, result)
+1574-
+1575-
+1576:def test_colon_grid_headerless():
+1577:    "Output: colon_grid without headers"
+1578-    expected = "\n".join(
+1579-        [
+1580-            "+------+---------+",
+--
+1584-            "+------+---------+",
+1585-        ]
+1586-    )
+1587:    result = tabulate(_test_table, tablefmt="colon_grid")
+1588-    assert_equal(expected, result)
+1589-
+1590-
+1591:def test_colon_grid_multiline():
+1592:    "Output: colon_grid with multiline cells"
+1593-    table = [["Data\n5", "33\n3"]]
+1594-    headers = ["H1\n1", "H2\n2"]
+1595-    expected = "\n".join(
+--
+1603-            "+------+------+",
+1604-        ]
+1605-    )
+1606:    result = tabulate(table, headers, tablefmt="colon_grid")
+1607-    assert_equal(expected, result)
+1608-
+445:    "colon_grid": TableFormat(
+446-        lineabove=Line("+", "-", "+", "+"),
+447-        linebelowheader=_grid_line_with_colons,
+448-        linebetweenrows=Line("+", "-", "+", "+"),
+449-        linebelow=Line("+", "-", "+", "+"),
+450-        headerrow=DataRow("|", "|", "|"),
+451-        datarow=DataRow("|", "|", "|"),
+452-        padding=1,
+453-        with_header_hide=None,
+454-    ),
+455-    "outline": TableFormat(
+456-        lineabove=Line("+", "-", "+", "+"),
+457-        linebelowheader=Line("+", "=", "+", "+"),
+--
+738:    "colon_grid": "colon_grid",
+739-    "pipe": "pipe",
+740-    "orgtbl": "orgtbl",
+741-    "jira": "jira",
+742-    "presto": "presto",
+743-    "pretty": "pretty",
+744-    "psql": "psql",
+745-    "rst": "rst",
+746-    "github": "github",
+747-    "outline": "outline",
+748-    "simple_outline": "simple_outline",
+749-    "rounded_outline": "rounded_outline",
+750-    "heavy_outline": "heavy_outline",
+--
+1960:    "colon_grid" is similar to "grid" but uses colons only to define
+1961-    columnwise content alignment, without whitespace padding,
+1962-    similar to the alignment specification of Pandoc `grid_tables`:
+1963-
+1964-    >>> print(tabulate([["spam", 41.9999], ["eggs", "451.0"]],
+1965:    ...                ["strings", "numbers"], "colon_grid"))
+1966-    +-----------+-----------+
+1967-    | strings   | numbers   |
+1968-    +:==========+:==========+
+1969-    | spam      | 41.9999   |
+1970-    +-----------+-----------+
+1971-    | eggs      | 451       |

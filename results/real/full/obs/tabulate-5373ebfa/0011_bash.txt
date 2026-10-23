@@ -1,0 +1,133 @@
+    elif not alignment:
+        return f"{header}"
+    else:
+        return _padleft(width, header)
+
+
+def _remove_separating_lines(rows):
+    if isinstance(rows, list):
+        separating_lines = []
+        sans_rows = []
+        for index, row in enumerate(rows):
+            if _is_separating_line(row):
+                separating_lines.append(index)
+            else:
+                sans_rows.append(row)
+        return sans_rows, separating_lines
+    else:
+        return rows, None
+
+
+def _reinsert_separating_lines(rows, separating_lines):
+    if separating_lines:
+        for index in separating_lines:
+            rows.insert(index, SEPARATING_LINE)
+
+
+def _prepend_row_index(rows, index):
+    """Add a left-most index column."""
+    if index is None or index is False:
+        return rows
+    if isinstance(index, Sized) and len(index) != len(rows):
+        raise ValueError(
+            "index must be as long as the number of data rows: "
+            + f"len(index)={len(index)} len(rows)={len(rows)}"
+        )
+    sans_rows, separating_lines = _remove_separating_lines(rows)
+    new_rows = []
+    index_iter = iter(index)
+    for row in sans_rows:
+        index_v = next(index_iter)
+        new_rows.append([index_v] + list(row))
+def _type(string, has_invisible=True, numparse=True):
+    """The least generic type (type(None), int, float, str, unicode).
+
+    Treats empty string as missing for the purposes of type deduction, so as to not influence
+    the type of an otherwise complete column; does *not* result in missingval replacement!
+
+    >>> _type(None) is type(None)
+    True
+    >>> _type("") is type(None)
+    True
+    >>> _type("foo") is type("")
+    True
+    >>> _type("1") is type(1)
+    True
+    >>> _type('\x1b[31m42\x1b[0m') is type(42)
+    True
+    >>> _type('\x1b[31m42\x1b[0m') is type(42)
+    True
+
+    """
+
+    if has_invisible and isinstance(string, (str, bytes)):
+        string = _strip_ansi(string)
+
+    if string is None or (isinstance(string, (bytes, str)) and not string):
+        return type(None)
+    elif hasattr(string, "isoformat"):  # datetime.datetime, date, and time
+        return str
+    elif _isbool(string):
+        return bool
+    elif numparse and (
+        _isint(string)
+        or (
+            isinstance(string, str)
+            and _isnumber_with_thousands_separator(string)
+            and "." not in string
+        )
+    ):
+        return int
+    elif numparse and (
+        _isnumber(string)
+        or (isinstance(string, str) and _isnumber_with_thousands_separator(string))
+    ):
+        return float
+    elif isinstance(string, bytes):
+        return bytes
+    else:
+        return str
+
+
+def _afterpoint(string):
+    """Symbols after a decimal point, -1 if the string lacks the decimal point.
+
+    >>> _afterpoint("123.45")
+    2
+    >>> _afterpoint("1001")
+    -1
+    >>> _afterpoint("eggs")
+    -1
+    >>> _afterpoint("123e45")
+    2
+    >>> _afterpoint("123,456.78")
+    2
+
+    """
+    if _isnumber(string) or _isnumber_with_thousands_separator(string):
+        if _isint(string):
+            return -1
+        else:
+            pos = string.rfind(".")
+            pos = string.lower().rfind("e") if pos < 0 else pos
+            if pos >= 0:
+                return len(string) - pos - 1
+            else:
+                return -1  # no point
+    else:
+        return -1  # not a number
+
+
+def _padleft(width, s):
+    """Flush right.
+
+    >>> _padleft(6, '\u044f\u0439\u0446\u0430') == '  \u044f\u0439\u0446\u0430'
+    True
+
+    """
+    fmt = "{0:>%ds}" % width
+    return fmt.format(s)
+
+
+def _padright(width, s):
+    """Flush left.

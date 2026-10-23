@@ -1,0 +1,152 @@
+    """
+    A convenience function to add appropriate rules to plurals and singular
+    for irregular words.
+
+    :param singular: irregular word in singular form
+    :param plural: irregular word in plural form
+    """
+    def caseinsensitive(string):
+        return ''.join('[' + char + char.upper() + ']' for char in string)
+
+    if singular[0].upper() == plural[0].upper():
+        PLURALS.insert(0, (
+            r"(?i)({}){}$".format(singular[0], singular[1:]),
+            r'\1' + plural[1:]
+        ))
+        PLURALS.insert(0, (
+            r"(?i)({}){}$".format(plural[0], plural[1:]),
+            r'\1' + plural[1:]
+        ))
+        SINGULARS.insert(0, (
+            r"(?i)({}){}$".format(plural[0], plural[1:]),
+            r'\1' + singular[1:]
+        ))
+    else:
+        PLURALS.insert(0, (
+            r"{}{}$".format(singular[0].upper(),
+                            caseinsensitive(singular[1:])),
+            plural[0].upper() + plural[1:]
+        ))
+        PLURALS.insert(0, (
+            r"{}{}$".format(singular[0].lower(),
+                            caseinsensitive(singular[1:])),
+            plural[0].lower() + plural[1:]
+        ))
+        PLURALS.insert(0, (
+            r"{}{}$".format(plural[0].upper(), caseinsensitive(plural[1:])),
+            plural[0].upper() + plural[1:]
+        ))
+        PLURALS.insert(0, (
+            r"{}{}$".format(plural[0].lower(), caseinsensitive(plural[1:])),
+            plural[0].lower() + plural[1:]
+        ))
+        SINGULARS.insert(0, (
+            r"{}{}$".format(plural[0].upper(), caseinsensitive(plural[1:])),
+            singular[0].upper() + singular[1:]
+        ))
+        SINGULARS.insert(0, (
+            r"{}{}$".format(plural[0].lower(), caseinsensitive(plural[1:])),
+            singular[0].lower() + singular[1:]
+        ))
+
+
+        >>> ordinalize(1)
+        '1st'
+        >>> ordinalize(2)
+        '2nd'
+        >>> ordinalize(1002)
+        '1002nd'
+        >>> ordinalize(1003)
+        '1003rd'
+        >>> ordinalize(-11)
+        '-11th'
+        >>> ordinalize(-1021)
+        '-1021st'
+
+    """
+    return "{}{}".format(number, ordinal(number))
+
+
+def parameterize(string, separator='-'):
+    """
+    Replace special characters in a string so that it may be used as part of a
+    'pretty' URL.
+
+    Example::
+
+        >>> parameterize(u"Donald E. Knuth")
+        'donald-e-knuth'
+
+    """
+    string = transliterate(string)
+    # Turn unwanted chars into the separator
+    string = re.sub(r"(?i)[^a-z0-9\-_]+", separator, string)
+    if separator:
+        re_sep = re.escape(separator)
+        # No more than one of the separator in a row.
+        string = re.sub(r'%s{2,}' % re_sep, separator, string)
+        # Remove leading/trailing separator.
+        string = re.sub(r"(?i)^{sep}|{sep}$".format(sep=re_sep), '', string)
+
+    return string.lower()
+
+
+def pluralize(word):
+    """
+    Return the plural form of a word.
+
+    Examples::
+
+        >>> pluralize("posts")
+        'posts'
+        >>> pluralize("octopus")
+        'octopi'
+        >>> pluralize("sheep")
+        'sheep'
+        >>> pluralize("CamelOctopus")
+        'CamelOctopi'
+
+    """
+    if not word or word.lower() in UNCOUNTABLES:
+        return word
+    else:
+        for rule, replacement in PLURALS:
+            if re.search(rule, word):
+                return re.sub(rule, replacement, word)
+        return word
+
+
+def singularize(word):
+    """
+    Return the singular form of a word, the reverse of :func:`pluralize`.
+
+    Examples::
+
+        >>> singularize("posts")
+        'post'
+        >>> singularize("octopi")
+        'octopus'
+        >>> singularize("sheep")
+        'sheep'
+        >>> singularize("word")
+        'word'
+        >>> singularize("CamelOctopi")
+        'CamelOctopus'
+
+    """
+    for inflection in UNCOUNTABLES:
+        if re.search(r'(?i)\b(%s)\Z' % inflection, word):
+            return word
+
+    for rule, replacement in SINGULARS:
+        if re.search(rule, word):
+            return re.sub(rule, replacement, word)
+    return word
+
+
+def tableize(word):
+    """
+    Create the name of a table like Rails does for models to table names. This
+    method uses the :func:`pluralize` method on the last word in the string.
+
+    Examples::

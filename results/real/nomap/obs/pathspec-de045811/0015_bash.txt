@@ -1,0 +1,60 @@
+E      AssertionError: False is not true
+E      AssertionError: False is not true
+E       AssertionError: Lists differ: [(False, 1), (False, 1)] != [(True, 0), (True, 0)]
+E       
+E       First differing element 0:
+E       (False, 1)
+E       (True, 0)
+E       
+E       - [(False, 1), (False, 1)]
+E       + [(True, 0), (True, 0)] : (['a/', '!a/b/'], [CheckResult(file='a/b/file.txt', include=False, index=1), CheckResult(file='a/b/c/deep.txt', include=False, index=1)])
+E       AssertionError: Lists differ: [(False, 1), (False, 1)] != [(True, 0), (True, 0)]
+E       
+E       First differing element 0:
+E       (False, 1)
+E       (True, 0)
+E       
+E       - [(False, 1), (False, 1)]
+E       + [(True, 0), (True, 0)] : (['a/', '!a/b/'], [CheckResult(file='a/b/file.txt', include=False, index=1), CheckResult(file='a/b/c/deep.txt', include=False, index=1)])
+E       AssertionError: Lists differ: [(False, 2)] != [(True, 0)]
+E       
+E       First differing element 0:
+E       (False, 2)
+E       (True, 0)
+E       
+E       - [(False, 2)]
+E       + [(True, 0)] : (['a/', '!a/b/', '!*.txt'], [CheckResult(file='a/b/file.txt', include=False, index=2)])
+E       AssertionError: Lists differ: [(False, 2)] != [(True, 0)]
+E       
+E       First differing element 0:
+E       (False, 2)
+E       (True, 0)
+E       
+E       - [(False, 2)]
+E       + [(True, 0)] : (['a/', '!a/b/', '!*.txt'], [CheckResult(file='a/b/file.txt', include=False, index=2)])
+E       AssertionError: Lists differ: [(True, 2)] != [(True, 0)]
+E       
+E       First differing element 0:
+E       (True, 2)
+E       (True, 0)
+E       
+E       - [(True, 2)]
+E       ?         ^
+E       
+E       + [(True, 0)]
+E       ?         ^
+E        : (['a/', '!a/b/', '*.txt'], [CheckResult(file='a/b/file.txt', include=True, index=2)])
+E       AssertionError: Lists differ: [(True, 2)] != [(True, 0)]
+E       
+E       First differing element 0:
+E       (True, 2)
+E       (True, 0)
+E       
+E       - [(True, 2)]
+E       ?         ^
+E       
+E       + [(True, 0)]
+E       ?         ^
+E        : (['a/', '!a/b/', '*.txt'], [CheckResult(file='a/b/file.txt', include=True, index=2)])
+E       AssertionError: Lists differ: [(False, 1)] != [(True, 0)]
+E

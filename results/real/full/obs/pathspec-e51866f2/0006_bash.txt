@@ -1,0 +1,60 @@
+commit 4f5559a36ec36a27970476a08217efc6f8691c5e
+Author: dataset <dataset@local>
+Date:   Fri Oct 23 16:01:34 2026 +0800
+
+    build: apply test patch + stub _version (source fix removed)
+
+diff --git a/tests/test_03_gitignore_basic.py b/tests/test_03_gitignore_basic.py
+index 3302625..e4029e5 100644
+--- a/tests/test_03_gitignore_basic.py
++++ b/tests/test_03_gitignore_basic.py
+@@ -997,11 +997,11 @@ class GitIgnoreBasicPatternIssue93Test(TestCase):
+ 		Test patterns with valid range notation.
+ 		"""
+ 		for raw_pattern, regex in [
+-			('[!a-z]', f'^(?s:.+/)?[^a-z]{_DIR_OPT}'),
+-			('[^a-z]', f'^(?s:.+/)?[^a-z]{_DIR_OPT}'),
++			('[!a-z]', f'^(?s:.+/)?[^/a-z]{_DIR_OPT}'),
++			('[^a-z]', f'^(?s:.+/)?[^/a-z]{_DIR_OPT}'),
+ 			('[a-z]', f'^(?s:.+/)?[a-z]{_DIR_OPT}'),
+-			('a[!a-z]', f'^(?s:.+/)?a[^a-z]{_DIR_OPT}'),
+-			('a[^a-z]', f'^(?s:.+/)?a[^a-z]{_DIR_OPT}'),
++			('a[!a-z]', f'^(?s:.+/)?a[^/a-z]{_DIR_OPT}'),
++			('a[^a-z]', f'^(?s:.+/)?a[^/a-z]{_DIR_OPT}'),
+ 			('a[a-z]', f'^(?s:.+/)?a[a-z]{_DIR_OPT}'),
+ 		]:
+ 			with self.subTest(f"p={raw_pattern!r}"):
+diff --git a/tests/test_04_gitignore_spec.py b/tests/test_04_gitignore_spec.py
+index 7169380..dbab0c2 100644
+--- a/tests/test_04_gitignore_spec.py
++++ b/tests/test_04_gitignore_spec.py
+@@ -767,10 +767,10 @@ class GitIgnoreSpecPatternTest(TestCase):
+ 			('[[:blank:]]', '[\\t ]'),
+ 			('[[:cntrl:]]', '[\\x00-\\x1f\\x7f]'),
+ 			('[[:digit:]]', '[0-9]'),
+-			('[[:graph:]]', '[\\x21-\\x7e]'),
++			('[[:graph:]]', '[\\x21-\\x2e\\x30-\\x7e]'),
+ 			('[[:lower:]]', '[a-z]'),
+-			('[[:print:]]', '[\\x20-\\x7e]'),
+-			('[[:punct:]]', '[!-/:-@\\[-`{-~]'),
++			('[[:print:]]', '[\\x20-\\x2e\\x30-\\x7e]'),
++			('[[:punct:]]', '[!-.:-@\\[-`{-~]'),
+ 			('[[:space:]]', '[\\t\\n\\r ]'),
+ 			('[[:upper:]]', '[A-Z]'),
+ 			('[[:xdigit:]]', '[0-9A-Fa-f]'),
+@@ -1123,11 +1123,11 @@ class GitIgnoreSpecPatternIssue93Test(TestCase):
+ 		Test patterns with valid range notation.
+ 		"""
+ 		for raw_pattern, regex in [
+-			('[!a-z]', f'^(?s:.+/)?[^a-z]{_DIR_MARK_OPT}'),
+-			('[^a-z]', f'^(?s:.+/)?[^a-z]{_DIR_MARK_OPT}'),
++			('[!a-z]', f'^(?s:.+/)?[^/a-z]{_DIR_MARK_OPT}'),
++			('[^a-z]', f'^(?s:.+/)?[^/a-z]{_DIR_MARK_OPT}'),
+ 			('[a-z]', f'^(?s:.+/)?[a-z]{_DIR_MARK_OPT}'),
+-			('a[!a-z]', f'^(?s:.+/)?a[^a-z]{_DIR_MARK_OPT}'),
+-			('a[^a-z]', f'^(?s:.+/)?a[^a-z]{_DIR_MARK_OPT}'),
++			('a[!a-z]', f'^(?s:.+/)?a[^/a-z]{_DIR_MARK_OPT}'),
++			('a[^a-z]', f'^(?s:.+/)?a[^/a-z]{_DIR_MARK_OPT}'),
+ 			('a[a-z]', f'^(?s:.+/)?a[a-z]{_DIR_MARK_OPT}'),
+ 		]:
+ 			with self.subTest(f"p={raw_pattern!r}"):

@@ -1,0 +1,89 @@
+    60 |         return False
+    61 | 
+    62 |     # handling any additional checks user/pass
+    63 |     if "@" in netloc:
+    64 |         netloc = netloc.rsplit("@", 1)[1]
+    65 |     return hostname(netloc, may_have_port=True)
+    66 | 
+    67 | 
+    68 | @validator
+    69 | def uri(value: str, /):
+    70 |     """Return whether or not given value is a valid URI.
+    71 | 
+    72 |     Examples:
+    73 |         >>> uri('mailto:example@domain.com')
+    74 |         True
+    75 |         >>> uri('file:path.txt')
+    76 |         ValidationError(func=uri, args={'value': 'file:path.txt'})
+    77 | 
+    78 |     Args:
+    79 |         value:
+    80 |             URI to validate.
+    81 | 
+    82 |     Returns:
+    83 |         (Literal[True]): If `value` is a valid URI.
+    84 |         (ValidationError): If `value` is an invalid URI.
+    85 |     """
+    86 |     if not value:
+    87 |         return False
+    88 | 
+    89 |     # TODO: work on various validations
+    90 | 
+    91 |     # url
+    92 |     if any(
+    93 |         # fmt: off
+    94 |         value.startswith(item)
+    95 |         for item in {
+    96 |             "ftp",
+    97 |             "ftps",
+    98 |             "git",
+    99 |             "http",
+   100 |             "https",
+   101 |             "irc",
+   102 |             "rtmp",
+   103 |             "rtmps",
+   104 |             "rtsp",
+   105 |             "sftp",
+   106 |             "ssh",
+   107 |         }
+   108 |         # fmt: on
+   109 |     ):
+   110 |         return url(value)
+   111 | 
+   112 |     # email
+   113 |     if value.startswith("mailto:"):
+   114 |         return email(value[len("mailto:") :])
+   115 | 
+   116 |     # file
+   117 |     if value.startswith("file:"):
+   118 |         return _file_url(value)
+   119 | 
+   120 |     # ipfs
+   121 |     if value.startswith("ipfs:"):
+   122 |         return _ipfs_url(value)
+   123 | 
+   124 |     # magnet
+   125 |     if value.startswith("magnet:?"):
+   126 |         return True
+   127 | 
+   128 |     # telephone
+   129 |     if value.startswith("tel:"):
+   130 |         return True
+   131 | 
+   132 |     # data
+   133 |     if value.startswith("data:"):
+   134 |         return True
+   135 | 
+   136 |     # urn
+   137 |     if value.startswith("urn:"):
+   138 |         return True
+   139 | 
+   140 |     # urc
+   141 |     if value.startswith("urc:"):
+   142 |         return True
+   143 | 
+   144 |     # telnet
+   145 |     if value.startswith("telnet:"):
+   146 |         return _telnet_url(value)
+   147 | 
+   148 |     return False

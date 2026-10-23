@@ -1,0 +1,92 @@
+    expected = "   1.235\n   1.000\n1234.560"
+    assert_equal(expected, result)
+
+
+def test_floatfmt_multi():
+    "Output: floating point format different for each column"
+    result = tabulate([[0.12345, 0.12345, 0.12345]], floatfmt=(".1f", ".3f"), tablefmt="plain")
+    expected = "0.1  0.123  0.12345"
+    assert_equal(expected, result)
+
+
+def test_floatfmt_decimal():
+    result = tabulate(
+        [[Decimal("99999998999.999980"), 1234.5, 1.2345678, "inf"]],
+        floatfmt=".6f",
+        tablefmt="plain",
+    )
+    expected = "99999998999.999980  1234.500000  1.234568  inf"
+    assert_equal(expected, result)
+
+
+def test_colalign_multi():
+    "Output: string columns with custom colalign"
+    result = tabulate([["one", "two"], ["three", "four"]], colalign=("right",), tablefmt="plain")
+    expected = "  one  two\nthree  four"
+    assert_equal(expected, result)
+
+
+def test_colalign_multi_with_sep_line():
+    "Output: string columns with custom colalign"
+    result = tabulate(
+969:def _type(string, has_invisible=True, numparse=True):
+970-    """The least generic type (type(None), int, float, str, unicode).
+971-
+972-    Treats empty string as missing for the purposes of type deduction, so as to not influence
+973-    the type of an otherwise complete column; does *not* result in missingval replacement!
+974-
+975-    >>> _type(None) is type(None)
+976-    True
+977-    >>> _type("") is type(None)
+978-    True
+979-    >>> _type("foo") is type("")
+980-    True
+981-    >>> _type("1") is type(1)
+982-    True
+983-    >>> _type('\x1b[31m42\x1b[0m') is type(42)
+984-    True
+985-    >>> _type('\x1b[31m42\x1b[0m') is type(42)
+986-    True
+987-
+988-    """
+989-
+990-    if has_invisible and isinstance(string, (str, bytes)):
+991-        string = _strip_ansi(string)
+992-
+993-    if string is None or (isinstance(string, (bytes, str)) and not string):
+994-        return type(None)
+995-    elif hasattr(string, "isoformat"):  # datetime.datetime, date, and time
+996-        return str
+997-    elif _isbool(string):
+998-        return bool
+999-    elif numparse and (
+1000-        _isint(string)
+1001-        or (
+1002-            isinstance(string, str)
+1003-            and _isnumber_with_thousands_separator(string)
+1004-            and "." not in string
+1005-        )
+1006-    ):
+1007-        return int
+1008-    elif numparse and (
+1009-        _isnumber(string)
+1010-        or (isinstance(string, str) and _isnumber_with_thousands_separator(string))
+1011-    ):
+1012-        return float
+1013-    elif isinstance(string, bytes):
+1014-        return bytes
+1015-    else:
+1016-        return str
+1017-
+1018-
+1019-def _afterpoint(string):
+1020-    """Symbols after a decimal point, -1 if the string lacks the decimal point.
+1021-
+1022-    >>> _afterpoint("123.45")
+1023-    2
+1024-    >>> _afterpoint("1001")
+1025-    -1
+1026-    >>> _afterpoint("eggs")
+1027-    -1
+1028-    >>> _afterpoint("123e45")
+1029-    2

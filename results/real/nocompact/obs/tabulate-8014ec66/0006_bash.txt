@@ -1,0 +1,80 @@
+147:def _pipe_line_with_colons(colwidths, colaligns):
+148-    """Return a horizontal line with optional colons to indicate column's
+149-    alignment (as in `pipe` output format)."""
+150-    if not colaligns:  # e.g. printing an empty data frame (github issue #15)
+151-        colaligns = [""] * len(colwidths)
+152-    segments = "|".join(_pipe_segment_with_colons(a, w) for a, w in zip(colaligns, colwidths))
+153-    return f"|{segments}|"
+154-
+155-
+156-def _grid_segment_with_colons(colwidth, align):
+157-    """Return a segment of a horizontal line with optional colons which indicate
+158-    column's alignment in a grid table."""
+159-    width = colwidth
+160-    if align == "right":
+161-        return ("=" * (width - 1)) + ":"
+162-    elif align == "center":
+163-        return ":" + ("=" * (width - 2)) + ":"
+164-    elif align == "left":
+165-        return ":" + ("=" * (width - 1))
+166-    else:
+167-        return "=" * width
+--
+536:        lineabove=_pipe_line_with_colons,
+537:        linebelowheader=_pipe_line_with_colons,
+538-        linebetweenrows=None,
+539-        linebelow=None,
+540-        headerrow=DataRow("|", "|", "|"),
+541-        datarow=DataRow("|", "|", "|"),
+542-        padding=1,
+543-        with_header_hide=["lineabove"],
+544-    ),
+545-    "orgtbl": TableFormat(
+546-        lineabove=None,
+547-        linebelowheader=Line("|", "-", "+", "|"),
+548-        linebetweenrows=None,
+549-        linebelow=None,
+550-        headerrow=DataRow("|", "|", "|"),
+551-        datarow=DataRow("|", "|", "|"),
+552-        padding=1,
+553-        with_header_hide=None,
+79:#     --- linebelowheader ---
+110:        "linebelowheader",
+357:        linebelowheader=Line("", "-", "  ", ""),
+367:        linebelowheader=None,
+377:        linebelowheader=Line("+", "=", "+", "+"),
+387:        linebelowheader=Line("├", "─", "┼", "┤"),
+397:        linebelowheader=Line("├", "─", "┼", "┤"),
+407:        linebelowheader=Line("┣", "━", "╋", "┫"),
+417:        linebelowheader=Line("┝", "━", "┿", "┥"),
+427:        linebelowheader=Line("╠", "═", "╬", "╣"),
+437:        linebelowheader=Line("╞", "═", "╪", "╡"),
+447:        linebelowheader=_grid_line_with_colons,
+457:        linebelowheader=Line("+", "=", "+", "+"),
+467:        linebelowheader=Line("├", "─", "┼", "┤"),
+477:        linebelowheader=Line("├", "─", "┼", "┤"),
+487:        linebelowheader=Line("┣", "━", "╋", "┫"),
+497:        linebelowheader=Line("┝", "━", "┿", "┥"),
+507:        linebelowheader=Line("╠", "═", "╬", "╣"),
+517:        linebelowheader=Line("╞", "═", "╪", "╡"),
+527:        linebelowheader=Line("|", "-", "|", "|"),
+537:        linebelowheader=_pipe_line_with_colons,
+547:        linebelowheader=Line("|", "-", "+", "|"),
+557:        linebelowheader=None,
+567:        linebelowheader=Line("", "-", "+", ""),
+577:        linebelowheader=Line("+", "-", "+", "+"),
+587:        linebelowheader=Line("|", "-", "+", "|"),
+597:        linebelowheader=Line("", "=", "  ", ""),
+612:        linebelowheader=Line("|-", "", "", ""),
+622:        linebelowheader=None,
+632:        linebelowheader="",
+642:        linebelowheader="",
+652:        linebelowheader=Line("\\hline", "", "", ""),
+662:        linebelowheader=Line("\\hline", "", "", ""),
+672:        linebelowheader=Line("\\midrule", "", "", ""),
+682:        linebelowheader=Line("\\hline\n\\endhead", "", "", ""),
+692:        linebelowheader=None,
+702:        linebelowheader=None,
+712:        linebelowheader=None,
+2625:        if fmt.linebelowheader and "linebelowheader" not in hidden:
+2626:            _append_line(lines, padded_widths, colaligns, fmt.linebelowheader)

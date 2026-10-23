@@ -1,0 +1,110 @@
+		self = super().from_lines(use_factory, lines, backend=backend, _test_backend_factory=_test_backend_factory)  # type: ignore[arg-type,type-var]
+		return self  # type: ignore[return-value]
+
+	@override
+	@staticmethod
+	def _make_backend(
+		name: BackendNamesHint,
+		patterns: Sequence[Pattern],
+	) -> _Backend:
+		"""
+		.. warning:: This method is not part of the public API. It is subject to
+			change.
+
+		Create the backend for the patterns.
+
+		*name* (:class:`str`) is the name of the backend.
+
+		*patterns* (:class:`~collections.abc.Sequence` of :class:`.Pattern`)
+		contains the compiled patterns.
+
+		Returns the backend (:class:`._Backend`).
+		"""
+		return make_gitignore_backend(name, patterns)
+"""
+This module provides :class:`.PathSpec` which is an object-oriented interface
+for pattern matching of files.
+"""
+from __future__ import annotations
+
+from collections.abc import (
+	Collection,
+	Iterable,
+	Iterator,
+	Sequence)
+from itertools import (
+	zip_longest)
+from typing import (
+	Callable,  # Replaced by `collections.abc.Callable` in 3.9.2.
+	Generic,
+	Literal,
+	Optional,  # Replaced by `X | None` in 3.10.
+	TypeVar,
+	Union,  # Replaced by `X | Y` in 3.10.
+	cast,
+	overload)
+
+Self = TypeVar("Self", bound='PathSpec')
+"""
+:class:`.PathSpec` self type hint to support Python v<3.11 using PEP 673
+recommendation.
+"""
+
+from pathspec import util
+from pathspec.backend import (
+	BackendNamesHint,
+	_Backend,
+	_TestBackendFactoryHint)
+from pathspec._backends.agg import (
+	make_pathspec_backend)
+from pathspec.pattern import (
+	Pattern)
+from pathspec.patterns.gitignore.basic import (
+	GitIgnoreBasicPattern)
+from pathspec._typing import (
+	AnyStr,  # Removed in 3.18.
+	deprecated)  # Added in 3.13.
+from pathspec.util import (
+	CheckResult,
+	StrPath,
+	TPattern,
+	TPattern_co,
+	TStrPath,
+	TreeEntry,
+	_is_iterable,
+	normalize_file)
+
+
+class PathSpec(Generic[TPattern_co]):
+	"""
+	The :class:`PathSpec` class is a wrapper around a list of compiled
+	:class:`.Pattern` instances.
+	"""
+
+	def __init__(
+		self,
+		patterns: Union[Sequence[TPattern_co], Iterable[TPattern_co]],
+		*,
+		backend: Union[BackendNamesHint, str, None] = None,
+		_test_backend_factory: _TestBackendFactoryHint = None,
+	) -> None:
+		"""
+		Initializes the :class:`.PathSpec` instance.
+
+		*patterns* (:class:`~collections.abc.Sequence` or :class:`~collections.abc.Iterable`)
+		contains each compiled pattern (:class:`.Pattern`). If not a sequence, it
+		will be converted to a :class:`list`.
+
+		*backend* (:class:`str` or :data:`None`) is the pattern (regular expression)
+		matching backend to use. Default is :data:`None` for "best" to use the best
+		available backend. Priority of backends is: "re2", "hyperscan", "simple".
+		The "simple" backend is always available. Automatic selection uses "simple"
+		when any pattern is not a :class:`.RegexPattern`. Native backends only
+		support regular expressions.
+__init__.py
+__pycache__
+_utils.py
+agg.py
+hyperscan
+re2
+simple

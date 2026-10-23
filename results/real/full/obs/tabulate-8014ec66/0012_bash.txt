@@ -1,0 +1,180 @@
+def _build_row(padded_cells, colwidths, colaligns, rowfmt):
+    "Return a string which represents a row of data cells."
+    if not rowfmt:
+        return None
+    if callable(rowfmt):
+        return rowfmt(padded_cells, colwidths, colaligns)
+    else:
+        return _build_simple_row(padded_cells, rowfmt)
+
+
+def _append_basic_row(lines, padded_cells, colwidths, colaligns, rowfmt, rowalign=None):
+    # NOTE: rowalign is ignored and exists for api compatibility with _append_multiline_row
+    lines.append(_build_row(padded_cells, colwidths, colaligns, rowfmt))
+    return lines
+
+
+def _align_cell_veritically(text_lines, num_lines, column_width, row_alignment):
+    delta_lines = num_lines - len(text_lines)
+    blank = [" " * column_width]
+    if row_alignment == "bottom":
+        return blank * delta_lines + text_lines
+    elif row_alignment == "center":
+        top_delta = delta_lines // 2
+        bottom_delta = delta_lines - top_delta
+        return top_delta * blank + text_lines + bottom_delta * blank
+    else:
+        return text_lines + blank * delta_lines
+
+
+def _append_multiline_row(
+    lines, padded_multiline_cells, padded_widths, colaligns, rowfmt, pad, rowalign=None
+):
+    colwidths = [w - 2 * pad for w in padded_widths]
+    cells_lines = [c.splitlines() for c in padded_multiline_cells]
+    nlines = max(map(len, cells_lines))  # number of lines in the row
+    # vertically pad cells where some lines are missing
+    # cells_lines = [
+    #     (cl + [" " * w] * (nlines - len(cl))) for cl, w in zip(cells_lines, colwidths)
+    # ]
+
+    cells_lines = [
+        _align_cell_veritically(cl, nlines, w, rowalign) for cl, w in zip(cells_lines, colwidths)
+    ]
+    lines_cells = [[cl[i] for cl in cells_lines] for i in range(nlines)]
+    for ln in lines_cells:
+        padded_ln = _pad_row(ln, pad)
+        _append_basic_row(lines, padded_ln, colwidths, colaligns, rowfmt)
+    return lines
+
+
+def _build_line(colwidths, colaligns, linefmt):
+    "Return a string which represents a horizontal line."
+    if not linefmt:
+        return None
+    if callable(linefmt):
+        return linefmt(colwidths, colaligns)
+    else:
+        begin, fill, sep, end = linefmt
+        cells = [fill * w for w in colwidths]
+        return _build_simple_row(cells, (begin, sep, end))
+
+
+def _append_line(lines, colwidths, colaligns, linefmt):
+    lines.append(_build_line(colwidths, colaligns, linefmt))
+    return lines
+
+
+class JupyterHTMLStr(str):
+    """Wrap the string with a _repr_html_ method so that Jupyter
+    displays the HTML table"""
+
+    def _repr_html_(self):
+        return self
+
+    @property
+    def str(self):
+        """add a .str property so that the raw string is still accessible"""
+        return self
+
+
+def _format_table(
+    fmt, headers, headersaligns, rows, colwidths, colaligns, is_multiline, rowaligns
+):
+    """Produce a plain-text representation of the table."""
+    lines = []
+    hidden = fmt.with_header_hide if (headers and fmt.with_header_hide) else []
+    pad = fmt.padding
+    headerrow = fmt.headerrow
+
+    padded_widths = [(w + 2 * pad) for w in colwidths]
+    if is_multiline:
+        pad_row = lambda row, _: row  # noqa: E731 # do it later, in _append_multiline_row
+        append_row = partial(_append_multiline_row, pad=pad)
+    else:
+        pad_row = _pad_row
+        append_row = _append_basic_row
+
+    padded_headers = pad_row(headers, pad)
+
+    if fmt.lineabove and "lineabove" not in hidden:
+        _append_line(lines, padded_widths, colaligns, fmt.lineabove)
+
+    if padded_headers:
+        append_row(lines, padded_headers, padded_widths, headersaligns, headerrow)
+        if fmt.linebelowheader and "linebelowheader" not in hidden:
+            _append_line(lines, padded_widths, colaligns, fmt.linebelowheader)
+
+    if rows and fmt.linebetweenrows and "linebetweenrows" not in hidden:
+        # initial rows with a line below
+        for row, ralign in zip(rows[:-1], rowaligns):
+            if row != SEPARATING_LINE:
+                append_row(
+                    lines,
+                    pad_row(row, pad),
+                    padded_widths,
+                    colaligns,
+                    fmt.datarow,
+                    rowalign=ralign,
+                )
+            _append_line(lines, padded_widths, colaligns, fmt.linebetweenrows)
+        # the last row without a line below
+        append_row(
+            lines,
+            pad_row(rows[-1], pad),
+            padded_widths,
+            colaligns,
+            fmt.datarow,
+            rowalign=rowaligns[-1],
+        )
+    else:
+        separating_line = (
+            fmt.linebetweenrows
+            or fmt.linebelowheader
+            or fmt.linebelow
+            or fmt.lineabove
+            or Line("", "", "", "")
+        )
+        for row in rows:
+            # test to see if either the 1st column or the 2nd column (account for showindex) has
+            # the SEPARATING_LINE flag
+            if _is_separating_line(row):
+                _append_line(lines, padded_widths, colaligns, separating_line)
+            else:
+                append_row(lines, pad_row(row, pad), padded_widths, colaligns, fmt.datarow)
+
+    if fmt.linebelow and "linebelow" not in hidden:
+        _append_line(lines, padded_widths, colaligns, fmt.linebelow)
+
+    if headers or rows:
+        output = "\n".join(lines)
+        if fmt.lineabove == _html_begin_table_without_header:
+            return JupyterHTMLStr(output)
+        else:
+            return output
+    else:  # a completely empty table
+        return ""
+
+
+class _CustomTextWrap(textwrap.TextWrapper):
+    """A custom implementation of CPython's textwrap.TextWrapper. This supports
+    both wide characters (Korea, Japanese, Chinese)  - including mixed string.
+    For the most part, the `_handle_long_word` and `_wrap_chunks` functions were
+    copy pasted out of the CPython baseline, and updated with our custom length
+    and line appending logic.
+    """
+
+    def __init__(self, *args, **kwargs):
+        self._active_codes = []
+        self.max_lines = None  # For python2 compatibility
+        textwrap.TextWrapper.__init__(self, *args, **kwargs)
+
+    @staticmethod
+    def _len(item):
+        """Custom len that gets console column width for wide
+        and non-wide characters as well as ignores color codes"""
+        stripped = _strip_ansi(item)
+        if wcwidth:
+            return wcwidth.wcswidth(stripped)
+        else:
+            return len(stripped)
