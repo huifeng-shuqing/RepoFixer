@@ -12,7 +12,11 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from build_dataset import patch_scm_version  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 WORK = ROOT / "work"
@@ -52,6 +56,7 @@ def main() -> int:
             run(["git", "-C", str(scratch), "checkout", "--quiet", t["base_commit"]])
             for tf in t["test_files"]:
                 run(["git", "-C", str(scratch), "checkout", "--quiet", t["fix_commit"], "--", tf])
+            patch_scm_version(scratch)  # same stub the task repos carry (setuptools_scm)
             rc_before = verify(t["verify_command"], scratch)
             if rc_before == 0:
                 print(f"BAD {t['id']}: verify passes BEFORE the fix (bug not observable)")

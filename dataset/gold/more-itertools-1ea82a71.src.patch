@@ -1,0 +1,16 @@
+diff --git a/more_itertools/more.py b/more_itertools/more.py
+index c128bc9..940b800 100755
+--- a/more_itertools/more.py
++++ b/more_itertools/more.py
+@@ -3718,6 +3718,11 @@ def ichunked(iterable, n):
+     [8, 9, 10, 11]
+ 
+     """
++    if n is not None and n < 0:
++        raise ValueError('n must be at least 0')
++    if n == 0:
++        return
++
+     iterator = iter(iterable)
+     for first in iterator:
+         rest = islice(iterator, n - 1)

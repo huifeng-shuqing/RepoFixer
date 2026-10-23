@@ -1,0 +1,116 @@
+diff --git a/boltons/listutils.py b/boltons/listutils.py
+index d05d09d..9fbb4d6 100644
+--- a/boltons/listutils.py
++++ b/boltons/listutils.py
+@@ -114,6 +114,8 @@ class BarrelList(list):
+             if rel_idx < len_list:
+                 break
+             rel_idx -= len_list
++        else:
++            return None, None  # index >= len(self)
+         if rel_idx < 0:
+             return None, None
+         return list_idx, rel_idx
+@@ -137,9 +139,13 @@ class BarrelList(list):
+             self.lists[0].insert(index, item)
+             self._balance_list(0)
+         else:
+-            list_idx, rel_idx = self._translate_index(index)
+-            if list_idx is None:
++            len_self = len(self)
++            if index >= len_self:  # clamp to append, like list.insert
++                list_idx, rel_idx = len(self.lists) - 1, len(self.lists[-1])
++            elif index < -len_self:  # clamp to prepend, like list.insert
+                 list_idx, rel_idx = 0, 0
++            else:
++                list_idx, rel_idx = self._translate_index(index)
+             self.lists[list_idx].insert(rel_idx, item)
+             self._balance_list(list_idx)
+         return
+@@ -156,6 +162,8 @@ class BarrelList(list):
+             return self.lists[0].pop()
+         index = a and a[0]
+         if index == () or index is None or index == -1:
++            while len(lists) > 1 and not lists[-1]:
++                lists.pop()  # clean up empty tail sublists first
+             ret = lists[-1].pop()
+             if len(lists) > 1 and not lists[-1]:
+                 lists.pop()
+@@ -164,7 +172,10 @@ class BarrelList(list):
+             if list_idx is None:
+                 raise IndexError()
+             ret = lists[list_idx].pop(rel_idx)
+-            self._balance_list(list_idx)
++            if len(lists) > 1 and not lists[list_idx]:
++                del lists[list_idx]  # don't accumulate empty sublists
++            else:
++                self._balance_list(list_idx)
+         return ret
+ 
+     def iter_slice(self, start, stop, step=None):
+diff --git a/boltons/setutils.py b/boltons/setutils.py
+index 950b130..37b4440 100644
+--- a/boltons/setutils.py
++++ b/boltons/setutils.py
+@@ -56,6 +56,7 @@ __all__ = ['IndexedSet', 'complement']
+ 
+ 
+ _COMPACTION_FACTOR = 8
++_MAX_DEAD_INTERVALS = 384
+ 
+ # TODO: inherit from set()
+ # TODO: .discard_many(), .remove_many()
+@@ -143,7 +144,7 @@ class IndexedSet(MutableSet):
+         if not ii_map:
+             del items[:]
+             del ded[:]
+-        elif len(ded) > 384:
++        elif len(ded) > _MAX_DEAD_INTERVALS:
+             self._compact()
+         elif self._dead_index_count > (len(items) / _COMPACTION_FACTOR):
+             self._compact()
+@@ -202,6 +203,19 @@ class IndexedSet(MutableSet):
+             dints.insert(int_idx, cand_int)
+         return
+ 
++    def _bulk_discard(self, to_remove):
++        """Remove many items in a single O(n) pass.
++
++        Removing k scattered items via repeated :meth:`discard` triggers a
++        full O(n) compaction every ``_MAX_DEAD_INTERVALS`` removals, i.e.
++        O(n * k) overall. Rebuilding once keeps bulk updates linear.
++        """
++        self.item_list = [item for item in self.item_list
++                          if item is not _MISSING and item not in to_remove]
++        self.item_index_map = {item: i
++                               for i, item in enumerate(self.item_list)}
++        del self.dead_indices[:]
++
+     # common operations (shared by set and list)
+     def __len__(self):
+         return len(self.item_index_map)
+@@ -355,14 +369,22 @@ class IndexedSet(MutableSet):
+ 
+     def intersection_update(self, *others):
+         "intersection_update(*others) -> discard self.difference(*others)"
+-        for val in self.difference(*others):
++        to_remove = self.difference(*others)
++        if len(to_remove) > _MAX_DEAD_INTERVALS:
++            self._bulk_discard(to_remove)
++            return
++        for val in to_remove:
+             self.discard(val)
+ 
+     def difference_update(self, *others):
+         "difference_update(*others) -> discard self.intersection(*others)"
+         if self in others:
+             self.clear()
+-        for val in self.intersection(*others):
++        to_remove = self.intersection(*others)
++        if len(to_remove) > _MAX_DEAD_INTERVALS:
++            self._bulk_discard(to_remove)
++            return
++        for val in to_remove:
+             self.discard(val)
+ 
+     def symmetric_difference_update(self, other):  # note singular 'other'
