@@ -42,7 +42,7 @@ def test_run_timeout_kills_process_tree(ws):
     env = LocalEnv(ws)
     t0 = time.time()
     r = env.run(
-        'python -c "import subprocess; subprocess.Popen([\'ping\',\' -n\',\'30\',\'127.0.0.1\']); import time; time.sleep(30)"',
+        'python -c "import subprocess; subprocess.Popen([\'python\', \'-c\', \'import time; time.sleep(30)\']); import time; time.sleep(30)"',
         timeout=3,
     )
     assert r.timed_out
@@ -52,6 +52,6 @@ def test_run_timeout_kills_process_tree(ws):
 def test_run_timeout(ws):
     env = LocalEnv(ws)
     t0 = time.time()
-    r = env.run("ping -n 3 127.0.0.1", timeout=1)
+    r = env.run('python -c "import time; time.sleep(30)"', timeout=1)
     assert r.timed_out
     assert time.time() - t0 < 10

@@ -15,7 +15,9 @@ from __future__ import annotations
 import os
 import shlex
 import shutil
+import signal
 import subprocess
+import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -35,6 +37,20 @@ def find_bash() -> str | None:
     return None
 
 
+def _kill_tree(proc: subprocess.Popen) -> None:
+    """Kill a process and its whole tree (cross-platform)."""
+    if sys.platform == "win32":
+        subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)], capture_output=True)
+    else:
+        try:
+            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+        except (ProcessLookupError, PermissionError):
+            try:
+                proc.kill()
+            except Exception:
+                pass
+
+
 def _run_with_timeout(
     cmd: list[str] | str,
     *,
@@ -49,8 +65,11 @@ def _run_with_timeout(
     kwargs: dict = dict(
         cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.DEVNULL,
         text=True, encoding="utf-8", errors="replace", env=env,
-        creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
     )
+    if sys.platform == "win32":
+        kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
+    else:
+        kwargs["start_new_session"] = True
     proc = subprocess.Popen(cmd, shell=shell, **kwargs)
     try:
         out, err = proc.communicate(timeout=timeout)
@@ -58,7 +77,7 @@ def _run_with_timeout(
             ok=proc.returncode == 0, stdout=out or "", stderr=err or "", exit_code=proc.returncode or 0
         )
     except subprocess.TimeoutExpired:
-        subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)], capture_output=True)
+        _kill_tree(proc)
         try:
             out, err = proc.communicate(timeout=10)
         except Exception:
