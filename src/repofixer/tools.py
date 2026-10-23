@@ -217,6 +217,10 @@ class ToolRegistry:
     def schemas(self) -> list[dict]:
         return [t.schema() for t in self._tools.values()]
 
+    def filter(self, names: set[str]) -> None:
+        """Keep only the given tools (used by eval baselines, e.g. noedit)."""
+        self._tools = {k: v for k, v in self._tools.items() if k in names}
+
     def call(self, name: str, args: dict) -> ToolResult:
         tool = self._tools.get(name)
         if tool is None:

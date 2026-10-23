@@ -26,5 +26,12 @@
 
 - **做了什么**：包名对齐 GitHub 仓库（repofixer）；`DockerEnv`（一次性容器：`--network none`、内存 2g/CPU 2/pids 256、命令级 timeout、close 即删）+ `create_env` 工厂（auto 探测）；CLI `--env`；样例任务仓库 `samples/calc_bug`（真实 bug + unittest 零依赖）；4 组单元测试（环境/工具/循环/Docker）；冒烟脚本 `scripts/smoke_local.py`。
 - **怎么实现的**：DockerEnv 把 workspace 挂到 `/workspace`，每条命令包成 `cd /workspace && timeout N sh -c <cmd>` 在新 shell 里执行——保持「每动作独立、不持有会话」的 mini 设计；循环用 FakeLLM 做无网络单测，trace 断言落盘内容。
-- **验证状态**：⏳ 单元测试待跑（本轮执行）；Docker 组测试依赖守护进程，我沙箱可能访问不到 docker pipe——由你在自己终端跑 `uv run pytest` 验证。
+- **验证状态**：✅ 16 个非 Docker 单测全绿；Docker 组因开发沙箱无法访问 docker 命名管道，由你在自己终端跑 `uv run pytest` / `uv run python scripts/smoke_local.py --env docker` 验证。
 - **参照**：mini-swe-agent 环境抽象（MIT）；SWE-bench 任务结构（思想）。
+
+### Block 3 — 评测体系核心（2026-10-23）
+
+- **做了什么**：任务 schema（id/problem_statement/repo/verify_command/timeout/difficulty，JSONL）；评测 runner（每任务独立环境 + 逐条结果追加 + 按 task_id 断点续跑 + 每任务 trace 落盘）；指标汇总（成功率/平均步数/token/成本估算/延迟分位）；两个基线（step3=3 步截断、noedit=裁剪编辑工具）；CLI `repofixer eval`。
+- **怎么实现的**：verify_command 的退出码即成功判据（SWE-bench 判定思想的零依赖简化版，F2P/P2P 留待接入真实 SWE-bench 数据时实现）；resume 通过读 results.jsonl 已有 task_id 跳过，防重复烧钱（SWE-bench run_id 缓存同思路）。
+- **验证状态**：✅ 单测覆盖评测管道（假 LLM 真修 bug → resolved=True）、断点续跑、noedit 基线必失败；真实模型跑分待你终端执行。
+- **参照**：SWE-bench 数据集结构/判定/缓存思想（MIT）；基线设计自定。

@@ -1,0 +1,1 @@
+{"id": "calc_bug-1", "problem_statement": "The `mul` function in calc/ops.py is broken: it returns a+b instead of a*b. Fix calc/ops.py so that `python tests/test_ops.py` passes. Do not modify the tests.", "repo": "../samples/calc_bug", "verify_command": "python tests/test_ops.py", "timeout": 300, "difficulty": "easy"}
