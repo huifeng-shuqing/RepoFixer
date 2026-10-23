@@ -85,3 +85,15 @@
 - **失败归因**（24 个失败任务）：loop_detected 9 / no_progress 7 / max_steps 6 / premature_done 1 / policy_blocked 1。
 - **诚实结论**：三组成功率一致，任务级差异 2+2（方差范围）——在 29 个单文件级任务上 repo map 与上下文压缩无显著增益，瓶颈在模型能力本身。机制的价值体现在更大的代码库上，这是后续工作的方向，也是面试时如实表述的结论。
 - **对比与归因报告**：results/real/COMPARISON.md + 各 run 目录 FAILURES.md；简历口径见 docs/resume.md。
+
+### Block 7 — 七项升级（2026-10-24）
+
+- **研读参考**（reference/ 浅克隆）：aider/repomap.py（tags 按 mtime 缓存、token 预算与无文件时动态扩展 map_mul_no_files=8）；gemini-cli policy.ts（ALLOW/ASK_USER/DENY 决策 + 非交互模式 ASK_USER 即拒绝）；opencode 的 agent markdown frontmatter（mode/model/tools 通配）与 permission.ts（`findLast` 实现「后匹配者胜」规则表）；khoj 的 UserMemory 模型。
+- **① 任务清单驱动**：新增 `plan` 工具，模型开工前把目标/验证方式/步骤写入 `.repofixer/plan.json`，system prompt 要求持续更新——对应 Anthropic feature_list 模式。
+- **② 独立上下文复审**：`review.py`（VERDICT: OK/ISSUES 协议）；模型声明 done 后，diff+任务以全新对话送复审（默认走小模型），发现关键问题则回注主循环，最多一轮纠正（max_review_rounds=1）。
+- **③ 影子快照回滚**：每步 `git add -A && git stash create`（生成 commit 对象但不移动 HEAD、不改工作区），随后 `git reset` 还原 index——评测复位（checkout -- .）语义不受影响；快照 SHA 记录于 AgentRun.snapshots，回滚 = `git reset --hard <sha>`。
+- **④ 仓库级长期记忆**：`notes.py`，会话开始注入 `.repofixer/notes.md`（≤4000 字符），结束追加一行结论；eval 与 CLI run 均已接入。
+- **⑤ MCP 标准化**：`mcp_server.py` 用官方 python-sdk 把 7 个工具以 stdio server 暴露（`repofixer mcp`），依赖放在 optional extra `mcp`（`uv sync --extra mcp`）；schema 转换函数纯函数化可单测。
+- **⑥ 分层模型路由**：`DEEPSEEK_SMALL_MODEL` 环境变量配置次级模型，用于上下文摘要与复审（Aider architect/editor 模式）；主循环决策仍用主模型。
+- **⑦ 并行工具引导**：system prompt 明确「多段独立信息单次请求多工具调用」；循环本就支持一次响应多工具。
+- **验证**：43 项单测全绿（新增 7 项：plan 读写、notes 回环与注入、快照不动 HEAD、复审重开循环/通过放行、MCP schema 转换）。前后对比评测：见 results/before_upgrade 与 results/after_upgrade（6 题子集）。

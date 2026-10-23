@@ -23,6 +23,7 @@ from pathlib import Path
 from .environment import create_env
 from .llm import LLMClient
 from .loop import run_agent
+from .notes import append_note, load_notes
 from .tools import ToolRegistry
 
 # price per 1M tokens (input, output), in yuan — rough estimate, configurable later
@@ -119,6 +120,7 @@ def run_task(
         if task.src_layout:
             pypath = "/workspace/src" if env_kind == "docker" else str(repo / "src")
             verify_env = {"PYTHONPATH": pypath}
+        notes_text = load_notes(repo)
         run = run_agent(
             task.problem_statement,
             llm,
@@ -130,8 +132,19 @@ def run_task(
             obs_dir=obs_dir,
             policy=SafetyPolicy("auto", workspace=repo),
             solved_check=lambda: env.run(task.verify_command, timeout=min(task.timeout, 120), env=verify_env).ok,
+            notes=notes_text or None,
+            snapshot=True,
+            review=True,
         )
         verify = env.run(task.verify_command, timeout=min(task.timeout, 180), env=verify_env)
+        try:
+            append_note(
+                repo,
+                f"{time.strftime('%Y-%m-%d')} {task.id} resolved={verify.ok} "
+                f"steps={len(run.steps)} reason={run.stopped_reason}: {run.done_summary or ''}".rstrip(),
+            )
+        except OSError:
+            pass
         return EvalResult(
             task_id=task.id,
             resolved=verify.ok,

@@ -20,6 +20,7 @@ Reliability (M5):
 from __future__ import annotations
 
 import json
+import subprocess
 import time
 from collections import deque
 from dataclasses import dataclass, field
@@ -29,6 +30,7 @@ from typing import Callable
 
 from .context import ContextManager, estimate_tokens
 from .llm import LLMClient
+from .review import build_review_messages, parse_verdict, review_feedback
 from .safety import SafetyPolicy
 from .tools import ToolRegistry
 from .trace import StepTrace, ToolCallTrace, TraceWriter
@@ -39,9 +41,11 @@ You are given a task. Explore, locate the bug, edit files, run tests, and iterat
 Rules:
 - Read code before changing it; prefer targeted edits (edit_file) over rewriting whole files.
 - Prefer the dedicated tools (read_file/edit_file/grep/run_test) over shell commands; use bash mainly for running commands that have no dedicated tool.
+- Before editing, call `plan` to record your goal, how you will verify it, and your steps; update the plan as you progress.
 - When tests fail, read the failure output and fix the cause, not the symptom.
 - As soon as the tests pass, stop exploring and call `done` immediately.
 - Call `done` with a summary ONLY when the task is finished. Never call done while tests still fail.
+- When you need several independent pieces of information (several files or searches), request them in a single response with multiple tool calls.
 - Be terse: report what you changed and what you verified.
 """
 
@@ -55,10 +59,46 @@ class AgentRun:
     completion_tokens: int = 0
     evictions: list[dict] = field(default_factory=list)
     policy_denials: list[dict] = field(default_factory=list)
+    review_rounds: int = 0
+    review_feedback: str | None = None
+    snapshots: list[str] = field(default_factory=list)
 
     @property
     def total_tokens(self) -> int:
         return self.prompt_tokens + self.completion_tokens
+
+
+def _git(workspace: Path, args: list[str], timeout: int = 60) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        ["git", "-C", str(workspace)] + args,
+        capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=timeout,
+    )
+
+
+def _snapshot(workspace: Path | None, step_no: int) -> str | None:
+    """Shadow-git snapshot (Cline-style): create a commit object via
+    `git stash create` WITHOUT moving HEAD or the working tree, so the eval
+    reset (`git checkout -- .`) keeps restoring the original baseline."""
+    if workspace is None or not (workspace / ".git").exists():
+        return None
+    try:
+        _git(workspace, ["add", "-A"])
+        p = _git(workspace, ["-c", "user.name=repofixer", "-c", "user.email=repofixer@local",
+                             "stash", "create", f"repofixer snapshot (step {step_no})"])
+        sha = p.stdout.strip()
+        _git(workspace, ["reset"])  # unstage; keep worktree, keep HEAD
+        return sha or None
+    except Exception:
+        return None
+
+
+def _get_diff(workspace: Path | None) -> str:
+    if workspace is None or not (workspace / ".git").exists():
+        return ""
+    try:
+        return _git(workspace, ["diff"]).stdout or ""
+    except Exception:
+        return ""
 
 
 def save_state(path: Path, step_next: int, messages: list[dict], max_steps: int) -> None:
@@ -94,6 +134,10 @@ def run_agent(
     policy: SafetyPolicy | None = None,
     loop_guard: int = 4,
     solved_check: Callable[[], bool] | None = None,
+    notes: str | None = None,
+    snapshot: bool = False,
+    review: bool = False,
+    max_review_rounds: int = 1,
 ) -> AgentRun:
     cm = ContextManager(obs_dir, context_budget)
     step_start = 1
@@ -106,7 +150,10 @@ def run_agent(
             max_steps = max(max_steps, int(st.get("max_steps", 0)))  # new call's cap wins if larger
             resumed = True
     if not resumed:
-        system = SYSTEM_PROMPT + (f"\n\n{repo_map}" if repo_map else "")
+        system = SYSTEM_PROMPT
+        if notes:
+            system += f"\n\nRepository notes from previous sessions:\n{notes}"
+        system += f"\n\n{repo_map}" if repo_map else ""
         cm.add_system(system)
         cm.add_user(task)
 
@@ -207,12 +254,40 @@ def run_agent(
             st.wall_ms = int((time.perf_counter() - t0) * 1000)
             tw.write(st)
             run.steps.append(st)
+            if snapshot:
+                sha = _snapshot(getattr(registry.env, "workspace", None), step_no)
+                if sha:
+                    run.snapshots.append(sha)
             if solved_check is not None:
                 try:
                     if solved_check():
                         run.stopped_reason = "solved_early"
                 except Exception:
                     pass
+            # Independent-context review: when the model declares done, a fresh
+            # conversation judges the diff; critical issues reopen the loop for
+            # at most max_review_rounds correction rounds.
+            if (
+                run.done_summary is not None
+                and review
+                and run.review_rounds < max_review_rounds
+            ):
+                run.review_rounds += 1
+                diff = _get_diff(getattr(registry.env, "workspace", None))
+                if diff:
+                    try:
+                        rtext = llm.complete(
+                            build_review_messages(task, diff), None,
+                            temperature=0.0, model=getattr(llm, "small_model", None),
+                        ).text
+                        ok, issues = parse_verdict(rtext)
+                        if not ok and issues:
+                            run.review_feedback = issues
+                            cm.add_user(review_feedback(issues))
+                            run.done_summary = None
+                            run.stopped_reason = "review_issues"
+                    except Exception:
+                        pass
             if run.done_summary is not None or run.stopped_reason in ("loop_detected", "solved_early", "no_progress"):
                 if state_path is not None and run.done_summary is not None:
                     state_path.unlink(missing_ok=True)

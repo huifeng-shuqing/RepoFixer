@@ -1,0 +1,43 @@
+   150 | 
+   151 | def test_intword_rounding_rollover() -> None:
+   152 |     """Values that round up to the next power must carry to the next unit.
+   153 | 
+   154 |     Regression: for magnitudes above ~10**22 the carry was checked in floating
+   155 |     point (``rounded_value * power == powers[ordinal + 1]``) and no longer
+   156 |     matched the exact integer power, so e.g. ``10**24 - 1`` was rendered as
+   157 |     "1000.0 sextillion" instead of "1.0 septillion".
+   158 |     """
+   159 |     units = [
+   160 |         "thousand",
+   161 |         "million",
+   162 |         "billion",
+   163 |         "trillion",
+   164 |         "quadrillion",
+   165 |         "quintillion",
+   166 |         "sextillion",
+   167 |         "septillion",
+   168 |         "octillion",
+   169 |         "nonillion",
+   170 |         "decillion",
+   171 |     ]
+   172 |     # value = 10**e - 1 rounds up to 10**e with "%.1f"/"%.0f", i.e. exactly 1.0
+   173 |     # of the unit sitting at 10**e (units[i] where 10**e == powers[i]).
+   174 |     for i, exponent in enumerate(range(6, 34, 3), start=1):
+   175 |         value = 10**exponent - 1
+   176 |         assert humanize.intword(value) == f"1.0 {units[i]}"
+   177 |         assert humanize.intword(value, "%.0f") == f"1 {units[i]}"
+   178 | 
+   179 |     # The mantissa must never render at or above 1000 for values below a
+   180 |     # decillion; a bare "1000.0" is only expected in the sparse gap between
+   181 |     # decillion and googol, which has no dedicated unit.
+   182 |     for exponent in range(6, 34, 3):
+   183 |         rendered = humanize.intword(10**exponent - 1)
+   184 |         mantissa = float(rendered.split(" ", 1)[0])
+   185 |         assert mantissa < 1000
+   186 | 
+   187 |     # The documented decillion..googol gap must be left untouched.
+   188 |     assert humanize.intword(10**36) == "1000.0 decillion"
+   189 |     assert humanize.intword(2 * 10**100) == "2.0 googol"
+   190 | 
+   191 | 
+... [188 more lines; pass offset=192 for next page]

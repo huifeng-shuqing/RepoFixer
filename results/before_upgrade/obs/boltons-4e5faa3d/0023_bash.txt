@@ -1,0 +1,42 @@
+.                                                                      [100%]
+================================== FAILURES ===================================
+_ TestSpooledStringIO.test_relative_backwards_seek_uses_character_position (rolled=False) _
+
+self = <tests.test_ioutils.TestSpooledStringIO testMethod=test_relative_backwards_seek_uses_character_position>
+
+    def test_relative_backwards_seek_uses_character_position(self):
+        for rolled in (False, True):
+            with self.subTest(rolled=rolled):
+                with ioutils.SpooledStringIO() as stream:
+                    stream.write('a\u2603bc')
+                    if rolled:
+                        stream.rollover()
+                    stream.seek(3)
+                    self.assertEqual(stream.seek(-2, os.SEEK_CUR), 1)
+>                   self.assertEqual(stream.read(2), '\u2603b')
+E                   AssertionError: '' != '\u2603b'
+E                   + \u2603b
+
+tests\test_ioutils.py:413: AssertionError
+_ TestSpooledStringIO.test_relative_backwards_seek_uses_character_position (rolled=True) _
+
+self = <tests.test_ioutils.TestSpooledStringIO testMethod=test_relative_backwards_seek_uses_character_position>
+
+    def test_relative_backwards_seek_uses_character_position(self):
+        for rolled in (False, True):
+            with self.subTest(rolled=rolled):
+                with ioutils.SpooledStringIO() as stream:
+                    stream.write('a\u2603bc')
+                    if rolled:
+                        stream.rollover()
+                    stream.seek(3)
+                    self.assertEqual(stream.seek(-2, os.SEEK_CUR), 1)
+>                   self.assertEqual(stream.read(2), '\u2603b')
+E                   AssertionError: '' != '\u2603b'
+E                   + \u2603b
+
+tests\test_ioutils.py:413: AssertionError
+=========================== short test summary info ===========================
+SUBFAILED(rolled=False) tests/test_ioutils.py::TestSpooledStringIO::test_relative_backwards_seek_uses_character_position
+SUBFAILED(rolled=True) tests/test_ioutils.py::TestSpooledStringIO::test_relative_backwards_seek_uses_character_position
+2 failed, 1 passed, 87 deselected in 0.25s

@@ -14,5 +14,7 @@ dataset/repos/
 
 data/tasks_nomap.jsonl
 data/tasks_nocompact.jsonl
+data/tasks_subset6.jsonl
 
 reference/
+.repofixer/

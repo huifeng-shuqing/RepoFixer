@@ -31,6 +31,8 @@ def main(argv: list[str] | None = None) -> int:
     run_p.add_argument("--no-compact", action="store_true", help="disable context compaction entirely")
     run_p.add_argument("--state", default=None, help="state file path for resume (continues if it exists)")
     run_p.add_argument("--approve", action="store_true", help="ask interactively before dangerous commands (default: auto-deny)")
+    run_p.add_argument("--snapshot", action="store_true", help="shadow-git snapshot after each step (rollback via git reset)")
+    run_p.add_argument("--review", action="store_true", help="independent-context review of the diff before finishing")
 
     eval_p = sub.add_parser("eval", help="run the agent over a dataset and print metrics")
     eval_p.add_argument("--dataset", required=True, help="JSONL dataset file")
@@ -48,7 +50,16 @@ def main(argv: list[str] | None = None) -> int:
     map_p.add_argument("repo")
     map_p.add_argument("task")
     map_p.add_argument("--token-budget", type=int, default=1000)
+
+    mcp_p = sub.add_parser("mcp", help="serve the tool set over MCP stdio (needs `uv sync --extra mcp`)")
+    mcp_p.add_argument("--workspace", "-w", default=".")
     args = parser.parse_args(argv)
+
+    if args.cmd == "mcp":
+        from .mcp_server import serve
+
+        serve(Path(args.workspace).resolve())
+        return 0
 
     if args.cmd == "map":
         from .repomap import build_repo_map
@@ -107,6 +118,10 @@ def main(argv: list[str] | None = None) -> int:
                 policy = SafetyPolicy("auto")
             llm = LLMClient()
             registry = ToolRegistry(env)
+            from .notes import append_note, load_notes
+
+            workspace_path = Path(args.workspace).resolve()
+            notes_text = load_notes(workspace_path) or None
             trace_path = Path(args.trace_dir) / f"run_{int(time.time())}.jsonl"
             run = run_agent(
                 args.task,
@@ -119,13 +134,25 @@ def main(argv: list[str] | None = None) -> int:
                 obs_dir=Path(args.trace_dir) / "obs",
                 state_path=Path(args.state) if args.state else None,
                 policy=policy,
+                notes=notes_text,
+                snapshot=args.snapshot,
+                review=args.review,
             )
+            try:
+                append_note(
+                    workspace_path,
+                    f"{time.strftime('%Y-%m-%d')} {args.task[:60]} steps={len(run.steps)} "
+                    f"reason={run.stopped_reason}: {run.done_summary or ''}".rstrip(),
+                )
+            except OSError:
+                pass
             print(f"stopped: {run.stopped_reason}")
             print(f"done summary: {run.done_summary}")
             print(
                 f"steps={len(run.steps)} prompt_tokens={run.prompt_tokens} "
                 f"completion_tokens={run.completion_tokens} total={run.total_tokens} "
-                f"evictions={len(run.evictions)} denials={len(run.policy_denials)}"
+                f"evictions={len(run.evictions)} denials={len(run.policy_denials)} "
+                f"review_rounds={run.review_rounds} snapshots={len(run.snapshots)}"
             )
             print(f"trace: {trace_path}")
             return 0

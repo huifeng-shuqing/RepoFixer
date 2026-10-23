@@ -1,0 +1,146 @@
+     1	"""
+     2	This module provides the simple backend for :class:`~pathspec.gitignore.GitIgnoreSpec`.
+     3	
+     4	WARNING: The *pathspec._backends.simple* package is not part of the public API.
+     5	Its contents and structure are likely to change.
+     6	"""
+     7	
+     8	from collections.abc import (
+     9		Sequence)
+    10	from typing import (
+    11		Optional)  # Replaced by `X | None` in 3.10.
+    12	
+    13	from pathspec.pattern import (
+    14		RegexPattern)
+    15	from pathspec.patterns.gitignore.spec import (
+    16		_DIR_MARK)
+    17	from pathspec._typing import (
+    18		override)  # Added in 3.12.
+    19	
+    20	from .pathspec import (
+    21		SimplePsBackend)
+    22	
+    23	
+    24	class SimpleGiBackend(SimplePsBackend):
+    25		"""
+    26		The :class:`SimpleGiBackend` class is the default (or simple) implementation
+    27		used by :class:`~pathspec.gitignore.GitIgnoreSpec` for matching files.
+    28		"""
+    29	
+    30		# Change type hint.
+    31		_patterns: list[tuple[int, RegexPattern]]  # type: ignore[assignment]
+    32	
+    33		def __init__(
+    34			self,
+    35			patterns: Sequence[RegexPattern],
+    36			*,
+    37			no_filter: Optional[bool] = None,
+    38			no_reverse: Optional[bool] = None,
+    39		) -> None:
+    40			"""
+    41			Initialize the :class:`SimpleGiBackend` instance.
+    42	
+    43			*patterns* (:class:`Sequence` of :class:`.RegexPattern`) contains the
+    44			compiled patterns.
+    45	
+    46			*no_filter* (:class:`bool`) is whether to keep no-op patterns (:data:`True`),
+    47			or remove them (:data:`False`).
+    48	
+    49			*no_reverse* (:class:`bool`) is whether to keep the pattern order
+    50			(:data:`True`), or reverse the order (:data:`True`).
+    51			"""
+    52			super().__init__(patterns, no_filter=no_filter, no_reverse=no_reverse)
+    53	
+    54		@override
+    55		def match_file(self, file: str) -> tuple[Optional[bool], Optional[int]]:
+    56			"""
+    57			Check the file against the patterns.
+    58	
+    59			*file* (:class:`str`) is the normalized file path to check.
+    60	
+    61			Returns a :class:`tuple` containing whether to include *file* (:class:`bool`
+    62			or :data:`None`), and the index of the last matched pattern (:class:`int` or
+    63			:data:`None`).
+    64			"""
+    65			return self._match(file, check_ancestors=True)
+    66	
+    67		def _match(
+    68			self, file: str, check_ancestors: bool,
+    69		) -> tuple[Optional[bool], Optional[int]]:
+    70			"""
+    71			Implements :meth:`match_file`. *check_ancestors* (:class:`bool`) is
+    72			whether to ask if an ancestor directory of *file* is excluded; see
+    73			:meth:`_ancestor_excluded` for why it can be skipped.
+    74			"""
+    75			is_reversed = self._is_reversed
+    76	
+    77			# Resolve the ancestor directory and the file separately: a file negation
+    78			# only applies while no ancestor directory is excluded.
+    79			dir_include: Optional[bool] = None
+    80			dir_index: Optional[int] = None
+    81			file_include: Optional[bool] = None
+    82			file_index: Optional[int] = None
+    83	
+    84			for index, pattern in self._patterns:
+    85				if (
+    86					(include := pattern.include) is not None
+    87					and (match := pattern.match_file(file)) is not None
+    88				):
+    89					# Pattern matched.
+    90					if match.match.groupdict().get(_DIR_MARK):
+    91						# A pattern can match both a strict ancestor of the file and the
+    92						# file itself. For anchored patterns there is only one match, but
+    93						# `**/` compiles to the unanchored `(?P<ps_d>/)`: on "a/b/" it
+    94						# matches at "a/" and at "b/", and `match` only returns the first.
+    95						is_ancestor = is_self = False
+    96						assert pattern.regex is not None, pattern
+    97						for dir_match in pattern.regex.finditer(file):
+    98							if dir_match.end(_DIR_MARK) < len(file):
+    99								is_ancestor = True
+   100							else:
+   101								is_self = True
+   102	
+   103						if is_ancestor and (dir_include is None or not is_reversed):
+   104							dir_include = include
+   105							dir_index = index
+   106	
+   107						if is_self and (file_include is None or not is_reversed):
+   108							file_include = include
+   109							file_index = index
+   110					elif file_include is None or not is_reversed:
+   111						# Pattern matched by a file pattern.
+   112						file_include = include
+   113						file_index = index
+   114	
+   115			if dir_include and check_ancestors and self._ancestor_excluded(file):
+   116				return (dir_include, dir_index)
+   117			elif file_include is not None:
+   118				return (file_include, file_index)
+   119			elif dir_include:
+   120				# An ancestor matched an exclude pattern, but the spec as a whole
+   121				# re-includes that ancestor, so the rule does not apply.
+   122				return (None, None)
+   123			else:
+   124				return (dir_include, dir_index)
+   125	
+   126		def _ancestor_excluded(self, file: str) -> bool:
+   127			"""
+   128			Whether any strict ancestor directory of *file* is excluded. Git stops
+   129			descending at the first excluded directory, so the ancestors are asked
+   130			outermost first, each as a directory query (trailing slash included).
+   131			By the time an ancestor is asked, every ancestor above it is known not to
+   132			be excluded, so it is matched without checking its own ancestors again;
+   133			otherwise each level re-asks all the levels above it and the work grows
+   134			exponentially with depth.
+   135			"""
+   136			index = file.find('/')
+   137			while index != -1 and index + 1 < len(file):
+   138				ancestor_include, _ancestor_index = self._match(
+   139					file[:index + 1], check_ancestors=False,
+   140				)
+   141				if ancestor_include:
+   142					return True
+   143				index = file.find('/', index + 1)
+   144	
+   145			return False
+   146

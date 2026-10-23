@@ -13,6 +13,7 @@ Design follows:
 """
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -178,6 +179,22 @@ def build_tools(env: Environment) -> list[Tool]:
     def done(summary: str) -> ToolResult:
         return ToolResult(ok=True, output=summary)
 
+    def plan(goal: str | None = None, verify: str | None = None, steps: list | None = None) -> ToolResult:
+        """Task-plan persistence (Anthropic harness pattern): record goal,
+        verification approach and steps to .repofixer/plan.json."""
+        try:
+            p = env.resolve(".repofixer/plan.json")
+            if goal is not None or verify is not None or steps is not None:
+                p.parent.mkdir(parents=True, exist_ok=True)
+                data = {"goal": goal or "", "verify": verify or "", "steps": steps or []}
+                p.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+                return ToolResult(ok=True, output=f"plan saved ({len(steps or [])} steps)")
+            if p.exists():
+                return ToolResult(ok=True, output=p.read_text(encoding="utf-8"))
+            return ToolResult(ok=True, output="(no plan recorded yet)")
+        except OSError as e:
+            return ToolResult.err(str(e))
+
     def run_test(command: str) -> ToolResult:
         res = env.run(command)
         out = (res.stdout + ("\n[stderr]\n" + res.stderr if res.stderr else "")).rstrip()
@@ -242,6 +259,22 @@ def build_tools(env: Environment) -> list[Tool]:
             description="Run a test/verification command and return a summary focused on failures.",
             parameters={"type": "object", "properties": {"command": {"type": "string"}}, "required": ["command"]},
             handler=run_test,
+        ),
+        Tool(
+            name="plan",
+            description=(
+                "Record or read the task plan (.repofixer/plan.json). Call at the start with your goal, "
+                "how you will verify, and the steps; update it as you progress. Call with no arguments to read it."
+            ),
+            parameters={
+                "type": "object",
+                "properties": {
+                    "goal": {"type": "string"},
+                    "verify": {"type": "string"},
+                    "steps": {"type": "array", "items": {"type": "string"}},
+                },
+            },
+            handler=plan,
         ),
         Tool(
             name="done",

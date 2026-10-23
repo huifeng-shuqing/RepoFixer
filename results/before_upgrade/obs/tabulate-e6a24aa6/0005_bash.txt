@@ -1,0 +1,224 @@
+# depending on the formatter
+_DEFAULT_ALIGN = "default"
+
+
+# if True, enable wide-character (CJK) support
+WIDE_CHARS_MODE = wcwidth is not None
+
+# Constant that can be used as part of passed rows to generate a separating line
+# It is purposely an unprintable character, very unlikely to be used in a table
+SEPARATING_LINE = "\001"
+
+Line = namedtuple("Line", ["begin", "hline", "sep", "end"])
+
+
+@dataclass
+class DataRow:
+    begin: str
+    sep: str
+    end: str
+    escape_map: dict = None
+
+
+# A table structure is supposed to be:
+#
+#     --- lineabove ---------
+#         headerrow
+#     --- linebelowheader ---
+#         datarow
+#     --- linebetweenrows ---
+#     ... (more datarows) ...
+#     --- linebetweenrows ---
+#         last datarow
+#     --- linebelow ---------
+#
+# TableFormat's line* elements can be
+#
+#   - either None, if the element is not used,
+#   - or a Line tuple,
+#   - or a function: [col_widths], [col_alignments] -> string.
+#
+# TableFormat's *row elements can be
+        linebelow=Line("┕", "━", "┷", "┙"),
+        headerrow=DataRow("│", "│", "│"),
+        datarow=DataRow("│", "│", "│"),
+        padding=1,
+        with_header_hide=None,
+    ),
+    "double_outline": TableFormat(
+        lineabove=Line("╔", "═", "╦", "╗"),
+        linebelowheader=Line("╠", "═", "╬", "╣"),
+        linebetweenrows=None,
+        linebelow=Line("╚", "═", "╩", "╝"),
+        headerrow=DataRow("║", "║", "║"),
+        datarow=DataRow("║", "║", "║"),
+        padding=1,
+        with_header_hide=None,
+    ),
+    "fancy_outline": TableFormat(
+        lineabove=Line("╒", "═", "╤", "╕"),
+        linebelowheader=Line("╞", "═", "╪", "╡"),
+        linebetweenrows=None,
+        linebelow=Line("╘", "═", "╧", "╛"),
+        headerrow=DataRow("│", "│", "│"),
+        datarow=DataRow("│", "│", "│"),
+        padding=1,
+        with_header_hide=None,
+    ),
+    "pipe": TableFormat(
+        lineabove=_pipe_line_with_colons,
+        linebelowheader=_pipe_line_with_colons,
+        linebetweenrows=None,
+        linebelow=None,
+        headerrow=DataRow("|", "|", "|"),
+        datarow=DataRow("|", "|", "|"),
+        padding=1,
+        with_header_hide=["lineabove"],
+    ),
+    "orgtbl": TableFormat(
+        lineabove=None,
+        linebelowheader=Line("|", "-", "+", "|"),
+        linebetweenrows=None,
+        linebelow=None,
+        headerrow=DataRow("|", "|", "|"),
+        datarow=DataRow("|", "|", "|"),
+        padding=1,
+        with_header_hide=None,
+    ),
+    "jira": TableFormat(
+        lineabove=None,
+        linebelowheader=None,
+        linebetweenrows=None,
+        linebelow=None,
+        headerrow=DataRow("||", "||", "||"),
+        datarow=DataRow("|", "|", "|"),
+        padding=1,
+        with_header_hide=None,
+    ),
+    "presto": TableFormat(
+        lineabove=None,
+        linebelowheader=Line("", "-", "+", ""),
+        linebetweenrows=None,
+        linebelow=None,
+    ),
+    "asciidoc": TableFormat(
+        lineabove=partial(_asciidoc_row, False),
+        linebelowheader=None,
+        linebetweenrows=None,
+        linebelow=Line("|====", "", "", ""),
+        headerrow=partial(_asciidoc_row, True),
+        datarow=partial(_asciidoc_row, False),
+        padding=1,
+        with_header_hide=["lineabove"],
+    ),
+}
+
+# "github" is an alias for "pipe": both produce GitHub-flavored Markdown with
+# alignment colons in the separator row.
+_table_formats["github"] = _table_formats["pipe"]
+
+
+tabulate_formats = sorted(_table_formats.keys())
+
+# The table formats for which multiline cells will be folded into subsequent
+# table rows. The key is the original format specified at the API. The value is
+# the format that will be used to represent the original format.
+multiline_formats = {
+    "plain": "plain",
+    "simple": "simple",
+    "grid": "grid",
+    "simple_grid": "simple_grid",
+    "rounded_grid": "rounded_grid",
+    "heavy_grid": "heavy_grid",
+    "mixed_grid": "mixed_grid",
+    "double_grid": "double_grid",
+    "fancy_grid": "fancy_grid",
+    "colon_grid": "colon_grid",
+    "pipe": "pipe",
+    "orgtbl": "orgtbl",
+    "jira": "jira",
+    "presto": "presto",
+    "pretty": "pretty",
+    "psql": "psql",
+    "rst": "rst",
+    "github": "github",
+    "outline": "outline",
+    "simple_outline": "simple_outline",
+    "rounded_outline": "rounded_outline",
+    "heavy_outline": "heavy_outline",
+    "mixed_outline": "mixed_outline",
+    "double_outline": "double_outline",
+    "fancy_outline": "fancy_outline",
+}
+
+# TODO: Add multiline support for the remaining table formats:
+#       - mediawiki: Replace \n with <br>
+#       - moinmoin: TBD
+#       - html: Replace \n with <br>
+#       - latex*: Use "makecell" package: In header, replace X\nY with
+#         \thead{X\\Y} and in data row, replace X\nY with \makecell{X\\Y}
+#       - tsv: TBD
+#       - textile: Replace \n with <br/> (must be well-formed XML)
+
+_multiline_codes = re.compile(r"\r|\n|\r\n")
+    if cells:
+        if cells == SEPARATING_LINE:
+            return SEPARATING_LINE
+        pad = " " * padding
+        padded_cells = [pad + cell + pad for cell in cells]
+        return padded_cells
+    else:
+        return cells
+
+
+def _build_simple_row(padded_cells: list[list], rowfmt: DataRow) -> str:
+    "Format row according to DataRow format without padding."
+    begin = rowfmt.begin
+    sep = rowfmt.sep
+    end = rowfmt.end
+    escape_map: dict = rowfmt.escape_map
+
+    if escape_map:
+        def escape_char(c):
+            return escape_map.get(c, c)
+        escaped_cells = ["".join(map(escape_char, cell)) for cell in padded_cells]
+    else:
+        escaped_cells = padded_cells
+
+    return (begin + sep.join(escaped_cells) + end).rstrip()
+
+
+def _build_row(padded_cells: list[list], colwidths: list[int], colaligns: list[str], rowfmt: Union[DataRow, Callable]) -> str:
+    "Return a string which represents a row of data cells."
+    if not rowfmt:
+        return None
+    if callable(rowfmt):
+        return rowfmt(padded_cells, colwidths, colaligns)
+    else:
+        return _build_simple_row(padded_cells, rowfmt)
+
+
+def _append_basic_row(lines, padded_cells, colwidths, colaligns, rowfmt, rowalign=None):
+    # NOTE: rowalign is ignored and exists for api compatibility with _append_multiline_row
+    lines.append(_build_row(padded_cells, colwidths, colaligns, rowfmt))
+    return lines
+
+
+def _align_cell_veritically(text_lines, num_lines, column_width, row_alignment):
+    delta_lines = num_lines - len(text_lines)
+    blank = [" " * column_width]
+    if row_alignment == "bottom":
+        return blank * delta_lines + text_lines
+    elif row_alignment == "center":
+        top_delta = delta_lines // 2
+        bottom_delta = delta_lines - top_delta
+        return top_delta * blank + text_lines + bottom_delta * blank
+    else:
+        return text_lines + blank * delta_lines
+
+
+def _append_multiline_row(
+    lines, padded_multiline_cells, padded_widths, colaligns, rowfmt, pad, rowalign=None
+):
+    colwidths = [w - 2 * pad for w in padded_widths]
+    cells_lines = [c.splitlines() for c in padded_multiline_cells]

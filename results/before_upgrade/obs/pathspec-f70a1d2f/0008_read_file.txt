@@ -1,0 +1,101 @@
+     1 | """
+     2 | This module provides utility methods for dealing with path-specs.
+     3 | """
+     4 | from __future__ import annotations
+     5 | 
+     6 | import os
+     7 | import os.path
+     8 | import pathlib
+     9 | import posixpath
+    10 | import stat
+    11 | from collections.abc import (
+    12 | 	Collection,
+    13 | 	Iterable,
+    14 | 	Iterator,
+    15 | 	Sequence)
+    16 | from dataclasses import (
+    17 | 	dataclass)
+    18 | from typing import (
+    19 | 	Any,
+    20 | 	Callable,  # Replaced by `collections.abc.Callable` in 3.9.2.
+    21 | 	Generic,
+    22 | 	Optional,  # Replaced by `X | None` in 3.10.
+    23 | 	TypeVar,
+    24 | 	Union,  # Replaced by `X | Y` in 3.10.
+    25 | 	cast)
+    26 | 
+    27 | from .pattern import (
+    28 | 	Pattern)
+    29 | from ._typing import (
+    30 | 	AnyStr,  # Removed in 3.18.
+    31 | 	deprecated)  # Added in 3.13.
+    32 | 
+    33 | StrPath = Union[str, os.PathLike[str]]
+    34 | 
+    35 | TPattern = TypeVar('TPattern', bound=Pattern)
+    36 | """
+    37 | Type variable for :class:`.Pattern`. This is used by :class:`pathspec.pathspec.PathSpec`
+    38 | to specialize the type of patterns.
+    39 | """
+    40 | 
+    41 | TPattern_co = TypeVar('TPattern_co', bound=Pattern, covariant=True)
+    42 | """
+    43 | Type variable for :class:`.Pattern` that is covariant. This is used by
+    44 | :class:`pathspec.pathspec.PathSpec` to specialize the type of patterns.
+    45 | """
+    46 | 
+    47 | TStrPath = TypeVar('TStrPath', bound=StrPath)
+    48 | """
+    49 | Type variable for :class:`str` or :class:`os.PathLike`.
+    50 | """
+    51 | 
+    52 | NORMALIZE_PATH_SEPS = [
+    53 | 	cast(str, __sep)
+    54 | 	for __sep in [os.sep, os.altsep]
+    55 | 	if __sep and __sep != posixpath.sep
+    56 | ]
+    57 | """
+    58 | *NORMALIZE_PATH_SEPS* (:class:`list` of :class:`str`) contains the path
+    59 | separators that need to be normalized to the POSIX separator for the current
+    60 | operating system. The separators are determined by examining :data:`os.sep` and
+    61 | :data:`os.altsep`.
+    62 | """
+    63 | 
+    64 | _registered_patterns: dict[str, Callable[[Union[str, bytes]], Pattern]] = {}
+    65 | """
+    66 | *_registered_patterns* (:class:`dict`) maps a name (:class:`str`) to the
+    67 | registered pattern factory (:class:`~collections.abc.Callable`).
+    68 | """
+    69 | 
+    70 | 
+    71 | def append_dir_sep(path: pathlib.Path) -> str:
+    72 | 	"""
+    73 | 	Appends the path separator to the path if the path is a directory. This can be
+    74 | 	used to aid in distinguishing between directories and files on the file-system
+    75 | 	by relying on the presence of a trailing path separator.
+    76 | 
+    77 | 	*path* (:class:`pathlib.Path`) is the path to use.
+    78 | 
+    79 | 	Returns the path (:class:`str`).
+    80 | 	"""
+    81 | 	str_path = str(path)
+    82 | 	if path.is_dir():
+    83 | 		str_path += os.sep
+    84 | 
+    85 | 	return str_path
+    86 | 
+    87 | 
+    88 | def check_match_file(
+    89 | 	patterns: Iterable[tuple[int, Pattern]],
+    90 | 	file: str,
+    91 | 	is_reversed: Optional[bool] = None,
+    92 | ) -> tuple[Optional[bool], Optional[int]]:
+    93 | 	"""
+    94 | 	Check the file against the patterns.
+    95 | 
+    96 | 	*patterns* (:class:`~collections.abc.Iterable`) yields each indexed pattern
+    97 | 	(:class:`tuple`) which contains the pattern index (:class:`int`) and actua
+    98 | 	pattern (:class:`.Pattern`).
+    99 | 
+   100 | 	*file* (:class:`str`) is the normalized file path to be matched against
+... [848 more lines; pass offset=101 for next page]

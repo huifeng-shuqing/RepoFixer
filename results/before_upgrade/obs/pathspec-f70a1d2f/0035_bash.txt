@@ -1,0 +1,164 @@
+"""Test directory negations below an excluded ancestor."""
+
+from unittest import TestCase
+from unittest.mock import patch
+
+from .test_06_gitignore import GitIgnoreSpecMixin
+
+
+class AncestorNegationTest(GitIgnoreSpecMixin, TestCase):
+
+	def test_excluded_ancestor(self):
+		# Expected ignore decisions and pattern indices verified with
+		# git check-ignore --no-index (Git 2.52.0.windows.1).
+		for lines, paths in (
+			(['a/', '!a/b/'], ['a/b/file.txt', 'a/b/c/deep.txt']),
+			(['a/', '!a/b/', '!*.txt'], ['a/b/file.txt']),
+			(['a/', '!a/b/', '*.txt'], ['a/b/file.txt']),
+			(['d/**/', '!d/child/'], ['d/child/grand/deep.txt']),
+			(['a/**', '!a/b/**'], ['a/b/file.txt', 'a/b/c/deep.txt']),
+			(['a/**', '!*.txt'], ['a/b/file.txt']),
+			(['*', '!*.txt'], ['a/top.txt', 'a/b/file.txt']),
+		):
+			for sub_test in self.parameterize_from_lines(lines):
+				with sub_test() as spec:
+					results = list(spec.check_files(iter(paths)))
+					self.assertEqual(
+						[(r.include, r.index) for r in results],
+						[(True, 0)] * len(paths),
+						(lines, results),
+					)
+					self.assertEqual(list(spec.match_files(iter(paths))), paths)
+					self.assertEqual(list(spec.match_files(iter(paths), negate=True)), [])
+
+	def test_reincluded_ancestors(self):
+		for lines, path in (
+			(['a/', '!a/', '!a/b/'], 'a/b/file.txt'),
+			(['a/*', '!a/b/'], 'a/b/file.txt'),
+			(['d/**/', '!d/child/'], 'd/child/top.txt'),
+			(['d/**/', '!d/child/', '!d/child/grand/'], 'd/child/grand/deep.txt'),
+			(['!a/b/'], 'a/b/file.txt'),
+			(['a/**', '!*.txt'], 'a/top.txt'),
+			(['*', '!a/', '!a/**'], 'a/b/file.txt'),
+		):
+			for sub_test in self.parameterize_from_lines(lines):
+				with sub_test() as spec:
+					self.assertFalse(spec.match_file(path), (lines, path))
+
+	def test_ancestors_checked_once(self):
+		# Keep the ancestor walk iterative even with many re-included levels.
+		path = 'a/' * 40 + 'file.txt'
+		for sub_test in self.parameterize_from_lines(['a/', '!a/']):
+			with sub_test() as spec:
+				backend_type = type(spec._backend)
+				original = backend_type._match
+				calls = []
+
+				def counted_match(backend, file, check_ancestors):
+					calls.append((file, check_ancestors))
+					return original(backend, file, check_ancestors)
+
+				with patch.object(backend_type, '_match', counted_match):
+					self.assertFalse(spec.match_file(path))
+				self.assertLessEqual(len(calls), 41)
+				self.assertTrue(all(not check for _, check in calls[1:]))
+====
+				{"d/top.txt"},
+				{"d/child/", "d/child/file.txt"},
+			),
+			(
+				"**/d/**/",
+				{"d/top.txt", "x/d/top.txt"},
+				{"d/child/file.txt", "x/d/child/file.txt"},
+			),
+			(
+				"a/**/**/",
+				{"a/top.txt"},
+				{"a/child/", "a/child/file.txt", "a/b/top.txt"},
+			),
+			(
+				"a/**/x/**/",
+				{"a/x/top.txt"},
+				{"a/x/child/file.txt", "a/b/x/child/file.txt"},
+			),
+			(
+				"*/**/",
+				{"d/top.txt"},
+				{"d/child/file.txt", "a/b/top.txt", "x/d/child/file.txt"},
+			),
+			(
+				"**/*/**/",
+				{"d/top.txt", "child/file.txt"},
+				{"d/child/file.txt", "a/x/child/file.txt", "child/grand/deep.txt"},
+			),
+		]
+		for pattern, unignored, ignored in cases:
+			for sub_test in self.parameterize_from_lines([pattern]):
+				with sub_test() as spec:
+					with self.subTest(pattern=pattern):
+						for path in unignored:
+							with self.subTest(path=path):
+								self.assertFalse(spec.match_file(path))
+						for path in ignored:
+							with self.subTest(path=path):
+								self.assertTrue(spec.match_file(path))
+
+	def test_d(self):
+		"""
+		Test terminal-globstar negation with excluded ancestor directories.
+		"""
+		for sub_test in self.parameterize_from_lines([
+			"d/**/",
+			"!d/child/",
+		]):
+			with sub_test() as spec:
+				# PathSpec leaves the bare pattern-root directory unmatched so a
+				# traversal can still reach its direct files.
+				self.assertFalse(spec.match_file("d/"))
+				self.assertFalse(spec.match_file("d/top.txt"))
+				self.assertFalse(spec.match_file("d/child/"))
+				self.assertFalse(spec.match_file("d/child/top.txt"))
+				self.assertTrue(spec.match_file("d/child/grand/"))
+				# Re-including child does not re-include the excluded grand directory.
+				self.assertTrue(spec.match_file("d/child/grand/deep.txt"))
+
+		for sub_test in self.parameterize_from_lines(["!d/**/"]):
+			with sub_test() as spec:
+				# The terminal-descendant rule applies to negated patterns too.
+				for path in ("d/", "d/top.txt"):
+					result = spec.check_file(path)
+					self.assertIsNone(result.include)
+					self.assertIsNone(result.index)
+				for path in (
+					"d/child/",
+					"d/child/file.txt",
+					"d/child/grand/deep.txt",
+				):
+					with self.subTest(negated_pattern_path=path):
+						result = spec.check_file(path)
+						self.assertFalse(result.include)
+						self.assertEqual(result.index, 0)
+
+
+class GitIgnoreSpecIssue139Test(GitIgnoreSpecMixin, TestCase):
+	"""
+	The :class:`GitIgnoreSpecIssue139Test` class tests the :class:`.GitIgnoreSpec`
+	implementation for issue #139.
+	"""
+
+	def test_1(self):
+		"""
+		Test that glob-stars match newlines in names.
+		"""
+		for pattern, path in [
+			("target", "line\nbreak/target"),
+			("*/target", "line\nbreak/target"),
+			("**/target", "line\nbreak/target"),
+			("root/*/target", "root/line\nbreak/target"),
+			("root/**/target", "root/line\nbreak/target"),
+			("*/target", "\n/target"),
+			("**/target", "\n/target"),
+		]:
+			for sub_test in self.parameterize_from_lines([pattern]):
+				with sub_test() as spec:
+					self.assertTrue(spec.match_file(path))

@@ -37,9 +37,18 @@ class LLMClient:
             max_retries=1,    # one retry only: 2*120s worst case instead of SDK defaults
         )
         self.model = model or os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
+        # tiered routing: a cheap secondary model for summarization/review
+        # (Aider architect/editor pattern); defaults to the main model
+        self.small_model = os.getenv("DEEPSEEK_SMALL_MODEL", self.model)
 
-    def complete(self, messages: list[dict], tools: list[dict] | None = None, temperature: float = 0.2) -> LLMResponse:
-        kwargs: dict = dict(model=self.model, messages=messages, temperature=temperature)
+    def complete(
+        self,
+        messages: list[dict],
+        tools: list[dict] | None = None,
+        temperature: float = 0.2,
+        model: str | None = None,
+    ) -> LLMResponse:
+        kwargs: dict = dict(model=model or self.model, messages=messages, temperature=temperature)
         if tools:
             kwargs["tools"] = tools
         resp = self.client.chat.completions.create(**kwargs)
@@ -65,7 +74,7 @@ class LLMClient:
         try:
             text = json.dumps(messages, ensure_ascii=False)[:60_000]
             resp = self.client.chat.completions.create(
-                model=self.model,
+                model=self.small_model,
                 messages=[
                     {
                         "role": "system",

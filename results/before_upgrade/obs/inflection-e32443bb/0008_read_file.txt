@@ -1,0 +1,51 @@
+   300 |     inflection.UNCOUNTABLES.add(uncountable_word)
+   301 |     try:
+   302 |         assert uncountable_word == inflection.singularize(uncountable_word)
+   303 |         assert uncountable_word == inflection.pluralize(uncountable_word)
+   304 |         assert(
+   305 |             inflection.pluralize(uncountable_word) ==
+   306 |             inflection.singularize(uncountable_word)
+   307 |         )
+   308 | 
+   309 |         assert "sponsor" == inflection.singularize(countable_word)
+   310 |         assert "sponsors" == inflection.pluralize(countable_word)
+   311 |         assert (
+   312 |             "sponsor" ==
+   313 |             inflection.singularize(inflection.pluralize(countable_word))
+   314 |         )
+   315 |     finally:
+   316 |         inflection.UNCOUNTABLES.remove(uncountable_word)
+   317 | 
+   318 | 
+   319 | @pytest.mark.parametrize(("singular", "plural"), SINGULAR_TO_PLURAL)
+   320 | def test_pluralize_singular(singular, plural):
+   321 |     assert plural == inflection.pluralize(singular)
+   322 |     assert plural.capitalize() == inflection.pluralize(singular.capitalize())
+   323 | 
+   324 | 
+   325 | @pytest.mark.parametrize(("singular", "plural"), SINGULAR_TO_PLURAL)
+   326 | def test_singularize_plural(singular, plural):
+   327 |     assert singular == inflection.singularize(plural)
+   328 |     assert singular.capitalize() == inflection.singularize(plural.capitalize())
+   329 | 
+   330 | 
+   331 | @pytest.mark.parametrize(("singular", "plural"), SINGULAR_TO_PLURAL)
+   332 | def test_pluralize_plural(singular, plural):
+   333 |     assert plural == inflection.pluralize(plural)
+   334 |     assert plural.capitalize() == inflection.pluralize(plural.capitalize())
+   335 | 
+   336 | 
+   337 | @pytest.mark.parametrize(("before", "titleized"), MIXTURE_TO_TITLEIZED)
+   338 | def test_titleize(before, titleized):
+   339 |     assert titleized == inflection.titleize(before)
+   340 | 
+   341 | 
+   342 | @pytest.mark.parametrize(("camel", "underscore"), CAMEL_TO_UNDERSCORE)
+   343 | def test_camelize(camel, underscore):
+   344 |     assert camel == inflection.camelize(underscore)
+   345 | 
+   346 | 
+   347 | def test_camelize_with_lower_downcases_the_first_letter():
+   348 |     assert 'capital' == inflection.camelize('Capital', False)
+   349 | 
+... [82 more lines; pass offset=350 for next page]

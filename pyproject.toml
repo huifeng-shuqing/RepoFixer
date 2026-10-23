@@ -15,6 +15,9 @@ dependencies = [
 [project.scripts]
 repofixer = "repofixer.main:main"
 
+[project.optional-dependencies]
+mcp = ["mcp>=1.0"]
+
 [dependency-groups]
 dev = ["pytest>=8"]
 
