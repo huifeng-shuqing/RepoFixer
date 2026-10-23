@@ -30,10 +30,10 @@ def run(cmd: list[str], cwd: Path | None = None, timeout: int = 900) -> subproce
     )
 
 
-def verify(command: str, cwd: Path) -> int:
+def verify(command: str, cwd: Path, env: dict | None = None) -> int:
     p = subprocess.run(
         command, cwd=str(cwd), shell=True, capture_output=True, text=True,
-        encoding="utf-8", errors="replace", timeout=900,
+        encoding="utf-8", errors="replace", timeout=900, env={**os.environ, **(env or {})},
     )
     return p.returncode
 
@@ -57,14 +57,15 @@ def main() -> int:
             for tf in t["test_files"]:
                 run(["git", "-C", str(scratch), "checkout", "--quiet", t["fix_commit"], "--", tf])
             patch_scm_version(scratch)  # same stub the task repos carry (setuptools_scm)
-            rc_before = verify(t["verify_command"], scratch)
+            venv = {"PYTHONPATH": str(scratch / "src")} if t.get("src_layout") else None
+            rc_before = verify(t["verify_command"], scratch, venv)
             if rc_before == 0:
                 print(f"BAD {t['id']}: verify passes BEFORE the fix (bug not observable)")
                 bad += 1
                 continue
             for sf in t["src_files"]:
                 run(["git", "-C", str(scratch), "checkout", "--quiet", t["fix_commit"], "--", sf])
-            rc_after = verify(t["verify_command"], scratch)
+            rc_after = verify(t["verify_command"], scratch, venv)
             if rc_after != 0:
                 print(f"BAD {t['id']}: verify still fails AFTER applying the source fix (rc={rc_after})")
                 bad += 1

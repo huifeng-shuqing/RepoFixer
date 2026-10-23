@@ -1,0 +1,101 @@
+     1 | """Humanizing functions for numbers."""
+     2 | 
+     3 | from __future__ import annotations
+     4 | 
+     5 | __lazy_modules__ = {"bisect"}
+     6 | 
+     7 | import bisect
+     8 | 
+     9 | from .i18n import _gettext as _
+    10 | from .i18n import _gettext_noop as N_
+    11 | from .i18n import _ngettext, decimal_separator, thousands_separator
+    12 | from .i18n import _ngettext_noop as NS_
+    13 | from .i18n import _pgettext as P_
+    14 | from .i18n import _pgettext_noop as PS_
+    15 | 
+    16 | TYPE_CHECKING = False
+    17 | if TYPE_CHECKING:
+    18 |     from typing import TypeAlias
+    19 | 
+    20 |     # This type can be better defined by typing.SupportsFloat
+    21 |     # but that's a Python 3.8 only typing option.
+    22 |     NumberOrString: TypeAlias = float | str
+    23 | 
+    24 | 
+    25 | _SUPERSCRIPT_MAP = {
+    26 |     "0": "⁰",
+    27 |     "1": "¹",
+    28 |     "2": "²",
+    29 |     "3": "³",
+    30 |     "4": "⁴",
+    31 |     "5": "⁵",
+    32 |     "6": "⁶",
+    33 |     "7": "⁷",
+    34 |     "8": "⁸",
+    35 |     "9": "⁹",
+    36 |     "-": "⁻",
+    37 | }
+    38 | _SUPERSCRIPT_TRANS = str.maketrans(_SUPERSCRIPT_MAP)
+    39 | 
+    40 | _ORDINAL_SUFFIXES = {
+    41 |     "male": (
+    42 |         PS_("0 (male)", "th"),
+    43 |         PS_("1 (male)", "st"),
+    44 |         PS_("2 (male)", "nd"),
+    45 |         PS_("3 (male)", "rd"),
+    46 |         PS_("4 (male)", "th"),
+    47 |         PS_("5 (male)", "th"),
+    48 |         PS_("6 (male)", "th"),
+    49 |         PS_("7 (male)", "th"),
+    50 |         PS_("8 (male)", "th"),
+    51 |         PS_("9 (male)", "th"),
+    52 |     ),
+    53 |     "female": (
+    54 |         PS_("0 (female)", "th"),
+    55 |         PS_("1 (female)", "st"),
+    56 |         PS_("2 (female)", "nd"),
+    57 |         PS_("3 (female)", "rd"),
+    58 |         PS_("4 (female)", "th"),
+    59 |         PS_("5 (female)", "th"),
+    60 |         PS_("6 (female)", "th"),
+    61 |         PS_("7 (female)", "th"),
+    62 |         PS_("8 (female)", "th"),
+    63 |         PS_("9 (female)", "th"),
+    64 |     ),
+    65 | }
+    66 | _APNUMBER_WORDS = (
+    67 |     N_("zero"),
+    68 |     N_("one"),
+    69 |     N_("two"),
+    70 |     N_("three"),
+    71 |     N_("four"),
+    72 |     N_("five"),
+    73 |     N_("six"),
+    74 |     N_("seven"),
+    75 |     N_("eight"),
+    76 |     N_("nine"),
+    77 | )
+    78 | 
+    79 | 
+    80 | def _format_not_finite(value: float) -> str:
+    81 |     """Utility function to handle infinite and nan cases."""
+    82 |     import math
+    83 | 
+    84 |     if math.isnan(value):
+    85 |         return "NaN"
+    86 |     if math.isinf(value) and value < 0:
+    87 |         return "-Inf"
+    88 |     if math.isinf(value) and value > 0:
+    89 |         return "+Inf"
+    90 |     return ""
+    91 | 
+    92 | 
+    93 | def ordinal(value: NumberOrString, gender: str = "male") -> str:
+    94 |     """Converts an integer to its ordinal as a string.
+    95 | 
+    96 |     For example, 1 is "1st", 2 is "2nd", 3 is "3rd", etc. Works for any integer or
+    97 |     anything `int()` will turn into an integer. Anything else will return the output
+    98 |     of str(value).
+    99 | 
+   100 |     Examples:
+... [499 more lines; pass offset=101 for next page]

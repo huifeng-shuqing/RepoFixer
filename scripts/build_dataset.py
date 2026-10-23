@@ -210,18 +210,19 @@ def emit_task(repo: Path, name: str, cand: dict, py: Path, out, seen: set[str]) 
     src_patch = run(["git", "-C", str(repo), "diff", f"{cand['sha']}^", cand["sha"], "--", *cand["src_files"]]).stdout
     (gold_dir / f"{tid}.src.patch").write_text(src_patch, encoding="utf-8")
     tfiles = " ".join(cand["test_files"])
-    prefix = "set PYTHONPATH=src&& " if (dest / "src").exists() else ""
+    src_layout = (dest / "src").exists()
     entry = {
         "id": tid,
         "problem_statement": f"Fix the failing tests.\n\nUpstream commit message: {cand['subject']}",
         "repo": f"../dataset/repos/{tid}",
-        "verify_command": f"{prefix}\"{py}\" -m pytest -q --tb=no {tfiles}",
+        "verify_command": f'"{py}" -m pytest -q --tb=no {tfiles}',
         "timeout": 600,
         "difficulty": "easy" if len(cand["test_files"]) == 1 else "medium",
         "base_commit": cand["parent"],
         "fix_commit": cand["sha"],
         "test_files": cand["test_files"],
         "src_files": cand["src_files"],
+        "src_layout": src_layout,
     }
     out.write(json.dumps(entry, ensure_ascii=False) + "\n")
     out.flush()

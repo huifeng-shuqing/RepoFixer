@@ -1,0 +1,67 @@
+129:         ([2e100], "2.0 googol"),
+130:         ([None], "None"),
+131:         (["1230000", "%0.2f"], "1.23 million"),
+132:         ([10**100], "1.0 googol"),
+133:         ([10**101], "10.0 googol"),
+134:         ([math.nan], "NaN"),
+135:         ([math.inf], "+Inf"),
+136:         ([-math.inf], "-Inf"),
+137:         (["nan"], "NaN"),
+138:         (["-inf"], "-Inf"),
+139:         (["1234567", "%.0f"], "1 million"),
+140:         (["1234567", "%.1f"], "1.2 million"),
+141:         (["1234567", "%.2f"], "1.23 million"),
+142:         (["1234567", "%.3f"], "1.235 million"),
+143:         (["999500", "%.0f"], "1 million"),
+144:         (["999499", "%.0f"], "999 thousand"),
+145:     ],
+146: )
+147: def test_intword(test_args: list[str], expected: str) -> None:
+148:     assert humanize.intword(*test_args) == expected
+149: 
+150: 
+151: def test_intword_rounding_rollover() -> None:
+152:     """Values that round up to the next power must carry to the next unit.
+153: 
+154:     Regression: for magnitudes above ~10**22 the carry was checked in floating
+155:     point (``rounded_value * power == powers[ordinal + 1]``) and no longer
+156:     matched the exact integer power, so e.g. ``10**24 - 1`` was rendered as
+157:     "1000.0 sextillion" instead of "1.0 septillion".
+158:     """
+159:     units = [
+160:         "thousand",
+161:         "million",
+162:         "billion",
+163:         "trillion",
+164:         "quadrillion",
+165:         "quintillion",
+166:         "sextillion",
+167:         "septillion",
+168:         "octillion",
+169:         "nonillion",
+170:         "decillion",
+171:     ]
+172:     # value = 10**e - 1 rounds up to 10**e with "%.1f"/"%.0f", i.e. exactly 1.0
+173:     # of the unit sitting at 10**e (units[i] where 10**e == powers[i]).
+174:     for i, exponent in enumerate(range(6, 34, 3), start=1):
+175:         value = 10**exponent - 1
+176:         assert humanize.intword(value) == f"1.0 {units[i]}"
+177:         assert humanize.intword(value, "%.0f") == f"1 {units[i]}"
+178: 
+179:     # The mantissa must never render at or above 1000 for values below a
+180:     # decillion; a bare "1000.0" is only expected in the sparse gap between
+181:     # decillion and googol, which has no dedicated unit.
+182:     for exponent in range(6, 34, 3):
+183:         rendered = humanize.intword(10**exponent - 1)
+184:         mantissa = float(rendered.split(" ", 1)[0])
+185:         assert mantissa < 1000
+186: 
+187:     # The documented decillion..googol gap must be left untouched.
+188:     assert humanize.intword(10**36) == "1000.0 decillion"
+189:     assert humanize.intword(2 * 10**100) == "2.0 googol"
+190: 
+191: 
+192: @pytest.mark.parametrize(
+193:     "test_input, expected",
+194:     [
+195:         (0, "zero"),

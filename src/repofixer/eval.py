@@ -41,6 +41,7 @@ class Task:
     fix_commit: str = ""
     test_files: list = field(default_factory=list)
     src_files: list = field(default_factory=list)
+    src_layout: bool = False
 
 
 @dataclass
@@ -102,7 +103,7 @@ def run_task(
         try:
             p = subprocess.run(
                 [sys.executable, "-m", "repofixer", "map", str(repo), task.problem_statement],
-                capture_output=True, text=True, timeout=180,
+                capture_output=True, text=True, timeout=90,
             )
             if p.returncode == 0 and p.stdout.strip():
                 repo_map = p.stdout
@@ -114,6 +115,10 @@ def run_task(
         registry = ToolRegistry(env)
         if tool_filter:
             registry.filter(tool_filter)
+        verify_env = None
+        if task.src_layout:
+            pypath = "/workspace/src" if env_kind == "docker" else str(repo / "src")
+            verify_env = {"PYTHONPATH": pypath}
         run = run_agent(
             task.problem_statement,
             llm,
@@ -124,9 +129,9 @@ def run_task(
             context_budget=context_budget,
             obs_dir=obs_dir,
             policy=SafetyPolicy("auto"),
-            solved_check=lambda: env.run(task.verify_command, timeout=task.timeout).ok,
+            solved_check=lambda: env.run(task.verify_command, timeout=min(task.timeout, 300), env=verify_env).ok,
         )
-        verify = env.run(task.verify_command, timeout=task.timeout)
+        verify = env.run(task.verify_command, timeout=task.timeout, env=verify_env)
         return EvalResult(
             task_id=task.id,
             resolved=verify.ok,
@@ -164,14 +169,17 @@ def run_eval(
                 d = json.loads(line)
                 done[d["task_id"]] = EvalResult(**d)
     results: list[EvalResult] = []
-    for task in tasks:
+    for i, task in enumerate(tasks, 1):
         if task.id in done:
             results.append(done[task.id])
+            print(f"[{i}/{len(tasks)}] {task.id} (cached) resolved={done[task.id].resolved}", flush=True)
             continue
+        print(f"[{i}/{len(tasks)}] {task.id} running...", flush=True)
         res = run_task(
             task, llm, env_kind, out_dir, base_dir=base_dir, max_steps=max_steps,
             tool_filter=tool_filter, use_repo_map=use_repo_map, context_budget=context_budget,
         )
+        print(f"[{i}/{len(tasks)}] {task.id} -> resolved={res.resolved} steps={res.steps} ({res.stopped_reason})", flush=True)
         with results_path.open("a", encoding="utf-8") as f:
             f.write(json.dumps(asdict(res), ensure_ascii=False) + "\n")
         results.append(res)

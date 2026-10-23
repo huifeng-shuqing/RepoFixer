@@ -14,10 +14,25 @@ from __future__ import annotations
 
 import os
 import shlex
+import shutil
 import subprocess
 import time
 from dataclasses import dataclass
 from pathlib import Path
+
+BASH_CANDIDATES = (r"C:\Program Files\Git\bin\bash.exe", r"C:\Program Files\Git\usr\bin\bash.exe")
+
+
+def find_bash() -> str | None:
+    # prefer Git Bash explicitly: `which bash` can resolve to the WSL stub in
+    # System32, whose failure mode is an opaque UTF-16 ACCESSDENIED
+    for c in BASH_CANDIDATES:
+        if Path(c).exists():
+            return c
+    found = shutil.which("bash")
+    if found and Path(found).parent.resolve() != Path(os.environ.get("SystemRoot", r"C:\Windows")) / "System32":
+        return found
+    return None
 
 
 @dataclass
@@ -41,6 +56,14 @@ class Environment:
 
 
 class LocalEnv(Environment):
+    """Runs commands on the host, confined to the workspace directory.
+
+    Uses Git Bash when available so that POSIX-style commands the model
+    naturally writes (`grep -rn x . | head`, `a; b`, `2>/dev/null`) behave
+    like they would inside the Docker sandbox; falls back to cmd.exe.
+    NOTE: this is the development environment, not a security boundary.
+    """
+
     def __init__(
         self,
         workspace: Path,
@@ -48,6 +71,7 @@ class LocalEnv(Environment):
     ):
         self.workspace = workspace.resolve()
         self.command_blacklist = command_blacklist
+        self.bash = find_bash()
 
     def resolve(self, path: str) -> Path:
         p = (self.workspace / path).resolve()
@@ -55,7 +79,7 @@ class LocalEnv(Environment):
             raise ValueError(f"path escapes workspace: {path}")
         return p
 
-    def run(self, command: str, cwd: str = ".", timeout: int = 120) -> ExecResult:
+    def run(self, command: str, cwd: str = ".", timeout: int = 120, env: dict | None = None) -> ExecResult:
         low = command.lower()
         for bad in self.command_blacklist:
             if bad in low:
@@ -66,14 +90,29 @@ class LocalEnv(Environment):
                     exit_code=1,
                 )
         try:
-            proc = subprocess.run(
-                command,
-                shell=True,
-                cwd=str(self.resolve(cwd)),
-                capture_output=True,
-                text=True,
-                timeout=timeout,
-            )
+            if self.bash:
+                proc = subprocess.run(
+                    [self.bash, "-lc", command],
+                    cwd=str(self.resolve(cwd)),
+                    capture_output=True,
+                    text=True,
+                    encoding="utf-8",
+                    errors="replace",
+                    timeout=timeout,
+                    env={**os.environ, **(env or {})},
+                )
+            else:
+                proc = subprocess.run(
+                    command,
+                    shell=True,
+                    cwd=str(self.resolve(cwd)),
+                    capture_output=True,
+                    text=True,
+                    encoding="utf-8",
+                    errors="replace",
+                    timeout=timeout,
+                    env={**os.environ, **(env or {})},
+                )
             return ExecResult(
                 ok=proc.returncode == 0,
                 stdout=proc.stdout,
@@ -156,14 +195,17 @@ class DockerEnv(Environment):
             raise ValueError(f"path escapes workspace: {path}")
         return p
 
-    def run(self, command: str, cwd: str = ".", timeout: int | None = None) -> ExecResult:
+    def run(self, command: str, cwd: str = ".", timeout: int | None = None, env: dict | None = None) -> ExecResult:
         timeout = timeout or self.timeout
         target = (self.workspace / cwd).resolve()
         if not target.is_relative_to(self.workspace):
             return ExecResult(ok=False, stdout="", stderr=f"cwd escapes workspace: {cwd}", exit_code=1)
         rel = "" if target == self.workspace else f"/{target.relative_to(self.workspace).as_posix()}"
         wrapped = f"cd /workspace{rel} && timeout {timeout} sh -c {shlex.quote(command)}"
-        proc = self._docker(["exec", self.name, "sh", "-c", wrapped], timeout=timeout + 15)
+        args = ["exec"]
+        for k, v in (env or {}).items():
+            args += ["-e", f"{k}={v}"]
+        proc = self._docker(args + [self.name, "sh", "-c", wrapped], timeout=timeout + 15)
         return ExecResult(
             ok=proc.returncode == 0,
             stdout=proc.stdout,

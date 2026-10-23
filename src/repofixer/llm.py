@@ -33,6 +33,8 @@ class LLMClient:
         self.client = OpenAI(
             api_key=api_key or os.getenv("DEEPSEEK_API_KEY"),
             base_url=base_url or os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com"),
+            timeout=120,      # hard per-request timeout: a hung call must not freeze the harness
+            max_retries=1,    # one retry only: 2*120s worst case instead of SDK defaults
         )
         self.model = model or os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
 
