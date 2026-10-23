@@ -1,5 +1,7 @@
 # RepoFixer — 可评测的代码仓库修复 Agent
 
+[![CI](https://github.com/huifeng-shuqing/RepoFixer/actions/workflows/ci.yml/badge.svg)](https://github.com/huifeng-shuqing/RepoFixer/actions/workflows/ci.yml)
+
 给一个任务描述（issue/需求）+ 一个 git 仓库，RepoFixer 自主读代码、定位、修改、跑测试、迭代修复，全程结构化留痕、可评测、可断点续跑。
 
 GitHub: <https://github.com/huifeng-shuqing/RepoFixer>
