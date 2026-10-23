@@ -61,3 +61,12 @@
 - **修复**：把 repo map 计算隔离到子进程（`repofixer map` 子命令，eval/run 通过 subprocess 调用）——评测主进程保持纯 Python；子进程即使崩溃也只是降级为「无 map」，不伤评测。测试同步改走子进程路径，pytest 进程不再加载 tree-sitter。
 - **新增「验证驱动早停」**：eval 每步结束后执行 verify_command，通过即 `solved_early` 停止——治好了 agent「修对了但话痨」（40 步 ¥0.73 → 早停后同样任务 20 步内、费用下降 70%+）。
 - **验证**：✅ 30 单测全绿；✅ 单任务真实验收稳定（exit 0，resolved=1）；全量 31 任务评测已在后台重跑（results/real/full）。
+
+### Block 5.2 — 数据集假阳性修复 + 质量门禁（2026-10-23）
+
+- **问题**：全量评测首 3 个任务全部「1 步解决」——排查发现是**假阳性**：构建任务时只把仓库停在父提交，忘了应用修复提交里的**测试改动**（SWE-bench 的 test patch 概念），导致 verify 命令在坏代码上也无测试可失败。
+- **修复**：任务仓库 = 父提交 + 测试补丁 + `_version` 存根（作为一次提交），源码修复留在外部 gold patch；任务 JSON 增加 `base_commit / fix_commit / test_files / src_files` 元数据（可追溯）。
+- **质量门禁** `scripts/validate_dataset.py`（SWE-bench `--gold` 等价物）：对每条任务在全新 checkout 上验证「测试补丁下 verify 必失败 → 应用源码补丁后必通过」。**29/29 全部通过**（重建后数据集 29 条）。
+- **教训（面试素材）**：评测管道本身的正确性必须被独立验证——「agent 全对」和「评测坏了」长得一模一样。
+- **M6 首刀**：LLM 摘要压缩（预算超限且淘汰不足时，模型把最旧历史压缩为摘要，保留消息结构）；trace 查看器 `scripts/show_trace.py`；失败归因 `scripts/analyze_failures.py`；GitHub Actions CI。
+- **当前状态**：三连跑后台执行中（完整 / nomap / nocompact，各 29 任务，带早停）。
