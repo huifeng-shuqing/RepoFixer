@@ -128,10 +128,10 @@ def run_task(
             repo_map=repo_map,
             context_budget=context_budget,
             obs_dir=obs_dir,
-            policy=SafetyPolicy("auto"),
-            solved_check=lambda: env.run(task.verify_command, timeout=min(task.timeout, 300), env=verify_env).ok,
+            policy=SafetyPolicy("auto", workspace=repo),
+            solved_check=lambda: env.run(task.verify_command, timeout=min(task.timeout, 120), env=verify_env).ok,
         )
-        verify = env.run(task.verify_command, timeout=task.timeout, env=verify_env)
+        verify = env.run(task.verify_command, timeout=min(task.timeout, 180), env=verify_env)
         return EvalResult(
             task_id=task.id,
             resolved=verify.ok,

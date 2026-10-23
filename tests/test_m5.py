@@ -113,6 +113,16 @@ def test_reading_files_is_not_no_progress(ws):
     assert run.stopped_reason == "done"  # read-only steps do not trigger no_progress
 
 
+def test_policy_blocks_workspace_escape(ws):
+    policy = SafetyPolicy("auto", workspace=ws)
+    blocked = policy.check("bash", {"command": "cd /c/practice/ProductionPractice; grep -rn x ."})
+    assert blocked is not None and blocked.error_type == "PolicyDenied"
+    assert policy.denied[0]["reason"] == "workspace_escape"
+    assert policy.check("bash", {"command": "cd .."}) is not None
+    assert policy.check("bash", {"command": "cd tests && python -m pytest -q"}) is None  # relative, allowed
+    assert policy.check("bash", {"command": "grep -rn x src/"}) is None
+
+
 def test_safety_policy_denies_dangerous(ws):
     policy = SafetyPolicy("auto")
     blocked = policy.check("bash", {"command": "rm -rf data"})

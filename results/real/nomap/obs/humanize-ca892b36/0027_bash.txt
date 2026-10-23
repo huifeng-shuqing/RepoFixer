@@ -1,0 +1,80 @@
+22247dd build: apply test patch + stub _version (source fix removed)
+f971127 Fix `naturaldelta` doctest (#402)
+ M src/humanize/number.py
+        str: Friendly text representation as a string, unless the value passed could not
+            be coaxed into an `int`.
+    """
+    import math
+
+    try:
+        if not math.isfinite(float(value)):
+            return _format_not_finite(float(value))
+        value = int(value)
+    except (TypeError, ValueError):
+        return str(value)
+
+    if value < 0:
+        value *= -1
+        negative_prefix = "-"
+    else:
+        negative_prefix = ""
+
+    if value < powers[0]:
+        return f"{negative_prefix}{value}"
+
+    ordinal = bisect.bisect_right(powers, value)
+    largest_ordinal = ordinal == len(powers)
+
+    # Consider the biggest power of 10 that is smaller than value
+    ordinal -= 1
+    power = powers[ordinal]
+    chopped = value / power
+    rounded_value = float(format % chopped)
+
+    if (
+        not largest_ordinal
+        and rounded_value >= 1000
+        and powers[ordinal + 1] == power * 1000
+    ):
+        # After rounding, we end up just at the next power. Compare the
+        # rounded mantissa instead of multiplying it back by the power, since
+        # that product loses precision for very large numbers.
+        ordinal += 1
+        rounded_value = 1.0
+
+    singular, plural = human_powers[ordinal]
+    unit = _ngettext(singular, plural, math.ceil(rounded_value))
+    decimal_sep = decimal_separator()
+    number = (format % rounded_value).replace(".", decimal_sep)
+    return f"{negative_prefix}{number} {unit}"
+151:def test_intword_rounding_rollover() -> None:
+152-    """Values that round up to the next power must carry to the next unit.
+153-
+154-    Regression: for magnitudes above ~10**22 the carry was checked in floating
+155-    point (``rounded_value * power == powers[ordinal + 1]``) and no longer
+156-    matched the exact integer power, so e.g. ``10**24 - 1`` was rendered as
+157-    "1000.0 sextillion" instead of "1.0 septillion".
+158-    """
+159-    units = [
+160-        "thousand",
+161-        "million",
+162-        "billion",
+163-        "trillion",
+164-        "quadrillion",
+165-        "quintillion",
+166-        "sextillion",
+167-        "septillion",
+168-        "octillion",
+169-        "nonillion",
+170-        "decillion",
+171-    ]
+172-    # value = 10**e - 1 rounds up to 10**e with "%.1f"/"%.0f", i.e. exactly 1.0
+173-    # of the unit sitting at 10**e (units[i] where 10**e == powers[i]).
+174-    for i, exponent in enumerate(range(6, 34, 3), start=1):
+175-        value = 10**exponent - 1
+176-        assert humanize.intword(value) == f"1.0 {units[i]}"
+177-        assert humanize.intword(value, "%.0f") == f"1 {units[i]}"
+178-
+179-    # The mantissa must never render at or above 1000 for values below a
+180-    # decillion; a bare "1000.0" is only expected in the sparse gap between
+181-    # decillion and googol, which has no dedicated unit.

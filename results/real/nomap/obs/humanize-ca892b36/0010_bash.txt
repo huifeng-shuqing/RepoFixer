@@ -1,0 +1,120 @@
+total 644034
+drwxr-xr-x 1 吴琼 197121         0 10月 22 20:44 .
+drwxr-xr-x 1 吴琼 197121         0  2月  3  2025 ..
+drwxr-xr-x 1 吴琼 197121         0  4月 28 13:46 .android
+drwxr-xr-x 1 吴琼 197121         0  8月 22 17:28 .AndrowsBox
+drwxr-xr-x 1 吴琼 197121         0  5月 20 21:53 .aws
+drwxr-xr-x 1 吴琼 197121         0  5月 20 21:53 .azure
+-rw-r--r-- 1 吴琼 197121     10262  7月 16 15:47 .bash_history
+drwxr-xr-x 1 吴琼 197121         0  8月 26 13:50 .cache
+drwxr-xr-x 1 吴琼 197121         0  5月 20 21:15 .cagent
+drwxr-xr-x 1 吴琼 197121         0  7月 17 15:15 .cargo
+drwxr-xr-x 1 吴琼 197121         0  7月 17 17:40 .cc-switch
+drwxr-xr-x 1 吴琼 197121         0 10月 19 18:27 .claude
+-rw-r--r-- 1 吴琼 197121       927 10月 19 18:27 .claude.json
+drwxr-xr-x 1 吴琼 197121         0 10月 23 15:57 .codex
+drwxr-xr-x 1 吴琼 197121         0  2月 17  2025 .conda
+-rw-r--r-- 1 吴琼 197121       350  5月 12 19:33 .condarc
+drwxr-xr-x 1 吴琼 197121         0  7月 15 14:28 .config
+drwxr-xr-x 1 吴琼 197121         0  7月 17 13:16 .copilot
+drwxr-xr-x 1 吴琼 197121         0  9月 23  2025 .cursor
+drwxr-xr-x 1 吴琼 197121         0 10月 22 22:03 .docker
+drwxr-xr-x 1 吴琼 197121         0  9月 19  2023 .dotnet
+drwxr-xr-x 1 吴琼 197121         0 10月 22 20:59 .dsh
+drwxr-xr-x 1 吴琼 197121         0  3月 11  2026 .eclipse
+-rw-r--r-- 1 吴琼 197121        16  4月 14  2026 .emulator_console_auth_token
+-rw-r--r-- 1 吴琼 197121       208  7月 17 13:24 .gitconfig
+drwxr-xr-x 1 吴琼 197121         0  4月 14  2026 .gradle
+drwxr-xr-x 1 吴琼 197121         0  4月 12  2026 .idlerc
+drwxr-xr-x 1 吴琼 197121         0  6月  3 19:31 .ipynb_checkpoints
+drwxr-xr-x 1 吴琼 197121         0  2月 23  2025 .ipython
+drwxr-xr-x 1 吴琼 197121         0  3月 11  2026 .jmc
+drwxr-xr-x 1 吴琼 197121         0  5月 12 20:25 .jupyter
+drwxr-xr-x 1 吴琼 197121         0  5月 26 17:41 .keras
+-rw-r--r-- 1 吴琼 197121        20  4月 13  2026 .lesshst
+drwxr-xr-x 1 吴琼 197121         0  7月 15 14:28 .local
+drwxr-xr-x 1 吴琼 197121         0  7月  2  2025 .m2
+drwxr-xr-x 1 吴琼 197121         0  7月 11  2025 .matplotlib
+drwxr-xr-x 1 吴琼 197121         0  9月 23  2024 .mozilla
+-rw-r--r-- 1 吴琼 197121        40  7月 14 15:40 .npmrc
+drwxr-xr-x 1 吴琼 197121         0  7月 17 15:08 .rustup
+drwxr-xr-x 1 吴琼 197121         0  8月 17 17:42 .ssh
+drwxr-xr-x 1 吴琼 197121         0  8月 26 13:47 .streamlit
+drwxr-xr-x 1 吴琼 197121         0  9月 19  2023 .templateengine
+drwxr-xr-x 1 吴琼 197121         0  3月  2  2025 .vivado_hls
+drwxr-xr-x 1 吴琼 197121         0  9月 11  2024 .vscode
+drwxr-xr-x 1 吴琼 197121         0  5月  7 08:54 .vscode-shared
+drwxr-xr-x 1 吴琼 197121         0  9月 11  2024 .Xilinx
+lrwxrwxrwx 1 吴琼 197121        61  2月  3  2025 「开始」菜单 -> /c/Users/wuqiong/AppData/Roaming/Microsoft/Windows/Start Menu
+-rw-r--r-- 1 吴琼 197121     14206  2月 23  2025 0.7.11
+drwxr-xr-x 1 吴琼 197121         0  2月 17  2025 anaconda3
+drwxr-xr-x 1 吴琼 197121         0  7月 14 17:32 AppData
+lrwxrwxrwx 1 吴琼 197121        32  2月  3  2025 Application Data -> /c/Users/wuqiong/AppData/Roaming
+drwxr-xr-x 1 吴琼 197121         0 10月 12  2023 Autodesk
+drwxr-xr-x 1 吴琼 197121         0  2月  4  2025 Contacts
+lrwxrwxrwx 1 吴琼 197121        60  2月  3  2025 Cookies -> /c/Users/wuqiong/AppData/Local/Microsoft/Windows/INetCookies
+drwxr-xr-x 1 吴琼 197121         0 10月 22 20:44 Desktop
+drwxr-xr-x 1 吴琼 197121         0 10月 23 15:11 Documents
+drwxr-xr-x 1 吴琼 197121         0  7月 14 17:34 Doubao
+drwxr-xr-x 1 吴琼 197121         0 10月 22 20:42 Downloads
+drwxr-xr-x 1 吴琼 197121         0 10月 20 18:51 Favorites
+drwxr-xr-x 1 吴琼 197121         0  3月 24  2026 IdeaProjects
+drwxr-xr-x 1 吴琼 197121         0  2月  4  2025 Links
+lrwxrwxrwx 1 吴琼 197121        30  2月  3  2025 Local Settings -> /c/Users/wuqiong/AppData/Local
+-rw-r--r-- 1 吴琼 197121      7753  9月  1 20:31 make_motor_doc.py
+drwxr-xr-x 1 吴琼 197121         0 10月 20 18:51 Music
+lrwxrwxrwx 1 吴琼 197121        26  2月  3  2025 My Documents -> /c/Users/wuqiong/Documents
+lrwxrwxrwx 1 吴琼 197121        68  2月  3  2025 NetHood -> /c/Users/wuqiong/AppData/Roaming/Microsoft/Windows/Network Shortcuts
+-rw-r--r-- 1 吴琼 197121  21233664 10月 10 19:31 NTUSER.DAT
+-rw-r--r-- 1 吴琼 197121   3145728  2月  3  2025 ntuser.dat.LOG1
+-rw-r--r-- 1 吴琼 197121   2883584  2月  3  2025 ntuser.dat.LOG2
+-rw-r--r-- 1 吴琼 197121   1048576 10月 23 16:32 NTUSER.DAT{2ad838bb-efea-11ee-a54d-000d3a94eaa1}.TxR.0.regtrans-ms
+-rw-r--r-- 1 吴琼 197121   1048576 10月 10 19:37 NTUSER.DAT{2ad838bb-efea-11ee-a54d-000d3a94eaa1}.TxR.1.regtrans-ms
+-rw-r--r-- 1 吴琼 197121   1048576 10月 10 19:37 NTUSER.DAT{2ad838bb-efea-11ee-a54d-000d3a94eaa1}.TxR.2.regtrans-ms
+-rw-r--r-- 1 吴琼 197121     65536 10月 23 16:32 NTUSER.DAT{2ad838bb-efea-11ee-a54d-000d3a94eaa1}.TxR.blf
+-rw-r--r-- 1 吴琼 197121     65536 10月 10 19:31 NTUSER.DAT{2ad838bc-efea-11ee-a54d-000d3a94eaa1}.TM.blf
+-rw-r--r-- 1 吴琼 197121      4096  7月  2 23:50 NTUSER.DAT{2ad838bc-efea-11ee-a54d-000d3a94eaa1}.TM.blf.cnpf
+-rw-r--r-- 1 吴琼 197121    524288 10月 23 16:32 NTUSER.DAT{2ad838bc-efea-11ee-a54d-000d3a94eaa1}.TMContainer00000000000000000001.regtrans-ms
+-rw-r--r-- 1 吴琼 197121      4096  7月  2 23:50 NTUSER.DAT{2ad838bc-efea-11ee-a54d-000d3a94eaa1}.TMContainer00000000000000000001.regtrans-ms.cnpf
+-rw-r--r-- 1 吴琼 197121    524288 10月 10 19:31 NTUSER.DAT{2ad838bc-efea-11ee-a54d-000d3a94eaa1}.TMContainer00000000000000000002.regtrans-ms
+-rw-r--r-- 1 吴琼 197121      4096  7月  2 23:50 NTUSER.DAT{2ad838bc-efea-11ee-a54d-000d3a94eaa1}.TMContainer00000000000000000002.regtrans-ms.cnpf
+-rw-r--r-- 1 吴琼 197121        20  2月  4  2025 ntuser.ini
+drwxr-xr-x 1 吴琼 197121         0 11月 20  2024 OneDrive
+drwxr-xr-x 1 吴琼 197121         0  8月 15  2025 outputs
+drwxr-xr-x 1 吴琼 197121         0 10月 20 18:51 Pictures
+drwxr-xr-x 1 吴琼 197121         0  5月 12 19:45 pip
+-rw-r--r-- 1 吴琼 197121  29234901  9月 24  2025 postgresql-14.11.tar.gz
+lrwxrwxrwx 1 吴琼 197121        68  2月  3  2025 PrintHood -> /c/Users/wuqiong/AppData/Roaming/Microsoft/Windows/Printer Shortcuts
+-rwxr-xr-x 1 吴琼 197121 598255880  2月 21  2025 pycharm-community-2024.3.3.exe
+drwxr-xr-x 1 吴琼 197121         0  5月 12 19:51 PycharmProjects
+lrwxrwxrwx 1 吴琼 197121        57  2月  3  2025 Recent -> /c/Users/wuqiong/AppData/Roaming/Microsoft/Windows/Recent
+drwxr-xr-x 1 吴琼 197121         0  7月  9  2025 sangfor
+drwxr-xr-x 1 吴琼 197121         0  2月  4  2025 Saved Games
+drwxr-xr-x 1 吴琼 197121         0  2月  4  2025 Searches
+lrwxrwxrwx 1 吴琼 197121        57  2月  3  2025 SendTo -> /c/Users/wuqiong/AppData/Roaming/Microsoft/Windows/SendTo
+drwxr-xr-x 1 吴琼 197121         0  9月 19  2023 source
+lrwxrwxrwx 1 吴琼 197121        60  2月  3  2025 Templates -> /c/Users/wuqiong/AppData/Roaming/Microsoft/Windows/Templates
+drwxr-xr-x 1 吴琼 197121         0 10月 20 18:51 Videos
+drwxr-xr-x 1 吴琼 197121         0  6月 22  2025 vscode-remote-wsl
+drwxr-xr-x 1 吴琼 197121         0 10月 23 14:47 WPS Cloud Files
+drwxr-xr-x 1 吴琼 197121         0  3月 21  2024 WPSDrive
+-rw-r--r-- 1 吴琼 197121         0  5月 20 21:31 wsl
+drwxr-xr-x 1 吴琼 197121         0  2月 11  2026 xwechat_files
+__pycache__
+_ir_tu2_temp_1
+{0348FE67-B70C-4227-BBAE-AD01D9DF5548}
+{03F7CEFE-8448-4CE1-90F7-2276908AE8A0}
+{043ACC06-0AA2-4A32-9143-68112EA07370}
+{058CB386-5351-4EFF-8E56-383988B65429}
+{0A5D9113-FE38-4929-89C6-CA85F96E8997}
+{0A7E1D98-C629-4A3A-ADA5-DF569FE5B380}
+{0B2D618E-B83C-410C-968D-3AEA1597BFA9}
+{1478B8FA-B81D-45D7-9A24-7EB29527CC13}
+~$arn claude code.docx
+~$面试题.docx
+Agent学习笔记.docx
+code
+Learn claude code.docx
+learning-roadmap-development总学习路线（正在进行中）.md
+rag
+面试题.docx

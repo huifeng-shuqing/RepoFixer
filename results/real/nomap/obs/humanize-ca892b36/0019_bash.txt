@@ -1,0 +1,80 @@
+    ordinal = bisect.bisect_right(powers, value)
+    largest_ordinal = ordinal == len(powers)
+
+    # Consider the biggest power of 10 that is smaller than value
+    ordinal -= 1
+    power = powers[ordinal]
+    chopped = value / power
+    rounded_value = float(format % chopped)
+
+    if not largest_ordinal and rounded_value == powers[ordinal + 1] // power:
+        # After rounding, we end up just at the next power. Compare against the
+        # integer ratio between the two powers instead of ``rounded_value * power``:
+        # for values above ~10**22 the latter is evaluated in floating point and
+        # no longer equals the exact ``powers[ordinal + 1]``, so the carry was
+        # silently skipped (e.g. 10**24 - 1 rendered as "1000.0 sextillion").
+        ordinal += 1
+        rounded_value = 1.0
+
+    singular, plural = human_powers[ordinal]
+    unit = _ngettext(singular, plural, math.ceil(rounded_value))
+    decimal_sep = decimal_separator()
+    number = (format % rounded_value).replace(".", decimal_sep)
+    return f"{negative_prefix}{number} {unit}"
+
+
+def apnumber(value: NumberOrString) -> str:
+    """Converts an integer to Associated Press style.
+
+    Examples:
+      ```pycon
+      >>> apnumber(0)
+      'zero'
+      >>> apnumber(5)
+      'five'
+      >>> apnumber(10)
+      '10'
+      >>> apnumber("7")
+      'seven'
+      >>> apnumber("foo")
+      'foo'
+      >>> apnumber(None)
+      'None'
+
+      ```
+
+93:def test_intword_powers() -> None:
+94-    # make sure that powers & human_powers have the same number of items
+95-    assert len(number.powers) == len(number.human_powers)
+96-
+--
+147:def test_intword(test_args: list[str], expected: str) -> None:
+148:    assert humanize.intword(*test_args) == expected
+149-
+150-
+151:def test_intword_rounding_rollover() -> None:
+152-    """Values that round up to the next power must carry to the next unit.
+153-
+154-    Regression: for magnitudes above ~10**22 the carry was checked in floating
+--
+176:        assert humanize.intword(value) == f"1.0 {units[i]}"
+177:        assert humanize.intword(value, "%.0f") == f"1 {units[i]}"
+178-
+179-    # The mantissa must never render at or above 1000 for values below a
+180-    # decillion; a bare "1000.0" is only expected in the sparse gap between
+--
+183:        rendered = humanize.intword(10**exponent - 1)
+184-        mantissa = float(rendered.split(" ", 1)[0])
+185-        assert mantissa < 1000
+186-
+--
+188:    assert humanize.intword(10**36) == "1000.0 decillion"
+189:    assert humanize.intword(2 * 10**100) == "2.0 googol"
+190-
+191-
+192-@pytest.mark.parametrize(
+--
+290:        ([1, humanize.intword, 1e6, None, "under "], "under 1.0 million"),
+291-        ([math.nan], "NaN"),
+292-        ([math.inf], "+Inf"),
+293-        ([-math.inf], "-Inf"),

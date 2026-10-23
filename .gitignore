@@ -11,3 +11,6 @@ work/
 vendor/
 work/
 dataset/repos/
+
+data/tasks_nomap.jsonl
+data/tasks_nocompact.jsonl

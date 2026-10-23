@@ -1,0 +1,50 @@
+cd C:/practice/ProductionPractice/RuyiHermesAgent/apps/desktop
+PATH="/c/practice/ProductionPractice/RuyiHermesAgent/.venv/Scripts:/c/Windows/System32:/c/Windows:/c/Windows/System32/Wbem:/c/Program Files/nodejs:/c/Users/wuqiong/.local/bin:/c/Program Files/Git/cmd"
+HERMES_DESKTOP_HERMES_ROOT="C:/practice/ProductionPractice/RuyiHermesAgent"
+HERMES_HOME="C:/practice/ProductionPractice/RuyiHermesAgent/workspace"
+/c/practice/ProductionPractice/RuyiHermesAgent/node_modules/electron/dist/electron.exe .
+cd C:/practice/ProductionPractice/RuyiHermesAgent/apps/desktop
+PATH="/c/practice/ProductionPractice/RuyiHermesAgent/.venv/Scripts:/c/Windows/System32:/c/Windows:/c/Windows/System32/Wbem:/c/Program Files/nodejs:/c/Users/wuqiong/.local/bin"
+HERMES_DESKTOP_HERMES_ROOT="C:/practice/ProductionPractice/RuyiHermesAgent"
+HERMES_HOME="C:/practice/ProductionPractice/RuyiHermesAgent/workspace"
+/c/practice/ProductionPractice/RuyiHermesAgent/node_modules/electron/dist/electron.exe .
+cat > /c/practice/ProductionPractice/RuyiHermesAgent/run-desktop.sh << 'EOF'
+#!/usr/bin/env bash
+
+[200~cat > /c/practice/ProductionPractice/RuyiHermesAgent/run-desktop.sh << 'EOF'~
+cat > /c/practice/ProductionPractice/RuyiHermesAgent/run-desktop.sh << 'EOF'
+
+rm -f /c/practice/ProductionPractice/RuyiHermesAgent/run-desktop.sh
+cat > /c/practice/ProductionPractice/RuyiHermesAgent/run-desktop.sh << 'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export PATH="/c/Windows/System32:/c/Windows:/c/Windows/System32/Wbem:/c/Program Files/nodejs:/c/Program Files/Git/cmd:$DIR/.venv/Scripts"
+export HERMES_DESKTOP_HERMES_ROOT="$DIR"
+export HERMES_HOME="$DIR/workspace"
+cd "$DIR/apps/desktop"
+exec "$DIR/node_modules/electron/dist/electron.exe" .
+EOF
+
+chmod +x /c/practice/ProductionPractice/RuyiHermesAgent/run-desktop.sh
+echo "created"
+ls -l /c/practice/ProductionPractice/RuyiHermesAgent/run-desktop.sh
+cd C:/practice/ProductionPractice/RuyiHermesAgent
+./run-desktop.sh
+ ./run-desktop.sh
+cd C:/practice/ProductionPractice/RuyiHermesAgent/apps/desktop
+export ELECTRON_MIRROR="https://npmmirror.com/mirrors/electron/"
+export ELECTRON_BUILDER_BINARIES_MIRROR="https://npmmirror.com/mirrors/electron-builder-binaries/"
+npm run desktop:package:portable:win
+cd C:/practice/ProductionPractice/RuyiHermesAgent/apps/desktop
+export ELECTRON_MIRROR="https://npmmirror.com/mirrors/electron/"
+export ELECTRON_BUILDER_BINARIES_MIRROR="https://npmmirror.com/mirrors/electron-builder-binaries/"
+npm run dist:win
+ki9999
+cd /c/practice/ProductionPractice/RuyiHermesAgent
+./run-desktop.sh
+cd /c/practice/ProductionPractice/RuyiHermesAgent
+ ./run-desktop.sh
+./run-desktop.sh
+cd /c/practice/ProductionPractice/RuyiHermesAgent
+ ./run-desktop.sh
