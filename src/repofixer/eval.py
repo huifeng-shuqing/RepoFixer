@@ -70,6 +70,8 @@ def run_task(
     base_dir: Path | None = None,
     max_steps: int = 40,
     tool_filter: set[str] | None = None,
+    use_repo_map: bool = True,
+    context_budget: int | None = 60_000,
 ) -> EvalResult:
     t0 = time.time()
     repo = Path(task.repo)
@@ -81,11 +83,29 @@ def run_task(
         return EvalResult(task_id=task.id, resolved=False, stopped_reason="env_failed",
                           steps=0, prompt_tokens=0, completion_tokens=0, wall_ms=0, error=str(e))
     trace_path = out_dir / "traces" / f"{task.id}.jsonl"
+    obs_dir = out_dir / "obs" / task.id
+    repo_map = None
+    if use_repo_map:
+        try:
+            from .repomap import build_repo_map
+
+            repo_map = build_repo_map(repo, task.problem_statement)
+        except Exception:
+            repo_map = None
     try:
         registry = ToolRegistry(env)
         if tool_filter:
             registry.filter(tool_filter)
-        run = run_agent(task.problem_statement, llm, registry, trace_path, max_steps=max_steps)
+        run = run_agent(
+            task.problem_statement,
+            llm,
+            registry,
+            trace_path,
+            max_steps=max_steps,
+            repo_map=repo_map,
+            context_budget=context_budget,
+            obs_dir=obs_dir,
+        )
         verify = env.run(task.verify_command, timeout=task.timeout)
         return EvalResult(
             task_id=task.id,
@@ -111,6 +131,8 @@ def run_eval(
     max_steps: int = 40,
     resume: bool = True,
     tool_filter: set[str] | None = None,
+    use_repo_map: bool = True,
+    context_budget: int | None = 60_000,
 ) -> list[EvalResult]:
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -126,7 +148,10 @@ def run_eval(
         if task.id in done:
             results.append(done[task.id])
             continue
-        res = run_task(task, llm, env_kind, out_dir, base_dir=base_dir, max_steps=max_steps, tool_filter=tool_filter)
+        res = run_task(
+            task, llm, env_kind, out_dir, base_dir=base_dir, max_steps=max_steps,
+            tool_filter=tool_filter, use_repo_map=use_repo_map, context_budget=context_budget,
+        )
         with results_path.open("a", encoding="utf-8") as f:
             f.write(json.dumps(asdict(res), ensure_ascii=False) + "\n")
         results.append(res)

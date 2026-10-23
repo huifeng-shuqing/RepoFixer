@@ -1,0 +1,1 @@
+{"task_id": "calc_bug-1", "resolved": true, "stopped_reason": "done", "steps": 5, "prompt_tokens": 6588, "completion_tokens": 330, "wall_ms": 8801, "trace_path": "results\\calc\\nomap\\traces\\calc_bug-1.jsonl", "error": ""}

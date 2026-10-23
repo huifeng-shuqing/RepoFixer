@@ -5,6 +5,10 @@ mini-swe-agent (MIT, vendor copy kept for reference): messages accumulate
 linearly, every tool result is written back to the model, and the loop ends
 when the model stops, calls the `done` tool, or hits the step budget. Every
 step is flushed to a JSONL trace immediately (crash-safe).
+
+Context engineering (M4): an optional repo map is injected into the system
+prompt, and a ContextManager tiers long observations and selectively evicts
+low-value tool results when a token budget is exceeded.
 """
 from __future__ import annotations
 
@@ -14,11 +18,12 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
+from .context import ContextManager
 from .llm import LLMClient
 from .tools import ToolRegistry
 from .trace import StepTrace, ToolCallTrace, TraceWriter
 
-SYSTEM_PROMPT = """You are RepairLoop, a software-repair agent working inside a git repository.
+SYSTEM_PROMPT = """You are RepoFixer, a software-repair agent working inside a git repository.
 You are given a task. Explore, locate the bug, edit files, run tests, and iterate until the task is done.
 
 Rules:
@@ -36,6 +41,7 @@ class AgentRun:
     stopped_reason: str = "max_steps"
     prompt_tokens: int = 0
     completion_tokens: int = 0
+    evictions: list[dict] = field(default_factory=list)
 
     @property
     def total_tokens(self) -> int:
@@ -49,17 +55,20 @@ def run_agent(
     trace_path: Path,
     *,
     max_steps: int = 40,
+    repo_map: str | None = None,
+    context_budget: int | None = None,
+    obs_dir: Path | None = None,
 ) -> AgentRun:
-    messages: list[dict] = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": task},
-    ]
+    cm = ContextManager(obs_dir, context_budget)
+    system = SYSTEM_PROMPT + (f"\n\n{repo_map}" if repo_map else "")
+    cm.add_system(system)
+    cm.add_user(task)
     tw = TraceWriter(trace_path)
     run = AgentRun()
     try:
         for step_no in range(1, max_steps + 1):
             t0 = time.perf_counter()
-            resp = llm.complete(messages, registry.schemas())
+            resp = llm.complete(cm.prepare(), registry.schemas())
             run.prompt_tokens += resp.prompt_tokens
             run.completion_tokens += resp.completion_tokens
             st = StepTrace(
@@ -77,19 +86,16 @@ def run_agent(
                 run.steps.append(st)
                 break
 
-            messages.append(
-                {
-                    "role": "assistant",
-                    "content": resp.text or None,
-                    "tool_calls": [
-                        {
-                            "id": c["id"],
-                            "type": "function",
-                            "function": {"name": c["name"], "arguments": json.dumps(c["arguments"], ensure_ascii=False)},
-                        }
-                        for c in resp.tool_calls
-                    ],
-                }
+            cm.add_assistant(
+                resp.text or None,
+                [
+                    {
+                        "id": c["id"],
+                        "type": "function",
+                        "function": {"name": c["name"], "arguments": json.dumps(c["arguments"], ensure_ascii=False)},
+                    }
+                    for c in resp.tool_calls
+                ],
             )
             for call in resp.tool_calls:
                 t1 = time.perf_counter()
@@ -105,7 +111,7 @@ def run_agent(
                         latency_ms=int((time.perf_counter() - t1) * 1000),
                     )
                 )
-                messages.append({"role": "tool", "tool_call_id": call["id"], "content": result.output})
+                cm.add_tool(call["id"], call["name"], result.output)
                 if call["name"] == "done" and result.ok:
                     run.done_summary = result.output
                     run.stopped_reason = "done"
@@ -115,6 +121,8 @@ def run_agent(
             run.steps.append(st)
             if run.done_summary is not None:
                 break
+        run.evictions = list(cm.evictions)
+        cm.write_eviction_log()
     finally:
         tw.close()
     return run

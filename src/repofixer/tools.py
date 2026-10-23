@@ -46,6 +46,31 @@ def _fmt_page(lines: list[str], start: int) -> str:
     return "\n".join(f"{start + i:>6} | {line}" for i, line in enumerate(lines))
 
 
+IMPORTANT_RE = re.compile(r"FAIL|Error|Traceback|assert|Exception|FAILED|failed", re.I)
+
+
+def summarize_test_output(text: str, max_lines: int = 60) -> str:
+    """Keep failure-relevant lines plus a little context; drop the noise."""
+    lines = text.splitlines()
+    if len(lines) <= max_lines:
+        return text
+    keep: set[int] = set()
+    for i, line in enumerate(lines):
+        if IMPORTANT_RE.search(line):
+            for j in range(max(0, i - 2), min(len(lines), i + 3)):
+                keep.add(j)
+    if not keep:
+        return "\n".join(lines[:30]) + f"\n... [{len(lines) - 30} lines omitted]"
+    parts: list[str] = []
+    prev = -2
+    for i in sorted(keep):
+        if i > prev + 1:
+            parts.append("...")
+        parts.append(lines[i])
+        prev = i
+    return "\n".join(parts)
+
+
 @dataclass
 class Tool:
     name: str
@@ -153,6 +178,18 @@ def build_tools(env: Environment) -> list[Tool]:
     def done(summary: str) -> ToolResult:
         return ToolResult(ok=True, output=summary)
 
+    def run_test(command: str) -> ToolResult:
+        res = env.run(command)
+        out = (res.stdout + ("\n[stderr]\n" + res.stderr if res.stderr else "")).rstrip()
+        out = summarize_test_output(out)
+        if res.timed_out:
+            return ToolResult.err(out or "command timed out", "ToolTimeout")
+        if res.exit_code != 0:
+            return ToolResult(
+                ok=False, output=out or f"(exit code {res.exit_code}, no output)", error_type="ToolError"
+            )
+        return ToolResult(ok=True, output=out or "(ok, no output)")
+
     return [
         Tool(
             name="read_file",
@@ -199,6 +236,12 @@ def build_tools(env: Environment) -> list[Tool]:
                 "required": ["pattern"],
             },
             handler=grep,
+        ),
+        Tool(
+            name="run_test",
+            description="Run a test/verification command and return a summary focused on failures.",
+            parameters={"type": "object", "properties": {"command": {"type": "string"}}, "required": ["command"]},
+            handler=run_test,
         ),
         Tool(
             name="done",

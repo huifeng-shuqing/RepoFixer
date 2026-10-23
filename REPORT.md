@@ -33,5 +33,13 @@
 
 - **做了什么**：任务 schema（id/problem_statement/repo/verify_command/timeout/difficulty，JSONL）；评测 runner（每任务独立环境 + 逐条结果追加 + 按 task_id 断点续跑 + 每任务 trace 落盘）；指标汇总（成功率/平均步数/token/成本估算/延迟分位）；两个基线（step3=3 步截断、noedit=裁剪编辑工具）；CLI `repofixer eval`。
 - **怎么实现的**：verify_command 的退出码即成功判据（SWE-bench 判定思想的零依赖简化版，F2P/P2P 留待接入真实 SWE-bench 数据时实现）；resume 通过读 results.jsonl 已有 task_id 跳过，防重复烧钱（SWE-bench run_id 缓存同思路）。
-- **验证状态**：✅ 单测覆盖评测管道（假 LLM 真修 bug → resolved=True）、断点续跑、noedit 基线必失败；真实模型跑分待你终端执行。
+- **验证状态**：✅ 单测覆盖评测管道（假 LLM 真修 bug → resolved=True）、断点续跑、noedit 基线必失败；✅ 真实模型 5 组基线已跑分（见 results/calc/COMPARISON.md，数据集扩充进行中）。
 - **参照**：SWE-bench 数据集结构/判定/缓存思想（MIT）；基线设计自定。
+
+### Block 4 — repo map + 上下文工程（2026-10-23）
+
+- **做了什么**：`repomap`（tree-sitter 符号提取 → 文件级引用图 → PageRank 式排序（任务关键词做种子）→ token 预算渲染，注入 system prompt）；`ContextManager`（长输出落盘+预览、重要性标记、超预算选择性淘汰 + 淘汰日志 evictions.jsonl）；`run_test` 工具（测试输出只回失败摘要）；基线扩充 nomap / nocompact / noedit（纯观察者）。
+- **怎么实现的**：repomap 借鉴 Aider 思路自实现简化版（文件级标识符共现近似引用边，仅 py/js 两种语言，代码内注释明示局限）；淘汰按 `value=(重要性×时间衰减) − 规模代价` 选最低者，保留最近 3 条不淘汰，全程可审计。
+- **验证**：✅ 25 单测全绿（符号提取/相关性排序/预算截断/分级落盘/淘汰保重要）；✅ 真实模型冒烟（7 步修复、最终测试 PASS）；✅ 5 组基线真实跑分（results/calc/COMPARISON.md）。
+- **发现（值得写进面试）**：noedit 第一版仍保留命令执行时，模型借 `run_test` 执行命令写文件绕过工具裁剪；改成纯读工具才形成真正下界。命令执行永远是可写向量，沙箱隔离比工具白名单更根本。
+- **参照**：Aider repo map（Apache-2.0，思想）；learn-claude-code s08 分层压缩（MIT，改写）。
