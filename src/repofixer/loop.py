@@ -38,6 +38,7 @@ You are given a task. Explore, locate the bug, edit files, run tests, and iterat
 
 Rules:
 - Read code before changing it; prefer targeted edits (edit_file) over rewriting whole files.
+- Prefer the dedicated tools (read_file/edit_file/grep/run_test) over shell commands; use bash mainly for running commands that have no dedicated tool.
 - When tests fail, read the failure output and fix the cause, not the symptom.
 - As soon as the tests pass, stop exploring and call `done` immediately.
 - Call `done` with a summary ONLY when the task is finished. Never call done while tests still fail.
@@ -112,7 +113,7 @@ def run_agent(
     tw = TraceWriter(trace_path)
     run = AgentRun()
     recent_calls: deque[str] = deque(maxlen=loop_guard)
-    recent_tool_names: deque[str] = deque(maxlen=6)
+    recent_tool_names: deque[str] = deque(maxlen=8)
     # reading files and grepping IS progress; only pure command probing is not
     try:
         for step_no in range(step_start, max_steps + 1):
@@ -189,7 +190,8 @@ def run_agent(
             ):
                 run.stopped_reason = "loop_detected"
             elif (
-                len(recent_tool_names) == recent_tool_names.maxlen
+                step_no >= 10
+                and len(recent_tool_names) == recent_tool_names.maxlen
                 and set(recent_tool_names) <= {"bash"}
                 and run.done_summary is None
             ):

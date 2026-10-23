@@ -81,12 +81,12 @@ def test_no_progress_guard_stops_probe_loops(ws):
                 tool_calls=[_bash_call(f"c{i}", f"python -c \"print({i})\"")],
                 finish_reason="tool_calls",
             )
-            for i in range(10)
+            for i in range(20)
         ]
     )
     run = run_agent("task", llm, ToolRegistry(LocalEnv(ws)), ws / "t.jsonl", max_steps=20)
     assert run.stopped_reason == "no_progress"
-    assert len(run.steps) == 6
+    assert len(run.steps) == 10  # step_no >= 10 + 8 consecutive bash
 
 
 def test_reading_files_is_not_no_progress(ws):
