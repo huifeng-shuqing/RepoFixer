@@ -1,0 +1,24 @@
+     27 '[[]draft].md'
+      1 'a[[:punct:]]b'
+      1 SUBFAILED(backend='simple') tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_spec_separator
+      1 SUBFAILED(factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[[:punct:]]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+      1 SUBFAILED(factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[[:punct:]]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+      1 SUBFAILED(factory=<class 'pathspec.patterns.gitignore.spec.GitIgnoreSpecPattern'>, bracket='[[:punct:]]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+      1 SUBFAILED(factory=<class 'pathspec.patterns.gitignore.spec.GitIgnoreSpecPattern'>, bracket='[[:punct:]]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+      1 SUBFAILED(factory=<class 'pathspec.patterns.gitwildmatch.GitWildMatchPattern'>, bracket='[[:punct:]]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+      1 SUBFAILED(factory=<class 'pathspec.patterns.gitwildmatch.GitWildMatchPattern'>, bracket='[[:punct:]]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+      1 SUBFAILED[p='[[:punct:]]' match '!'] tests\test_04_gitignore_spec.py::GitIgnoreSpecPatternTest::test_12_posix_class_b_match
+      1 SUBFAILED[p='[[:punct:]]' match '.'] tests\test_04_gitignore_spec.py::GitIgnoreSpecPatternTest::test_12_posix_class_b_match
+      1 SUBFAILED[p='[[:punct:]]' match '@'] tests\test_04_gitignore_spec.py::GitIgnoreSpecPatternTest::test_12_posix_class_b_match
+      1 SUBFAILED[p='[[:punct:]]' match '~'] tests\test_04_gitignore_spec.py::GitIgnoreSpecPatternTest::test_12_posix_class_b_match
+      1 SUBFAILED[p='[[:punct:]]'] tests\test_04_gitignore_spec.py::GitIgnoreSpecPatternTest::test_12_posix_class_a_regex
+SUBFAILED[p='[[:punct:]]'] tests\test_04_gitignore_spec.py::GitIgnoreSpecPatternTest::test_12_posix_class_a_regex
+SUBFAILED[p='[[:punct:]]' match '!'] tests\test_04_gitignore_spec.py::GitIgnoreSpecPatternTest::test_12_posix_class_b_match
+SUBFAILED[p='[[:punct:]]' match '.'] tests\test_04_gitignore_spec.py::GitIgnoreSpecPatternTest::test_12_posix_class_b_match
+SUBFAILED[p='[[:punct:]]' match '~'] tests\test_04_gitignore_spec.py::GitIgnoreSpecPatternTest::test_12_posix_class_b_match
+SUBFAILED[p='[[:punct:]]' match '@'] tests\test_04_gitignore_spec.py::GitIgnoreSpecPatternTest::test_12_posix_class_b_match
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[[:punct:]]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[[:punct:]]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.spec.GitIgnoreSpecPattern'>, bracket='[[:punct:]]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.spec.GitIgnoreSpecPattern'>, bracket='[[:punct:]]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitwildmatch.GitWildMatchPattern'>, bracket='[[:punct:]]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator

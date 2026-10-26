@@ -1,0 +1,101 @@
+     1 | """
+     2 | This module provides :class:`GitIgnoreSpecPattern` which implements Git's
+     3 | `gitignore`_ patterns, and handles edge-cases where Git's behavior differs from
+     4 | what's documented. Git allows including files from excluded directories which
+     5 | appears to contradict the documentation. Git discards patterns with invalid
+     6 | range notation. This is used by :class:`~pathspec.gitignore.GitIgnoreSpec` to
+     7 | fully replicate Git's handling.
+     8 | 
+     9 | .. _`gitignore`: https://git-scm.com/docs/gitignore
+    10 | """
+    11 | 
+    12 | from typing import (
+    13 | 	Literal,
+    14 | 	Optional)  # Replaced by `X | None` in 3.10.
+    15 | 
+    16 | from pathspec._typing import (
+    17 | 	AnyStr,  # Removed in 3.18.
+    18 | 	assert_unreachable,
+    19 | 	override)  # Added in 3.12.
+    20 | 
+    21 | from .base import (
+    22 | 	GitIgnorePatternError,
+    23 | 	_BYTES_ENCODING,
+    24 | 	_GitIgnoreBasePattern,
+    25 | 	_PosixClassError,
+    26 | 	_RangeNotationError,
+    27 | 	_TrailingBackslashError,
+    28 | 	_strip_trailing_ws)
+    29 | 
+    30 | _DIR_MARK = 'ps_d'
+    31 | """
+    32 | The regex group name for the directory marker. This is only used by
+    33 | :class:`GitIgnoreSpec`.
+    34 | """
+    35 | 
+    36 | _DIR_MARK_CG = f'(?P<{_DIR_MARK}>/)'
+    37 | """
+    38 | This regular expression matches the directory marker.
+    39 | """
+    40 | 
+    41 | _DIR_MARK_OPT = rf'(?:{_DIR_MARK_CG}|\Z)'
+    42 | """
+    43 | This regular expression matches the optional directory marker and sub-path.
+    44 | """
+    45 | 
+    46 | _MATCH_ALL = f'^(?s:.+/)?[^/]+{_DIR_MARK_OPT}'
+    47 | """
+    48 | This regular expression matches every path. It is the expansion of the patterns
+    49 | "*" and "**" (i.e., "**/{any name}"), and it has to capture the directory marker
+    50 | like any other pattern so that :class:`.GitIgnoreSpec` can tell a directory
+    51 | match from a file match.
+    52 | """
+    53 | 
+    54 | 
+    55 | class GitIgnoreSpecPattern(_GitIgnoreBasePattern):
+    56 | 	"""
+    57 | 	The :class:`GitIgnoreSpecPattern` class represents a compiled gitignore
+    58 | 	pattern with special handling for edge-cases to replicate Git's behavior.
+    59 | 
+    60 | 	This is registered under the deprecated name "gitwildmatch" for backward
+    61 | 	compatibility with v0.12. The registered name will be removed in a future
+    62 | 	version.
+    63 | 	"""
+    64 | 
+    65 | 	# Keep the dict-less class hierarchy.
+    66 | 	__slots__ = ()
+    67 | 
+    68 | 	@staticmethod
+    69 | 	def __normalize_segments(
+    70 | 		is_dir_pattern: bool,
+    71 | 		pattern_segs: list[str],
+    72 | 		requires_dir_descendant: bool,
+    73 | 	) -> tuple[Optional[list[str]], Optional[str]]:
+    74 | 		"""
+    75 | 		Normalize the pattern segments to make processing easier.
+    76 | 
+    77 | 		*is_dir_pattern* (:class:`bool`) is whether the pattern is a directory
+    78 | 		pattern (i.e., ends with a slash '/').
+    79 | 
+    80 | 		*pattern_segs* (:class:`list` of :class:`str`) contains the pattern
+    81 | 		segments. This may be modified in place.
+    82 | 
+    83 | 		*requires_dir_descendant* (:class:`bool`) indicates whether a terminal
+    84 | 		directory globstar must consume a descendant segment before the directory
+    85 | 		marker.
+    86 | 
+    87 | 		Raises :exc:`ValueError` if the pattern normalizes to nothing.
+    88 | 
+    89 | 		Returns a :class:`tuple` containing either:
+    90 | 
+    91 | 		- The normalized segments (:class:`list` of :class:`str`; or :data:`None`).
+    92 | 
+    93 | 		- The regular expression override (:class:`str` or :data:`None`).
+    94 | 		"""
+    95 | 		if not pattern_segs[0]:
+    96 | 			# A pattern beginning with a slash ('/') should match relative to the root
+    97 | 			# directory. Remove the empty first segment to make the pattern relative
+    98 | 			# to root.
+    99 | 			del pattern_segs[0]
+   100 | 
+... [330 more lines; pass offset=101 for next page]

@@ -1,0 +1,111 @@
+   195 | 		if trailing:
+   196 | 			out_string = stripped + '\\ ' * trailing
+   197 | 
+   198 | 		if return_type is bytes:
+   199 | 			out_bytes = out_string.encode(_BYTES_ENCODING)
+   200 | 			return out_bytes  # type: ignore[return-value]
+   201 | 		else:
+   202 | 			return out_string  # type: ignore[return-value]
+   203 | 
+   204 | 	@staticmethod
+   205 | 	def _translate_segment_glob(
+   206 | 		pattern: str,
+   207 | 		errors: Literal['literal', 'raise'],
+   208 | 	) -> str:
+   209 | 		"""
+   210 | 		Translates the glob pattern to a regular expression. This is used in the
+   211 | 		constructor to translate a path segment glob pattern to its corresponding
+   212 | 		regular expression.
+   213 | 
+   214 | 		*pattern* (:class:`str`) is the glob pattern.
+   215 | 
+   216 | 		*errors* (:class:`str`) is how to handle invalid pattern notation in the
+   217 | 		pattern:
+   218 | 
+   219 | 		-	``'literal'``: Invalid notation will be treated as a literal string.
+   220 | 
+   221 | 		-	``'raise'``: Invalid notation will raise an exception.
+   222 | 
+   223 | 		Raises :exc:`._PosixClassError` when an invalid POXIS class is found and
+   224 | 		*errors* is ``'raise'``.
+   225 | 
+   226 | 		Raises :exc:`._RangeNotationError` when an invalid range notation is found
+   227 | 		and *errors* is ``'raise'``.
+   228 | 
+   229 | 		Raises :exc:`._TrailingBackslashError` when a trailing backslash is found at
+   230 | 		the end of the pattern, regardless of the value of *errors*.
+   231 | 
+   232 | 		Returns the regular expression (:class:`str`).
+   233 | 		"""
+   234 | 		# NOTE: This is derived from `fnmatch.translate()` and is similar to the
+   235 | 		# POSIX function `fnmatch()` with the `FNM_PATHNAME` flag set.
+   236 | 
+   237 | 		escape = False
+   238 | 		regex = ''
+   239 | 		i, end = 0, len(pattern)
+   240 | 		while i < end:
+   241 | 			# Get next character.
+   242 | 			char = pattern[i]
+   243 | 			i += 1
+   244 | 
+   245 | 			if escape:
+   246 | 				# Escape the character.
+   247 | 				escape = False
+   248 | 				regex += re.escape(char)
+   249 | 
+   250 | 			elif char == '\\':
+   251 | 				# Escape character, escape next character.
+   252 | 				escape = True
+   253 | 
+   254 | 			elif char == '*':
+   255 | 				# Multi-character wildcard. Match any string (except slashes), including
+   256 | 				# an empty string.
+   257 | 				regex += '[^/]*'
+   258 | 
+   259 | 			elif char == '?':
+   260 | 				# Single-character wildcard. Match any single character (except a
+   261 | 				# slash).
+   262 | 				regex += '[^/]'
+   263 | 
+   264 | 			elif char == '[':
+   265 | 				# Bracket expression (range notation) wildcard. Except for the beginning
+   266 | 				# exclamation mark, the whole bracket expression can be used directly as
+   267 | 				# regex, but we have to find where the expression ends.
+   268 | 				# - "[][!]" matches ']', '[' and '!'.
+   269 | 				# - "[]-]" matches ']' and '-'.
+   270 | 				# - "[!]a-]" matches any character except ']', 'a' and '-'.
+   271 | 				bracket_start = i - 1
+   272 | 				j = i
+   273 | 
+   274 | 				# Pass bracket expression negation.
+   275 | 				if j < end and (pattern[j] == '!' or pattern[j] == '^'):
+   276 | 					j += 1
+   277 | 
+   278 | 				# Pass first closing bracket if it is at the beginning of the
+   279 | 				# expression.
+   280 | 				if j < end and pattern[j] == ']':
+   281 | 					j += 1
+   282 | 
+   283 | 				# Find closing bracket. Stop once we reach the end or find it.
+   284 | 				while j < end and pattern[j] != ']':
+   285 | 					if pattern[j] == '\\':
+   286 | 						# Skip over an escaped character so an escaped closing bracket
+   287 | 						# ("\]") does not end the bracket expression.
+   288 | 						j += 2
+   289 | 					elif pattern[j] == '[' and j + 1 < end and pattern[j + 1] == ':':
+   290 | 						# Skip over a POSIX character class token ("[:name:]") so its
+   291 | 						# internal closing bracket is not mistaken for the end of the whole
+   292 | 						# bracket expression.
+   293 | 						close = pattern.find(':]', j + 2)
+   294 | 						if close == -1:
+   295 | 							j = end
+   296 | 							break
+   297 | 						j = close + 2
+   298 | 					else:
+   299 | 						j += 1
+   300 | 
+   301 | 				if j < end:
+   302 | 					# Found end of bracket expression. Increment j to be one past the
+   303 | 					# closing bracket:
+   304 | 					#
+... [114 more lines; pass offset=305 for next page]

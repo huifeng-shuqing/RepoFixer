@@ -1,0 +1,45 @@
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[!]-]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[!]-]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[!-x]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[!-x]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.spec.GitIgnoreSpecPattern'>, bracket='[!]-]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+_ BracketSlashTest.test_pattern_separator (factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[!]-]', as_bytes=False) _
+
+self = <tests.test_08_gitignore_bracket_slash.BracketSlashTest testMethod=test_pattern_separator>
+
+    def test_pattern_separator(self):
+    	for factory in (GitIgnoreBasicPattern, GitIgnoreSpecPattern, GitWildMatchPattern):
+    		for bracket, matched in (
+    			('[!x]', '.0'),
+    			('[^x]', '.0'),
+    			('[!]-]', '.0'),
+    			('[!-x]', '.0'),
+    			('[.-0]', '.0'),
+    			(r'[\.-\0]', '.0'),
+    			('[!0-9]', '.x'),
+    			('[[:punct:]]', '.!'),
+    			('[[:graph:]]', '.0'),
+    			('[[:print:]]', '. '),
+    			('[[:digit:].]', '.0'),
+    		):
+    			for as_bytes in (False, True):
+    				with self.subTest(factory=factory, bracket=bracket, as_bytes=as_bytes):
+--
+_ BracketSlashTest.test_pattern_separator (factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[!]-]', as_bytes=True) _
+
+self = <tests.test_08_gitignore_bracket_slash.BracketSlashTest testMethod=test_pattern_separator>
+
+    def test_pattern_separator(self):
+    	for factory in (GitIgnoreBasicPattern, GitIgnoreSpecPattern, GitWildMatchPattern):
+    		for bracket, matched in (
+    			('[!x]', '.0'),
+    			('[^x]', '.0'),
+    			('[!]-]', '.0'),
+    			('[!-x]', '.0'),
+    			('[.-0]', '.0'),
+    			(r'[\.-\0]', '.0'),
+    			('[!0-9]', '.x'),
+    			('[[:punct:]]', '.!'),
+    			('[[:graph:]]', '.0'),
+    			('[[:print:]]', '. '),
+    			('[[:digit:].]', '.0'),

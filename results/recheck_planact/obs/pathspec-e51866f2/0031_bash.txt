@@ -1,0 +1,15 @@
+SUBFAILED[p='[a-z]'] tests\test_04_gitignore_spec.py::GitIgnoreSpecPatternIssue93Test::test_c_1_valid
+SUBFAILED[p='a[a-z]'] tests\test_04_gitignore_spec.py::GitIgnoreSpecPatternIssue93Test::test_c_1_valid
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[!]-]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[!]-]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[!-x]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[!-x]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.spec.GitIgnoreSpecPattern'>, bracket='[!]-]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.spec.GitIgnoreSpecPattern'>, bracket='[!]-]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.spec.GitIgnoreSpecPattern'>, bracket='[!-x]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitignore.spec.GitIgnoreSpecPattern'>, bracket='[!-x]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitwildmatch.GitWildMatchPattern'>, bracket='[!]-]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitwildmatch.GitWildMatchPattern'>, bracket='[!]-]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitwildmatch.GitWildMatchPattern'>, bracket='[!-x]', as_bytes=False) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+SUBFAILED(factory=<class 'pathspec.patterns.gitwildmatch.GitWildMatchPattern'>, bracket='[!-x]', as_bytes=True) tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_pattern_separator
+28 failed, 261 passed, 709 skipped, 14 warnings, 1028 subtests passed in 1.87s

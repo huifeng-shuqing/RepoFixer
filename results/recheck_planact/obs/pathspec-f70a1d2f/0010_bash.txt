@@ -1,0 +1,25 @@
+pathspec/_backends/simple/gitignore.py:65:		return self._match(file, check_ancestors=True)
+pathspec/_backends/simple/gitignore.py:67:	def _match(
+pathspec/_backends/simple/gitignore.py:68:		self, file: str, check_ancestors: bool,
+pathspec/_backends/simple/gitignore.py:71:		Implements :meth:`match_file`. *check_ancestors* (:class:`bool`) is
+pathspec/_backends/simple/gitignore.py:72:		whether to ask if an ancestor directory of *file* is excluded; see
+pathspec/_backends/simple/gitignore.py:73:		:meth:`_ancestor_excluded` for why it can be skipped.
+pathspec/_backends/simple/gitignore.py:77:		# Resolve the ancestor directory and the file separately: a file negation
+pathspec/_backends/simple/gitignore.py:78:		# only applies while no ancestor directory is excluded.
+pathspec/_backends/simple/gitignore.py:91:					# A pattern can match both a strict ancestor of the file and the
+pathspec/_backends/simple/gitignore.py:95:					is_ancestor = is_self = False
+pathspec/_backends/simple/gitignore.py:97:					for dir_match in pattern.regex.finditer(file):
+pathspec/_backends/simple/gitignore.py:98:						if dir_match.end(_DIR_MARK) < len(file):
+pathspec/_backends/simple/gitignore.py:99:							is_ancestor = True
+pathspec/_backends/simple/gitignore.py:103:					if is_ancestor and (dir_include is None or not is_reversed):
+pathspec/_backends/simple/gitignore.py:115:		if dir_include and check_ancestors and self._ancestor_excluded(file):
+pathspec/_backends/simple/gitignore.py:120:			# An ancestor matched an exclude pattern, but the spec as a whole
+pathspec/_backends/simple/gitignore.py:121:			# re-includes that ancestor, so the rule does not apply.
+pathspec/_backends/simple/gitignore.py:126:	def _ancestor_excluded(self, file: str) -> bool:
+pathspec/_backends/simple/gitignore.py:128:		Whether any strict ancestor directory of *file* is excluded. Git stops
+pathspec/_backends/simple/gitignore.py:129:		descending at the first excluded directory, so the ancestors are asked
+pathspec/_backends/simple/gitignore.py:131:		By the time an ancestor is asked, every ancestor above it is known not to
+pathspec/_backends/simple/gitignore.py:132:		be excluded, so it is matched without checking its own ancestors again;
+pathspec/_backends/simple/gitignore.py:138:			ancestor_include, _ancestor_index = self._match(
+pathspec/_backends/simple/gitignore.py:139:				file[:index + 1], check_ancestors=False,
+pathspec/_backends/simple/gitignore.py:141:			if ancestor_include:

@@ -1,0 +1,92 @@
+		"""
+		pattern = GitIgnoreBasicPattern(b'*.py')
+		results = set(filter(pattern.match_file, [b'a.py']))
+		self.assertEqual(results, {b'a.py'})
+
+	def test_07_match_bytes_and_bytes_complete(self):
+		"""
+		Test byte string patterns matching byte string paths.
+		"""
+		encoded = bytes(bytearray(range(0, 256)))
+
+		# Forward slashes cannot be escaped with the current implementation.
+		# Remove ASCII 47.
+		fs_ord = ord('/')
+		encoded = encoded[:fs_ord] + encoded[fs_ord+1:]
+
+		escaped = b''.join(b'\\' + encoded[i:i+1] for i in range(len(encoded)))
+
+		pattern = GitIgnoreBasicPattern(escaped)
+		results = set(filter(pattern.match_file, [encoded]))
+		self.assertEqual(results, {encoded})
+
+	def test_07_match_bytes_and_unicode_fail(self):
+		"""
+		Test byte string patterns matching byte string paths.
+		"""
+		pattern = GitIgnoreBasicPattern(b'*.py')
+		with self.assertRaises(TypeError):
+			pattern.match_file('a.py')
+
+	def test_07_match_unicode_and_bytes_fail(self):
+		"""
+		Test unicode patterns with byte paths.
+		"""
+		pattern = GitIgnoreBasicPattern('*.py')
+		with self.assertRaises(TypeError):
+			pattern.match_file(b'a.py')
+
+	def test_07_match_unicode_and_unicode(self):
+		"""
+		Test unicode patterns with unicode paths.
+			("**", "\n"),
+			("*", "\n"),
+		]:
+			with self.subTest(pattern=pattern, path=path):
+				self.assertIsNotNone(GitIgnoreBasicPattern(pattern).match_file(path))
+
+	def test_14_bracket_escape(self):
+		"""
+		Test that a backslash inside a bracket expression escapes the next
+		character.
+		"""
+		for raw_pattern, positives, negatives in [
+			('[a\\-c]', ['a', '-', 'c'], ['b', '\\']),
+			('[\\]]', [']'], ['\\', '\\]']),
+			('[a\\]]', ['a', ']'], ['\\', '\\]']),
+			('[\\!a]', ['!', 'a'], ['\\']),
+			('[\\\\]', ['\\'], ['a']),
+		]:
+			pattern = GitIgnoreBasicPattern(raw_pattern)
+			for path in positives:
+				with self.subTest(f"p={raw_pattern!r} match {path!r}"):
+					self.assertIsNotNone(pattern.match_file(path))
+			for path in negatives:
+				with self.subTest(f"p={raw_pattern!r} no-match {path!r}"):
+					self.assertIsNone(pattern.match_file(path))
+
+
+class GitIgnoreBasicPatternIssue19Test(TestCase):
+	"""
+	The :class:`GitIgnoreBasicPatternIssue19Test` class tests the
+	:class:`.GitIgnoreBasicPattern` implementation for issue #19.
+	"""
+
+	def test_a_directory(self):
+		"""
+		Test a directory discrepancy, scenario A.
+		"""
+		# NOTICE: The results from GitIgnoreBasicPattern will differ from
+		# GitIgnoreSpecPattern.
+		pattern = GitIgnoreBasicPattern('dirG/')
+		results = set(filter(pattern.match_file, [
+			'fileA',
+			'fileB',
+			'dirD/fileE',
+			'dirD/fileF',
+			'dirG/dirH/fileI',
+			'dirG/dirH/fileJ',
+			'dirG/fileO',
+		]))
+		self.assertEqual(results, {
+			'dirG/dirH/fileI',

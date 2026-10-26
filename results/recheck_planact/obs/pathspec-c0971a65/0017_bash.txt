@@ -1,0 +1,68 @@
+
+		# EDGE CASE: Git strips trailing spaces from a pattern unless they are
+		# escaped with a backslash. Escape them so an escaped filename that ends
+		# with a space still matches that file.
+		stripped = out_string.rstrip(' ')
+		trailing = len(out_string) - len(stripped)
+		if trailing:
+			out_string = stripped + '\\ ' * trailing
+
+		if return_type is bytes:
+			out_bytes = out_string.encode(_BYTES_ENCODING)
+			return out_bytes  # type: ignore[return-value]
+		else:
+			return out_string  # type: ignore[return-value]
+
+	@staticmethod
+	def _translate_segment_glob(
+		pattern: str,
+		errors: Literal['literal', 'raise'],
+	) -> str:
+		"""
+		Translates the glob pattern to a regular expression. This is used in the
+		constructor to translate a path segment glob pattern to its corresponding
+		regular expression.
+
+		*pattern* (:class:`str`) is the glob pattern.
+
+		*errors* (:class:`str`) is how to handle invalid pattern notation in the
+		pattern:
+
+		-	``'literal'``: Invalid notation will be treated as a literal string.
+
+		-	``'raise'``: Invalid notation will raise an exception.
+
+		Raises :exc:`._PosixClassError` when an invalid POXIS class is found and
+		*errors* is ``'raise'``.
+
+		Raises :exc:`._RangeNotationError` when an invalid range notation is found
+		and *errors* is ``'raise'``.
+
+		Raises :exc:`._TrailingBackslashError` when a trailing backslash is found at
+							raise
+						else:
+							# Treat the whole bracket expression as a literal.
+							regex += re.escape(pattern[bracket_start:j])
+							i = j
+							continue
+
+					if is_expr_negated:
+						# Negated expressions must also exclude the directory separator.
+						# Preserve literal ']' and '-' when inserting '/' ahead of them.
+						if body.startswith((']', '-')):
+							body = '\\' + body
+						expr += '/'
+
+					expr += body + ']'
+
+					if errors == 'raise':
+						try:
+							re.compile(expr)
+						except re.error as e:  # Renamed to `re.PatternError` in 3.13.
+							raise _RangeNotationError((
+								f"Invalid range notation={pattern[i:j]!r} found in "
+								f"pattern={pattern!r}."
+							)) from e
+
+					# Add regex bracket expression to regex result.
+					regex += expr

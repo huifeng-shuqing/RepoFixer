@@ -1,0 +1,101 @@
+					# Add regex bracket expression to regex result.
+					regex += expr
+
+					# Set i to one past the closing bracket.
+					i = j
+
+				else:
+					# Failed to find closing bracket.
+					if errors == 'raise':
+						# Treat invalid range notation as an error.
+						raise _RangeNotationError((
+							f"Invalid range notation={pattern[i:j]!r} found in {pattern=!r}."
+						))
+					else:
+						# Treat opening bracket as a bracket literal instead of as an
+						# expression.
+						regex += '\\['
+
+			else:
+				# Regular character, escape it for regex.
+				regex += re.escape(char)
+
+		if escape:
+			# Trailing backslash found. According to the gitignore docs, this "is an
+			# invalid pattern that never matches".
+			raise _TrailingBackslashError()
+
+		return regex
+
+
+class GitIgnorePatternError(ValueError):
+	"""
+	The :class:`GitIgnorePatternError` class indicates an invalid gitignore
+	pattern.
+	"""
+	pass
+
+
+class _PosixClassError(GitIgnorePatternError):
+	"""
+	Raised internally when a bracket expression contains an unknown or negated
+	POSIX character class name. Git treats such a pattern as malformed.
+	"""
+	pass
+
+
+class _RangeNotationError(GitIgnorePatternError):
+	"""
+	Raised internally when an invalid range notation was found in a gitignore
+	pattern.
+	"""
+	pass
+
+
+class _TrailingBackslashError(GitIgnorePatternError):
+	"""
+	Raised internally when a trailing backslash is found at the end of a gitignore
+	pattern.
+	"""
+	pass
+
+def _sub_bracket_token(match: re.Match[str]) -> str:
+	"""
+	Translate a single token matched by :data:`_BRACKET_TOKEN_REGEX`. A token can
+	be a range (groups 1 and 2), a backslash escaped character (group 3), or a
+	POSIX bracket character class (groups 4 and 5).
+
+	*match* (:class:`re.Match`) is the match object.
+
+	Returns the replacement string (:class:`str`).
+	"""
+	range_start, range_end, escape_char, class_negated, class_name = match.groups()
+
+	# Character range. A bracket expression cannot match a directory separator.
+	if range_start is not None:
+		range_start, range_end = range_start[-1], range_end[-1]
+		if range_start < '/' < range_end:
+			return re.escape(range_start) + '-.0-' + re.escape(range_end)
+		return re.escape(range_start) + '-' + re.escape(range_end)
+
+	# Backslash escaped character.
+	if escape_char:
+		return re.escape(escape_char)
+
+	# POSIX bracket character class.
+	class_regex = _POSIX_CLASS_TO_REGEX.get(class_name)
+	if class_regex is not None and not class_negated:
+		return class_regex
+
+	raise _PosixClassError((
+		f"Invalid character class={match.group(0)!r} found in pattern="
+		f"{match.string!r}."
+	))  # _PosixClassError
+
+
+class _GitIgnoreBasePattern(RegexPattern):
+	"""
+	.. warning:: This class is not part of the public API. It is subject to
+		change.
+
+	The :class:`_GitIgnoreBasePattern` class is the base implementation for a

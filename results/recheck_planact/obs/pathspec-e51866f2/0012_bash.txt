@@ -1,0 +1,60 @@
+17:_BRACKET_TOKEN_REGEX = re.compile((
+18-	# Escaped character.
+19-	r'\\(.)'
+20-	# POSIX class.
+21-	r'|\[:(\^?)([^:\]]*):\]'
+22-), re.DOTALL)
+23-"""
+24-Matches tokens inside a bracket expression:
+25-
+26-- A backslash escaped character (group 1).
+27-
+28--	Matches a POSIX bracket character class token such as ``[:alpha:]`` inside a
+29-	bracket expression. Group 2 captures a leading caret (unsupported by git);
+30-	group 3 captures the class name.
+31-"""
+32-
+33-_BYTES_ENCODING = 'latin1'
+34-"""
+35-The encoding to use when parsing a byte string pattern.
+36-"""
+37-
+38-_POSIX_CLASS_TO_REGEX: dict[str, str] = {
+39-	# Git's wildmatch implements POSIX bracket character classes using its own
+40-	# ASCII (locale-independent) ``is*`` functions, so each class maps to an
+41-	# explicit ASCII set. These are NOT the Unicode-aware equivalents (``\w``,
+42-	# ``\d``, ``\s``); using those would over-match non-ASCII characters that git
+--
+97:def _sub_bracket_token(match: re.Match[str]) -> str:
+98-	"""
+99:	Translate a single token matched by :data:`_BRACKET_TOKEN_REGEX`. A token can
+100-	be a backslash escaped character (group 1), a POSIX bracket character class
+101-	(groups 2 and 3).
+102-
+103-	*match* (:class:`re.Match`) is the match object.
+104-
+105-	Returns the replacement string (:class:`str`).
+106-	"""
+107-	escape_char, class_negated, class_name = match.groups()
+108-
+109-	# Backslash escaped character.
+110-	if escape_char:
+111-		return re.escape(escape_char)
+112-
+113-	# POSIX bracket character class.
+114-	class_regex = _POSIX_CLASS_TO_REGEX.get(class_name)
+115-	if class_regex is not None and not class_negated:
+116-		return class_regex
+117-
+118-	raise _PosixClassError((
+119-		f"Invalid character class={match.group(0)!r} found in pattern="
+120-		f"{match.string!r}."
+121-	))  # _PosixClassError
+122-
+123-
+124-class _GitIgnoreBasePattern(RegexPattern):
+--
+336:						body = _BRACKET_TOKEN_REGEX.sub(_sub_bracket_token, pattern[i:j])
+337-					except _PosixClassError:
+338-						if errors == 'raise':
+339-							# EDGE CASE: Git discards patterns with an invalid range notation

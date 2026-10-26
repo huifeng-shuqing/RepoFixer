@@ -1,0 +1,40 @@
+. [100%]
+================================== FAILURES ===================================
+_ BracketLiteralTest.test_pattern_literals (factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, line='[[]draft].md', as_bytes=False, errors=None) _
+
+self = <tests.test_10_gitignore_bracket_literals.BracketLiteralTest testMethod=test_pattern_literals>
+
+    def test_pattern_literals(self):
+    	for factory in (GitIgnoreBasicPattern, GitIgnoreSpecPattern, GitWildMatchPattern):
+    		for line, matches, misses in CASES:
+    			for as_bytes in (False, True):
+    				for errors in (None, 'literal', 'null', 'raise'):
+    					with self.subTest(factory=factory, line=line, as_bytes=as_bytes, errors=errors):
+    						re.purge()
+    						with warnings.catch_warnings():
+    							warnings.simplefilter('ignore', DeprecationWarning)
+--
+
+C:\Python314\Lib\re\_parser.py:559: FutureWarning
+_ BracketLiteralTest.test_pattern_literals (factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, line='[[]draft].md', as_bytes=False, errors='literal') _
+
+self = <tests.test_10_gitignore_bracket_literals.BracketLiteralTest testMethod=test_pattern_literals>
+
+    def test_pattern_literals(self):
+    	for factory in (GitIgnoreBasicPattern, GitIgnoreSpecPattern, GitWildMatchPattern):
+    		for line, matches, misses in CASES:
+    			for as_bytes in (False, True):
+    				for errors in (None, 'literal', 'null', 'raise'):
+    					with self.subTest(factory=factory, line=line, as_bytes=as_bytes, errors=errors):
+    						re.purge()
+    						with warnings.catch_warnings():
+    							warnings.simplefilter('ignore', DeprecationWarning)
+--
+
+C:\Python314\Lib\re\_parser.py:559: FutureWarning
+_ BracketLiteralTest.test_pattern_literals (factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, line='[[]draft].md', as_bytes=False, errors='null') _
+
+self = <tests.test_10_gitignore_bracket_literals.BracketLiteralTest testMethod=test_pattern_literals>
+
+    def test_pattern_literals(self):
+    	for factory in (GitIgnoreBasicPattern, GitIgnoreSpecPattern, GitWildMatchPattern):

@@ -1,0 +1,30 @@
+pathspec/patterns/gitignore/base.py:205:	def _translate_segment_glob(
+pathspec/patterns/gitignore/basic.py:370:					out_parts.append(cls._translate_segment_glob(seg, errors))
+pathspec/patterns/gitignore/spec.py:30:_DIR_MARK = 'ps_d'
+pathspec/patterns/gitignore/spec.py:36:_DIR_MARK_CG = f'(?P<{_DIR_MARK}>/)'
+pathspec/patterns/gitignore/spec.py:41:_DIR_MARK_OPT = rf'(?:{_DIR_MARK_CG}|\Z)'
+pathspec/patterns/gitignore/spec.py:46:_MATCH_ALL = f'^(?s:.+/)?[^/]+{_DIR_MARK_OPT}'
+pathspec/patterns/gitignore/spec.py:140:				return (None, _DIR_MARK_CG)
+pathspec/patterns/gitignore/spec.py:165:				return (None, _DIR_MARK_CG)
+pathspec/patterns/gitignore/spec.py:400:						out_parts.append(_DIR_MARK_CG)
+pathspec/patterns/gitignore/spec.py:420:					out_parts.append(cls._translate_segment_glob(seg, errors))
+pathspec/patterns/gitignore/spec.py:426:					out_parts.append(_DIR_MARK_OPT)
+Binary file pathspec/patterns/gitignore/__pycache__/base.cpython-314.pyc matches
+Binary file pathspec/patterns/gitignore/__pycache__/basic.cpython-314.pyc matches
+Binary file pathspec/patterns/gitignore/__pycache__/spec.cpython-314.pyc matches
+pathspec/_backends/hyperscan/gitignore.py:27:	_DIR_MARK_CG,
+pathspec/_backends/hyperscan/gitignore.py:28:	_DIR_MARK_OPT)
+pathspec/_backends/hyperscan/gitignore.py:139:				if _DIR_MARK_CG in regex_str:
+pathspec/_backends/hyperscan/gitignore.py:141:					if regex_str.endswith(_DIR_MARK_OPT):
+pathspec/_backends/hyperscan/gitignore.py:146:						base_regex = regex_str[:-len(_DIR_MARK_OPT)]
+pathspec/_backends/hyperscan/gitignore.py:151:						base_regex = regex_str.replace(_DIR_MARK_CG, '/')
+Binary file pathspec/_backends/hyperscan/__pycache__/gitignore.cpython-314.pyc matches
+pathspec/_backends/re2/gitignore.py:24:	_DIR_MARK_CG,
+pathspec/_backends/re2/gitignore.py:25:	_DIR_MARK_OPT)
+pathspec/_backends/re2/gitignore.py:102:				if _DIR_MARK_CG in regex_str:
+pathspec/_backends/re2/gitignore.py:104:					if regex_str.endswith(_DIR_MARK_OPT):
+pathspec/_backends/re2/gitignore.py:109:						base_regex = regex_str[:-len(_DIR_MARK_OPT)]
+pathspec/_backends/re2/gitignore.py:114:						base_regex = regex_str.replace(_DIR_MARK_CG, '/')
+Binary file pathspec/_backends/re2/__pycache__/gitignore.cpython-314.pyc matches
+pathspec/_backends/simple/gitignore.py:16:	_DIR_MARK)
+pathspec/_backends/simple/gitignore.py:90:				if match.match.groupdict().get(_DIR_MARK):

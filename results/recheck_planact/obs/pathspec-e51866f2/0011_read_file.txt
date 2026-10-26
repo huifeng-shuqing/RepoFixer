@@ -1,0 +1,61 @@
+   339 | 							# EDGE CASE: Git discards patterns with an invalid range notation
+   340 | 							# or an invalid POSIX class.
+   341 | 							raise
+   342 | 						else:
+   343 | 							# Treat the whole bracket expression as a literal.
+   344 | 							regex += re.escape(pattern[bracket_start:j])
+   345 | 							i = j
+   346 | 							continue
+   347 | 
+   348 | 					expr += body
+   349 | 
+   350 | 					if errors == 'raise':
+   351 | 						try:
+   352 | 							re.compile(expr)
+   353 | 						except re.error as e:  # Renamed to `re.PatternError` in 3.13.
+   354 | 							raise _RangeNotationError((
+   355 | 								f"Invalid range notation={pattern[i:j]!r} found in "
+   356 | 								f"pattern={pattern!r}."
+   357 | 							)) from e
+   358 | 
+   359 | 					# Add regex bracket expression to regex result.
+   360 | 					regex += expr
+   361 | 
+   362 | 					# Set i to one past the closing bracket.
+   363 | 					i = j
+   364 | 
+   365 | 				else:
+   366 | 					# Failed to find closing bracket.
+   367 | 					if errors == 'raise':
+   368 | 						# Treat invalid range notation as an error.
+   369 | 						raise _RangeNotationError((
+   370 | 							f"Invalid range notation={pattern[i:j]!r} found in {pattern=!r}."
+   371 | 						))
+   372 | 					else:
+   373 | 						# Treat opening bracket as a bracket literal instead of as an
+   374 | 						# expression.
+   375 | 						regex += '\\['
+   376 | 
+   377 | 			else:
+   378 | 				# Regular character, escape it for regex.
+   379 | 				regex += re.escape(char)
+   380 | 
+   381 | 		if escape:
+   382 | 			# Trailing backslash found. According to the gitignore docs, this "is an
+   383 | 			# invalid pattern that never matches".
+   384 | 			raise _TrailingBackslashError()
+   385 | 
+   386 | 		return regex
+   387 | 
+   388 | 
+   389 | class GitIgnorePatternError(ValueError):
+   390 | 	"""
+   391 | 	The :class:`GitIgnorePatternError` class indicates an invalid gitignore
+   392 | 	pattern.
+   393 | 	"""
+   394 | 	pass
+   395 | 
+   396 | 
+   397 | class _PosixClassError(GitIgnorePatternError):
+   398 | 	"""
+... [20 more lines; pass offset=399 for next page]

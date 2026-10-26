@@ -1,0 +1,64 @@
+     1 | """Test directory negations below an excluded ancestor."""
+     2 | 
+     3 | from unittest import TestCase
+     4 | from unittest.mock import patch
+     5 | 
+     6 | from .test_06_gitignore import GitIgnoreSpecMixin
+     7 | 
+     8 | 
+     9 | class AncestorNegationTest(GitIgnoreSpecMixin, TestCase):
+    10 | 
+    11 | 	def test_excluded_ancestor(self):
+    12 | 		# Expected ignore decisions and pattern indices verified with
+    13 | 		# git check-ignore --no-index (Git 2.52.0.windows.1).
+    14 | 		for lines, paths in (
+    15 | 			(['a/', '!a/b/'], ['a/b/file.txt', 'a/b/c/deep.txt']),
+    16 | 			(['a/', '!a/b/', '!*.txt'], ['a/b/file.txt']),
+    17 | 			(['a/', '!a/b/', '*.txt'], ['a/b/file.txt']),
+    18 | 			(['d/**/', '!d/child/'], ['d/child/grand/deep.txt']),
+    19 | 			(['a/**', '!a/b/**'], ['a/b/file.txt', 'a/b/c/deep.txt']),
+    20 | 			(['a/**', '!*.txt'], ['a/b/file.txt']),
+    21 | 			(['*', '!*.txt'], ['a/top.txt', 'a/b/file.txt']),
+    22 | 		):
+    23 | 			for sub_test in self.parameterize_from_lines(lines):
+    24 | 				with sub_test() as spec:
+    25 | 					results = list(spec.check_files(iter(paths)))
+    26 | 					self.assertEqual(
+    27 | 						[(r.include, r.index) for r in results],
+    28 | 						[(True, 0)] * len(paths),
+    29 | 						(lines, results),
+    30 | 					)
+    31 | 					self.assertEqual(list(spec.match_files(iter(paths))), paths)
+    32 | 					self.assertEqual(list(spec.match_files(iter(paths), negate=True)), [])
+    33 | 
+    34 | 	def test_reincluded_ancestors(self):
+    35 | 		for lines, path in (
+    36 | 			(['a/', '!a/', '!a/b/'], 'a/b/file.txt'),
+    37 | 			(['a/*', '!a/b/'], 'a/b/file.txt'),
+    38 | 			(['d/**/', '!d/child/'], 'd/child/top.txt'),
+    39 | 			(['d/**/', '!d/child/', '!d/child/grand/'], 'd/child/grand/deep.txt'),
+    40 | 			(['!a/b/'], 'a/b/file.txt'),
+    41 | 			(['a/**', '!*.txt'], 'a/top.txt'),
+    42 | 			(['*', '!a/', '!a/**'], 'a/b/file.txt'),
+    43 | 		):
+    44 | 			for sub_test in self.parameterize_from_lines(lines):
+    45 | 				with sub_test() as spec:
+    46 | 					self.assertFalse(spec.match_file(path), (lines, path))
+    47 | 
+    48 | 	def test_ancestors_checked_once(self):
+    49 | 		# Keep the ancestor walk iterative even with many re-included levels.
+    50 | 		path = 'a/' * 40 + 'file.txt'
+    51 | 		for sub_test in self.parameterize_from_lines(['a/', '!a/']):
+    52 | 			with sub_test() as spec:
+    53 | 				backend_type = type(spec._backend)
+    54 | 				original = backend_type._match
+    55 | 				calls = []
+    56 | 
+    57 | 				def counted_match(backend, file, check_ancestors):
+    58 | 					calls.append((file, check_ancestors))
+    59 | 					return original(backend, file, check_ancestors)
+    60 | 
+    61 | 				with patch.object(backend_type, '_match', counted_match):
+    62 | 					self.assertFalse(spec.match_file(path))
+    63 | 				self.assertLessEqual(len(calls), 41)
+    64 | 				self.assertTrue(all(not check for _, check in calls[1:]))
