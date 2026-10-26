@@ -1,0 +1,68 @@
+
+def test_intword_rounding_rollover() -> None:
+    """Values that round up to the next power must carry to the next unit.
+
+    Regression: for magnitudes above ~10**22 the carry was checked in floating
+    point (``rounded_value * power == powers[ordinal + 1]``) and no longer
+    matched the exact integer power, so e.g. ``10**24 - 1`` was rendered as
+    "1000.0 sextillion" instead of "1.0 septillion".
+    """
+    units = [
+        "thousand",
+        "million",
+        "billion",
+        "trillion",
+        "quadrillion",
+        "quintillion",
+        "sextillion",
+        "septillion",
+        "octillion",
+        "nonillion",
+        "decillion",
+    ]
+    # value = 10**e - 1 rounds up to 10**e with "%.1f"/"%.0f", i.e. exactly 1.0
+    # of the unit sitting at 10**e (units[i] where 10**e == powers[i]).
+    for i, exponent in enumerate(range(6, 34, 3), start=1):
+        value = 10**exponent - 1
+        assert humanize.intword(value) == f"1.0 {units[i]}"
+        assert humanize.intword(value, "%.0f") == f"1 {units[i]}"
+
+    # The mantissa must never render at or above 1000 for values below a
+    # decillion; a bare "1000.0" is only expected in the sparse gap between
+    # decillion and googol, which has no dedicated unit.
+    for exponent in range(6, 34, 3):
+        rendered = humanize.intword(10**exponent - 1)
+        mantissa = float(rendered.split(" ", 1)[0])
+        assert mantissa < 1000
+
+    # The documented decillion..googol gap must be left untouched.
+    assert humanize.intword(10**36) == "1000.0 decillion"
+    assert humanize.intword(2 * 10**100) == "2.0 googol"
+
+
+@pytest.mark.parametrize(
+    "test_input, expected",
+    [
+        (0, "zero"),
+        (1, "one"),
+        (2, "two"),
+        (4, "four"),
+        (5, "five"),
+        (9, "nine"),
+---
+
+=================================== ERRORS ====================================
+[31m[1m____________________ ERROR collecting tests/test_number.py ____________________[0m
+[31mImportError while importing test module 'C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\humanize-ca892b36\tests\test_number.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_number.py:10: in <module>
+    import humanize
+E   ModuleNotFoundError: No module named 'humanize'[0m
+[36m[1m=========================== short test summary info ===========================[0m
+[31mERROR[0m tests/test_number.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+[31m[31m[1m1 error[0m[31m in 0.13s[0m[0m

@@ -1,0 +1,68 @@
+     1 | """Test literal regex set operators in gitignore bracket expressions."""
+     2 | 
+     3 | import re
+     4 | import unittest
+     5 | import warnings
+     6 | 
+     7 | from pathspec import GitIgnoreSpec, PathSpec
+     8 | from pathspec.patterns.gitignore.basic import GitIgnoreBasicPattern
+     9 | from pathspec.patterns.gitignore.spec import GitIgnoreSpecPattern
+    10 | from pathspec.patterns.gitwildmatch import GitWildMatchPattern
+    11 | 
+    12 | from .util import require_backend
+    13 | 
+    14 | 
+    15 | CASES = (
+    16 | 	('[[]draft].md', ('[draft].md',), ('draft.md', 'adraft].md')),
+    17 | 	('[a&&b].pdf', ('a.pdf', '&.pdf', 'b.pdf'), ('c.pdf', 'ab.pdf')),
+    18 | 	('[a||b].pdf', ('a.pdf', '|.pdf', 'b.pdf'), ('c.pdf', 'ab.pdf')),
+    19 | 	('[a~~b].pdf', ('a.pdf', '~.pdf', 'b.pdf'), ('c.pdf', 'ab.pdf')),
+    20 | 	('[![]draft].md', ('adraft].md',), ('[draft].md', 'draft.md')),
+    21 | 	('[!a&&b].pdf', ('c.pdf',), ('a.pdf', '&.pdf', 'b.pdf')),
+    22 | 	('[^a||b].pdf', ('c.pdf',), ('a.pdf', '|.pdf', 'b.pdf')),
+    23 | 	('[!a~~b].pdf', ('c.pdf',), ('a.pdf', '~.pdf', 'b.pdf')),
+    24 | 	('[[:digit:]&&a-c].pdf', ('0.pdf', '&.pdf', 'b.pdf'), ('d.pdf', 'x.pdf')),
+    25 | 	(r'[\[\&\|\~].pdf', ('[.pdf', '&.pdf', '|.pdf', '~.pdf'), ('a.pdf',)),
+    26 | 	('[--0].pdf', ('-.pdf', '..pdf', '0.pdf'), ('1.pdf', '/.pdf')),
+    27 | )
+    28 | 
+    29 | 
+    30 | class BracketLiteralTest(unittest.TestCase):
+    31 | 
+    32 | 	def test_pattern_literals(self):
+    33 | 		for factory in (GitIgnoreBasicPattern, GitIgnoreSpecPattern, GitWildMatchPattern):
+    34 | 			for line, matches, misses in CASES:
+    35 | 				for as_bytes in (False, True):
+    36 | 					for errors in (None, 'literal', 'null', 'raise'):
+    37 | 						with self.subTest(factory=factory, line=line, as_bytes=as_bytes, errors=errors):
+    38 | 							re.purge()
+    39 | 							with warnings.catch_warnings():
+    40 | 								warnings.simplefilter('ignore', DeprecationWarning)
+    41 | 								warnings.simplefilter('error', FutureWarning)
+    42 | 								pattern = factory(line.encode() if as_bytes else line, errors=errors)
+    43 | 							for paths, expected in ((matches, True), (misses, False)):
+    44 | 								for path in paths:
+    45 | 									self.assertEqual(
+    46 | 										bool(pattern.match_file(path.encode() if as_bytes else path)),
+    47 | 										expected, path,
+    48 | 									)
+    49 | 
+    50 | 	def test_spec_literals(self):
+    51 | 		for backend in ('simple', 're2', 'hyperscan'):
+    52 | 			with self.subTest(backend=backend):
+    53 | 				require_backend(backend)
+    54 | 				for line, matches, misses in CASES:
+    55 | 					for style in ('gitignore', 'gitwildmatch', None):
+    56 | 						with self.subTest(line=line, style=style):
+    57 | 							re.purge()
+    58 | 							with warnings.catch_warnings():
+    59 | 								warnings.simplefilter('ignore', DeprecationWarning)
+    60 | 								warnings.simplefilter('error', FutureWarning)
+    61 | 								if style is None:
+    62 | 									spec = GitIgnoreSpec.from_lines([line], backend=backend)
+    63 | 								else:
+    64 | 									spec = PathSpec.from_lines(style, [line], backend=backend)
+    65 | 							for prefix in ('', 'docs/'):
+    66 | 								for paths, expected in ((matches, True), (misses, False)):
+    67 | 									for path in paths:
+    68 | 										self.assertEqual(spec.match_file(prefix + path), expected, path)

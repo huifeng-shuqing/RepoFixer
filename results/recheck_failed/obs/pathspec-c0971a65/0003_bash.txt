@@ -1,0 +1,42 @@
+/c/Users/wuqiong/Documents/deepseek-harness/default-workspace/repair-agent/dataset/repos/pathspec-c0971a65
+total 230
+drwxr-xr-x 1 吴琼 197121     0 10月 26 19:01 .
+drwxr-xr-x 1 吴琼 197121     0 10月 23 16:01 ..
+drwxr-xr-x 1 吴琼 197121     0 10月 26 20:17 .git
+drwxr-xr-x 1 吴琼 197121     0 10月 23 16:01 .github
+-rw-r--r-- 1 吴琼 197121   183 10月 23 16:01 .gitignore
+-rw-r--r-- 1 吴琼 197121   216 10月 23 16:01 .readthedocs.yaml
+drwxr-xr-x 1 吴琼 197121     0 10月 26 18:48 .repofixer
+drwxr-xr-x 1 吴琼 197121     0 10月 23 16:01 benchmarks
+-rw-r--r-- 1 吴琼 197121  7139 10月 23 16:01 benchmarks_backends.md
+-rw-r--r-- 1 吴琼 197121 26932 10月 23 16:01 CHANGES.rst
+-rw-r--r-- 1 吴琼 197121 15324 10月 23 16:01 CHANGES_0.in.rst
+-rw-r--r-- 1 吴琼 197121 11572 10月 23 16:01 CHANGES_1.in.rst
+drwxr-xr-x 1 吴琼 197121     0 10月 23 16:01 dev
+-rw-r--r-- 1 吴琼 197121  4508 10月 23 16:01 DEV.md
+drwxr-xr-x 1 吴琼 197121     0 10月 23 16:01 doc
+-rw-r--r-- 1 吴琼 197121  3846 10月 23 16:01 justfile
+-rw-r--r-- 1 吴琼 197121  1074 10月 23 16:01 LICENSE-MIT
+-rw-r--r-- 1 吴琼 197121 17099 10月 23 16:01 LICENSE-MPL-2.0
+-rw-r--r-- 1 吴琼 197121   650 10月 23 16:01 LICENSING.md
+-rw-r--r-- 1 吴琼 197121   283 10月 23 16:01 MANIFEST.in
+drwxr-xr-x 1 吴琼 197121     0 10月 23 17:50 pathspec
+-rw-r--r-- 1 吴琼 197121  4087 10月 23 16:01 prebuild.py
+-rw-r--r-- 1 吴琼 197121  2059 10月 23 16:01 pyproject.in.toml
+-rw-r--r-- 1 吴琼 197121  2106 10月 23 16:01 pyproject.toml
+-rw-r--r-- 1 吴琼 197121  8060 10月 23 16:01 README.rst
+-rw-r--r-- 1 吴琼 197121 14750 10月 23 16:01 README-dist.rst
+-rw-r--r-- 1 吴琼 197121   606 10月 23 16:01 SECURITY.md
+-rw-r--r-- 1 吴琼 197121  1267 10月 23 16:01 setup.cfg
+-rw-r--r-- 1 吴琼 197121   178 10月 23 16:01 setup.py
+-rw-r--r-- 1 吴琼 197121  1566 10月 23 16:01 testpypi_prepublish.py
+drwxr-xr-x 1 吴琼 197121     0 10月 23 17:50 tests
+-rw-r--r-- 1 吴琼 197121  3763 10月 23 16:01 tox.toml
+-rw-r--r-- 1 吴琼 197121   244 10月 23 16:01 tox-ci-constraints.txt
+-rw-r--r-- 1 吴琼 197121  1051 10月 23 16:01 tox-ci-py39.ini
+-rw-r--r-- 1 吴琼 197121  1809 10月 23 16:01 UPGRADING.rst
+8888e72 build: apply test patch + stub _version (source fix removed)
+7c7e7f4 Rename RecursionError to RecursivePathError
+f70175c Rename RecursionError to RecursivePathError
+7fb003d Rename RecursionError to RecursivePathError
+bce9a57 Clean up #165

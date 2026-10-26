@@ -1,0 +1,60 @@
+.. [100%]
+================================== FAILURES ===================================
+_ BracketLiteralTest.test_pattern_literals (factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, line='[[]draft].md', as_bytes=False, errors=None) _
+
+self = <tests.test_10_gitignore_bracket_literals.BracketLiteralTest testMethod=test_pattern_literals>
+
+    def test_pattern_literals(self):
+    	for factory in (GitIgnoreBasicPattern, GitIgnoreSpecPattern, GitWildMatchPattern):
+    		for line, matches, misses in CASES:
+    			for as_bytes in (False, True):
+    				for errors in (None, 'literal', 'null', 'raise'):
+    					with self.subTest(factory=factory, line=line, as_bytes=as_bytes, errors=errors):
+    						re.purge()
+    						with warnings.catch_warnings():
+    							warnings.simplefilter('ignore', DeprecationWarning)
+    							warnings.simplefilter('error', FutureWarning)
+>   							pattern = factory(line.encode() if as_bytes else line, errors=errors)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_10_gitignore_bracket_literals.py:42: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+pathspec\patterns\gitignore\base.py:177: in __init__
+    super().__init__(pattern, include, errors=errors)
+pathspec\pattern.py:136: in __init__
+    regex = re.compile(raw_regex)
+            ^^^^^^^^^^^^^^^^^^^^^
+C:\Python314\Lib\re\__init__.py:289: in compile
+    return _compile(pattern, flags)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python314\Lib\re\__init__.py:350: in _compile
+    p = _compiler.compile(pattern, flags)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python314\Lib\re\_compiler.py:762: in compile
+    p = _parser.parse(p, flags)
+        ^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python314\Lib\re\_parser.py:973: in parse
+    p = _parse_sub(source, state, flags & SRE_FLAG_VERBOSE, 0)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python314\Lib\re\_parser.py:460: in _parse_sub
+    itemsappend(_parse(source, state, verbose, nested + 1,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+source = <re._parser.Tokenizer object at 0x0000021983F63310>
+state = <re._parser.State object at 0x00000219840A5D50>, verbose = 0, nested = 1
+first = True
+
+    def _parse(source, state, verbose, nested, first=False):
+        # parse a simple pattern
+        subpattern = SubPattern(state)
+    
+        # precompute constants into local variables
+        subpatternappend = subpattern.append
+        sourceget = source.get
+        sourcematch = source.match
+        _len = len
+        _ord = ord
+    
+        while True:
+    
+            this = source.next

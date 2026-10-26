@@ -1,0 +1,155 @@
+207:def _html_row_with_attrs(celltag, unsafe, cell_values, colwidths, colaligns):
+217:            for c, a in zip(cell_values, colaligns)
+222:            for c, a in zip(cell_values, colaligns)
+230:def _moin_row_with_attrs(celltag, cell_values, colwidths, colaligns, header=""):
+239:        for c, a in zip(cell_values, colaligns)
+244:def _latex_line_begin_tabular(colwidths, colaligns, booktabs=False, longtable=False):
+246:    tabular_columns_fmt = "".join([alignment.get(a, "l") for a in colaligns])
+260:    def make_header_line(is_header, colwidths, colaligns):
+265:        asciidoc_alignments = zip(colwidths, [alignment[colalign] for colalign in colaligns])
+294:        cell_values, colwidths, colaligns = args
+298:            line = make_header_line(True, colwidths, colaligns) + "\n" + data_line
+305:            "_asciidoc_row() requires two (colwidths, colaligns) "
+306:            "or three (cell_values, colwidths, colaligns) arguments) "
+326:def _latex_row(cell_values, colwidths, colaligns, escrules=LATEX_ESCAPE_RULES):
+356:        lineabove=Line("", "-", "  ", ""),
+357:        linebelowheader=Line("", "-", "  ", ""),
+359:        linebelow=Line("", "-", "  ", ""),
+363:        with_header_hide=["lineabove", "linebelow"],
+366:        lineabove=None,
+367:        linebelowheader=None,
+369:        linebelow=None,
+376:        lineabove=Line("+", "-", "+", "+"),
+377:        linebelowheader=Line("+", "=", "+", "+"),
+379:        linebelow=Line("+", "-", "+", "+"),
+386:        lineabove=Line("┌", "─", "┬", "┐"),
+387:        linebelowheader=Line("├", "─", "┼", "┤"),
+389:        linebelow=Line("└", "─", "┴", "┘"),
+396:        lineabove=Line("╭", "─", "┬", "╮"),
+397:        linebelowheader=Line("├", "─", "┼", "┤"),
+399:        linebelow=Line("╰", "─", "┴", "╯"),
+406:        lineabove=Line("┏", "━", "┳", "┓"),
+407:        linebelowheader=Line("┣", "━", "╋", "┫"),
+409:        linebelow=Line("┗", "━", "┻", "┛"),
+416:        lineabove=Line("┍", "━", "┯", "┑"),
+417:        linebelowheader=Line("┝", "━", "┿", "┥"),
+419:        linebelow=Line("┕", "━", "┷", "┙"),
+426:        lineabove=Line("╔", "═", "╦", "╗"),
+427:        linebelowheader=Line("╠", "═", "╬", "╣"),
+429:        linebelow=Line("╚", "═", "╩", "╝"),
+436:        lineabove=Line("╒", "═", "╤", "╕"),
+437:        linebelowheader=Line("╞", "═", "╪", "╡"),
+439:        linebelow=Line("╘", "═", "╧", "╛"),
+446:        lineabove=Line("+", "-", "+", "+"),
+447:        linebelowheader=_grid_line_with_colons,
+449:        linebelow=Line("+", "-", "+", "+"),
+456:        lineabove=Line("+", "-", "+", "+"),
+457:        linebelowheader=Line("+", "=", "+", "+"),
+459:        linebelow=Line("+", "-", "+", "+"),
+466:        lineabove=Line("┌", "─", "┬", "┐"),
+467:        linebelowheader=Line("├", "─", "┼", "┤"),
+469:        linebelow=Line("└", "─", "┴", "┘"),
+476:        lineabove=Line("╭", "─", "┬", "╮"),
+477:        linebelowheader=Line("├", "─", "┼", "┤"),
+479:        linebelow=Line("╰", "─", "┴", "╯"),
+486:        lineabove=Line("┏", "━", "┳", "┓"),
+487:        linebelowheader=Line("┣", "━", "╋", "┫"),
+489:        linebelow=Line("┗", "━", "┻", "┛"),
+496:        lineabove=Line("┍", "━", "┯", "┑"),
+497:        linebelowheader=Line("┝", "━", "┿", "┥"),
+499:        linebelow=Line("┕", "━", "┷", "┙"),
+506:        lineabove=Line("╔", "═", "╦", "╗"),
+507:        linebelowheader=Line("╠", "═", "╬", "╣"),
+509:        linebelow=Line("╚", "═", "╩", "╝"),
+516:        lineabove=Line("╒", "═", "╤", "╕"),
+517:        linebelowheader=Line("╞", "═", "╪", "╡"),
+519:        linebelow=Line("╘", "═", "╧", "╛"),
+526:        lineabove=Line("|", "-", "|", "|"),
+527:        linebelowheader=Line("|", "-", "|", "|"),
+529:        linebelow=None,
+533:        with_header_hide=["lineabove"],
+536:        lineabove=_pipe_line_with_colons,
+537:        linebelowheader=_pipe_line_with_colons,
+539:        linebelow=None,
+543:        with_header_hide=["lineabove"],
+546:        lineabove=None,
+547:        linebelowheader=Line("|", "-", "+", "|"),
+549:        linebelow=None,
+556:        lineabove=None,
+557:        linebelowheader=None,
+559:        linebelow=None,
+566:        lineabove=None,
+567:        linebelowheader=Line("", "-", "+", ""),
+569:        linebelow=None,
+576:        lineabove=Line("+", "-", "+", "+"),
+577:        linebelowheader=Line("+", "-", "+", "+"),
+579:        linebelow=Line("+", "-", "+", "+"),
+586:        lineabove=Line("+", "-", "+", "+"),
+587:        linebelowheader=Line("|", "-", "+", "|"),
+589:        linebelow=Line("+", "-", "+", "+"),
+596:        lineabove=Line("", "=", "  ", ""),
+597:        linebelowheader=Line("", "=", "  ", ""),
+599:        linebelow=Line("", "=", "  ", ""),
+606:        lineabove=Line(
+612:        linebelowheader=Line("|-", "", "", ""),
+614:        linebelow=Line("|}", "", "", ""),
+621:        lineabove=None,
+622:        linebelowheader=None,
+624:        linebelow=None,
+631:        lineabove=_html_begin_table_without_header,
+632:        linebelowheader="",
+634:        linebelow=Line("</tbody>\n</table>", "", "", ""),
+638:        with_header_hide=["lineabove"],
+641:        lineabove=_html_begin_table_without_header,
+642:        linebelowheader="",
+644:        linebelow=Line("</tbody>\n</table>", "", "", ""),
+648:        with_header_hide=["lineabove"],
+651:        lineabove=_latex_line_begin_tabular,
+652:        linebelowheader=Line("\\hline", "", "", ""),
+654:        linebelow=Line("\\hline\n\\end{tabular}", "", "", ""),
+661:        lineabove=_latex_line_begin_tabular,
+662:        linebelowheader=Line("\\hline", "", "", ""),
+664:        linebelow=Line("\\hline\n\\end{tabular}", "", "", ""),
+671:        lineabove=partial(_latex_line_begin_tabular, booktabs=True),
+672:        linebelowheader=Line("\\midrule", "", "", ""),
+674:        linebelow=Line("\\bottomrule\n\\end{tabular}", "", "", ""),
+681:        lineabove=partial(_latex_line_begin_tabular, longtable=True),
+682:        linebelowheader=Line("\\hline\n\\endhead", "", "", ""),
+684:        linebelow=Line("\\hline\n\\end{longtable}", "", "", ""),
+691:        lineabove=None,
+692:        linebelowheader=None,
+694:        linebelow=None,
+701:        lineabove=None,
+702:        linebelowheader=None,
+704:        linebelow=None,
+711:        lineabove=partial(_asciidoc_row, False),
+712:        linebelowheader=None,
+714:        linebelow=Line("|====", "", "", ""),
+718:        with_header_hide=["lineabove"],
+2521:def _build_row(padded_cells, colwidths, colaligns, rowfmt):
+2526:        return rowfmt(padded_cells, colwidths, colaligns)
+2531:def _append_basic_row(lines, padded_cells, colwidths, colaligns, rowfmt, rowalign=None):
+2533:    lines.append(_build_row(padded_cells, colwidths, colaligns, rowfmt))
+2551:    lines, padded_multiline_cells, padded_widths, colaligns, rowfmt, pad, rowalign=None
+2567:        _append_basic_row(lines, padded_ln, colwidths, colaligns, rowfmt)
+2571:def _build_line(colwidths, colaligns, linefmt):
+2576:        return linefmt(colwidths, colaligns)
+2583:def _append_line(lines, colwidths, colaligns, linefmt):
+2584:    lines.append(_build_line(colwidths, colaligns, linefmt))
+2601:def _format_table(
+2602:    fmt, headers, headersaligns, rows, colwidths, colaligns, is_multiline, rowaligns
+2620:    if fmt.lineabove and "lineabove" not in hidden:
+2621:        _append_line(lines, padded_widths, colaligns, fmt.lineabove)
+2625:        if fmt.linebelowheader and "linebelowheader" not in hidden:
+2626:            _append_line(lines, padded_widths, colaligns, fmt.linebelowheader)
+2636:                    colaligns,
+2640:            _append_line(lines, padded_widths, colaligns, fmt.linebetweenrows)
+2646:            colaligns,
+2653:            or fmt.linebelowheader
+2654:            or fmt.linebelow
+2655:            or fmt.lineabove
+2662:                _append_line(lines, padded_widths, colaligns, separating_line)
+2664:                append_row(lines, pad_row(row, pad), padded_widths, colaligns, fmt.datarow)
+2666:    if fmt.linebelow and "linebelow" not in hidden:
+2667:        _append_line(lines, padded_widths, colaligns, fmt.linebelow)
+2671:        if fmt.lineabove == _html_begin_table_without_header:

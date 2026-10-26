@@ -1,0 +1,57 @@
+__init__.py
+__pycache__
+_utils.py
+agg.py
+hyperscan
+re2
+simple
+pathspec/util.py:304:	*memo* (:class:`dict`) keeps track of ancestor directories encountered. Maps
+pathspec/util.py:305:	each ancestor real path (:class:`str`) to relative path (:class:`str`).
+pathspec/util.py:318:	# Remember each encountered ancestor directory and its canonical (real) path.
+pathspec/util.py:376:	# the ancestors memo once we are done with it. This allows the same directory
+pathspec/util.py:447:	*memo* (:class:`dict`) keeps track of ancestor directories encountered. Maps
+pathspec/util.py:448:	each ancestor real path (:class:`str`) to relative path (:class:`str`).
+pathspec/util.py:461:	# Remember each encountered ancestor directory and its canonical (real) path.
+pathspec/util.py:504:	# the ancestors memo once we are done with it. This allows the same directory
+pathspec/_backends/hyperscan/gitignore.py:145:						# direct match and not an excluded ancestor.
+pathspec/_backends/hyperscan/gitignore.py:217:		return self._match(file, check_ancestors=True)
+pathspec/_backends/hyperscan/gitignore.py:220:		self, file: str, check_ancestors: bool,
+pathspec/_backends/hyperscan/gitignore.py:223:		Implements :meth:`match_file`. *check_ancestors* (:class:`bool`) is
+pathspec/_backends/hyperscan/gitignore.py:224:		whether to ask if an ancestor directory of *file* is excluded; see
+pathspec/_backends/hyperscan/gitignore.py:225:		:meth:`_ancestor_excluded` for why it can be skipped.
+pathspec/_backends/hyperscan/gitignore.py:239:		if dir_include and check_ancestors and self._ancestor_excluded(file):
+pathspec/_backends/hyperscan/gitignore.py:244:			# An ancestor matched an exclude pattern, but the spec as a whole
+pathspec/_backends/hyperscan/gitignore.py:245:			# re-includes that ancestor, so the rule does not apply.
+pathspec/_backends/hyperscan/gitignore.py:252:	def _ancestor_excluded(self, file: str) -> bool:
+pathspec/_backends/hyperscan/gitignore.py:254:		Whether any strict ancestor directory of *file* is excluded. Git stops
+pathspec/_backends/hyperscan/gitignore.py:255:		descending at the first excluded directory, so the ancestors are asked
+pathspec/_backends/hyperscan/gitignore.py:257:		By the time an ancestor is asked, every ancestor above it is known not to
+pathspec/_backends/hyperscan/gitignore.py:258:		be excluded, so it is matched without checking its own ancestors again;
+pathspec/_backends/hyperscan/gitignore.py:264:			ancestor_include, _ancestor_index = self._match(
+pathspec/_backends/hyperscan/gitignore.py:265:				file[:index + 1], check_ancestors=False,
+pathspec/_backends/hyperscan/gitignore.py:267:			if ancestor_include:
+pathspec/_backends/hyperscan/gitignore.py:292:		# Resolve the ancestor directory and the file separately: a file negation
+pathspec/_backends/hyperscan/gitignore.py:293:		# only applies while no ancestor directory is excluded.
+Binary file pathspec/_backends/hyperscan/__pycache__/gitignore.cpython-314.pyc matches
+pathspec/_backends/re2/gitignore.py:108:						# direct match and not an excluded ancestor.
+pathspec/_backends/re2/gitignore.py:159:		return self._match(file, check_ancestors=True)
+pathspec/_backends/re2/gitignore.py:162:		self, file: str, check_ancestors: bool,
+pathspec/_backends/re2/gitignore.py:165:		Implements :meth:`match_file`. *check_ancestors* (:class:`bool`) is
+pathspec/_backends/re2/gitignore.py:166:		whether to ask if an ancestor directory of *file* is excluded; see
+pathspec/_backends/re2/gitignore.py:167:		:meth:`_ancestor_excluded` for why it can be skipped.
+pathspec/_backends/re2/gitignore.py:174:		# Resolve the ancestor directory and the file separately: a file negation
+pathspec/_backends/re2/gitignore.py:175:		# only applies while no ancestor directory is excluded.
+pathspec/_backends/re2/gitignore.py:200:		if dir_include and check_ancestors and self._ancestor_excluded(file):
+pathspec/_backends/re2/gitignore.py:205:			# An ancestor matched an exclude pattern, but the spec as a whole
+pathspec/_backends/re2/gitignore.py:206:			# re-includes that ancestor, so the rule does not apply.
+pathspec/_backends/re2/gitignore.py:211:	def _ancestor_excluded(self, file: str) -> bool:
+pathspec/_backends/re2/gitignore.py:213:		Whether any strict ancestor directory of *file* is excluded. Git stops
+pathspec/_backends/re2/gitignore.py:214:		descending at the first excluded directory, so the ancestors are asked
+pathspec/_backends/re2/gitignore.py:216:		By the time an ancestor is asked, every ancestor above it is known not to
+pathspec/_backends/re2/gitignore.py:217:		be excluded, so it is matched without checking its own ancestors again;
+pathspec/_backends/re2/gitignore.py:223:			ancestor_include, _ancestor_index = self._match(
+pathspec/_backends/re2/gitignore.py:224:				file[:index + 1], check_ancestors=False,
+pathspec/_backends/re2/gitignore.py:226:			if ancestor_include:
+Binary file pathspec/_backends/re2/__pycache__/gitignore.cpython-314.pyc matches
+pathspec/_backends/simple/gitignore.py:65:		return self._match(file, check_ancestors=True)
+pathspec/_backends/simple/gitignore.py:68:		self, file: str, check_ancestors: bool,

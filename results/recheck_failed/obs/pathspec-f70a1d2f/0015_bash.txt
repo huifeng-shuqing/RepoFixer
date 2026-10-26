@@ -1,0 +1,40 @@
+    		(['d/**/', '!d/child/'], ['d/child/grand/deep.txt']),
+    		(['a/**', '!a/b/**'], ['a/b/file.txt', 'a/b/c/deep.txt']),
+    		(['a/**', '!*.txt'], ['a/b/file.txt']),
+    		(['*', '!*.txt'], ['a/top.txt', 'a/b/file.txt']),
+    	):
+    		for sub_test in self.parameterize_from_lines(lines):
+    			with sub_test() as spec:
+    				results = list(spec.check_files(iter(paths)))
+>   				self.assertEqual(
+    					[(r.include, r.index) for r in results],
+    					[(True, 0)] * len(paths),
+    					(lines, results),
+    				)
+E       AssertionError: Lists differ: [(False, 1), (False, 1)] != [(True, 0), (True, 0)]
+E       
+E       First differing element 0:
+E       (False, 1)
+E       (True, 0)
+E       
+E       - [(False, 1), (False, 1)]
+E       + [(True, 0), (True, 0)] : (['*', '!*.txt'], [CheckResult(file='a/top.txt', include=False, index=1), CheckResult(file='a/b/file.txt', include=False, index=1)])
+
+tests\test_09_gitignore_ancestor_negation.py:26: AssertionError
+=========================== short test summary info ===========================
+SUBFAILED[simple (unopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (minopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (unopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (minopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (unopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (minopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (unopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (minopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (unopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (minopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (unopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (minopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (unopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (minopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 14 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+14 failed, 2 passed, 48 skipped, 2 subtests passed in 0.23s

@@ -137,6 +137,13 @@ def run_task(
             _clean_for_verify(repo)
             return env.run(task.verify_command, timeout=timeout, env=verify_env).ok
 
+        def _verify_final(timeout: int, attempts: int = 3) -> bool:
+            """Majority verdict across N clean runs: some tasks' tests are
+            flaky beyond repo-level pollution (system temp state), so a single
+            final run can misjudge a correct fix (boltons-4e5faa3d evidence)."""
+            passes = sum(1 for _ in range(attempts) if _verify(timeout))
+            return passes >= 2
+
         def _attempt() -> EvalResult:
             run = run_agent(
                 task.problem_statement,
@@ -153,7 +160,7 @@ def run_task(
                 snapshot=True,
                 review=True,
             )
-            verify_ok = _verify(min(task.timeout, 180))
+            verify_ok = _verify_final(min(task.timeout, 180))
             try:
                 append_note(
                     repo,

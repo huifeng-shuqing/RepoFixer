@@ -1,0 +1,61 @@
+a/
+!a/b/
+commit c477a8bffdeb5d64f94ddfdbb2b89911fb646ad6
+Author: dataset <dataset@local>
+Date:   Fri Oct 23 16:01:27 2026 +0800
+
+    build: apply test patch + stub _version (source fix removed)
+
+ tests/test_06_gitignore.py                   |  8 ++--
+ tests/test_09_gitignore_ancestor_negation.py | 64 ++++++++++++++++++++++++++++
+ 2 files changed, 67 insertions(+), 5 deletions(-)
+commit c477a8bffdeb5d64f94ddfdbb2b89911fb646ad6
+Author: dataset <dataset@local>
+Date:   Fri Oct 23 16:01:27 2026 +0800
+
+    build: apply test patch + stub _version (source fix removed)
+
+diff --git a/tests/test_06_gitignore.py b/tests/test_06_gitignore.py
+index 1ef4788..523e905 100644
+--- a/tests/test_06_gitignore.py
++++ b/tests/test_06_gitignore.py
+@@ -1139,7 +1139,7 @@ class GitIgnoreSpecIssue137Test(GitIgnoreSpecMixin, TestCase):
+ 
+ 	def test_d(self):
+ 		"""
+-		Document terminal-globstar negation behavior without changing resolution.
++		Test terminal-globstar negation with excluded ancestor directories.
+ 		"""
+ 		for sub_test in self.parameterize_from_lines([
+ 			"d/**/",
+@@ -1153,10 +1153,8 @@ class GitIgnoreSpecIssue137Test(GitIgnoreSpecMixin, TestCase):
+ 				self.assertFalse(spec.match_file("d/child/"))
+ 				self.assertFalse(spec.match_file("d/child/top.txt"))
+ 				self.assertTrue(spec.match_file("d/child/grand/"))
+-				# Existing flat last-match resolution lets the negated directory
+-				# pattern match this descendant too. Git's ancestor-sensitive result
+-				# differs, but changing that separate behavior is outside this fix.
+-				self.assertFalse(spec.match_file("d/child/grand/deep.txt"))
++				# Re-including child does not re-include the excluded grand directory.
++				self.assertTrue(spec.match_file("d/child/grand/deep.txt"))
+ 
+ 		for sub_test in self.parameterize_from_lines(["!d/**/"]):
+ 			with sub_test() as spec:
+diff --git a/tests/test_09_gitignore_ancestor_negation.py b/tests/test_09_gitignore_ancestor_negation.py
+new file mode 100644
+index 0000000..99d03c0
+--- /dev/null
++++ b/tests/test_09_gitignore_ancestor_negation.py
+@@ -0,0 +1,64 @@
++"""Test directory negations below an excluded ancestor."""
++
++from unittest import TestCase
++from unittest.mock import patch
++
++from .test_06_gitignore import GitIgnoreSpecMixin
++
++
++class AncestorNegationTest(GitIgnoreSpecMixin, TestCase):
++
++	def test_excluded_ancestor(self):
++		# Expected ignore decisions and pattern indices verified with

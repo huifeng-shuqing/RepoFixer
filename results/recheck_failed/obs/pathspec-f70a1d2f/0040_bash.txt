@@ -1,0 +1,101 @@
+"""
+This module provides the :module:`hyperscan` backend for :class:`~pathspec.pathspec.PathSpec`.
+
+WARNING: The *pathspec._backends.hyperscan* package is not part of the public
+API. Its contents and structure are likely to change.
+"""
+from __future__ import annotations
+
+from collections.abc import (
+	Sequence)
+from typing import (
+	Any,
+	Callable,  # Replaced by `collections.abc.Callable` in 3.9.2.
+	Optional)  # Replaced by `X | None` in 3.10.
+
+try:
+	import hyperscan
+except ModuleNotFoundError:
+	hyperscan = None  # type: ignore[assignment]
+
+from pathspec.backend import (
+	_Backend)
+from pathspec.pattern import (
+	RegexPattern)
+from pathspec._typing import (
+	override)  # Added in 3.12.
+
+from .._utils import (
+	enumerate_patterns,
+	get_regex_flags,
+	has_unsupported_flags,
+	translate_end_anchor,
+	translate_regex_flags)
+
+from .base import (
+	hyperscan_error)
+from ._base import (
+	HS_FLAGS,
+	HS_VERSION,
+	HS_VERSION_0_9_1,
+	HyperscanExprDat,
+	HyperscanExprDebug,
+	compat_convert_utf8)
+
+
+class HyperscanPsBackend(_Backend):
+	"""
+	The :class:`HyperscanPsBackend` class is the :module:`hyperscan`
+	implementation used by :class:`~pathspec.pathspec.PathSpec` for matching
+	files. The Hyperscan database uses block mode for matching files.
+	"""
+
+	def __init__(
+		self,
+		patterns: Sequence[RegexPattern],
+		*,
+		_debug_exprs: Optional[bool] = None,
+		_test_sort: Optional[Callable[[list], None]] = None,
+	) -> None:
+		"""
+218:	def match_file(self, file: str) -> tuple[Optional[bool], Optional[int]]:
+219-		"""
+220-		Check the file against the patterns.
+221-
+222-		*file* (:class:`str`) is the normalized file path to check.
+223-
+224-		Returns a :class:`tuple` containing whether to include *file* (:class:`bool`
+225-		or :data:`None`), and the index of the last matched pattern (:class:`int` or
+226-		:data:`None`).
+227-		"""
+228-		# NOTICE: According to benchmarking, a method callback is 20% faster than
+229-		# using a closure here.
+230-		db = self._db
+231-		if db is None:
+232-			# Database was not initialized because there were no patterns. Return no
+233-			# match.
+234-			return (None, None)
+235-
+236-		self._out = (None, -1)
+237-		db.scan(file.encode('utf8'), match_event_handler=self.__on_match)
+238-
+239-		out_index: Optional[int]
+240-		out_include, out_index = self._out
+241-		if out_index == -1:
+242-			out_index = None
+243-
+244-		return (out_include, out_index)
+245-
+246-	@staticmethod
+247-	def _make_db() -> hyperscan.Database:  # type: ignore
+248-		"""
+249-		Create the Hyperscan database.
+250-
+251-		Returns the database (:class:`hyperscan.Database`).
+252-		"""
+253-		assert hyperscan is not None, (hyperscan, hyperscan_error)
+254-		return hyperscan.Database(mode=hyperscan.HS_MODE_BLOCK)
+255-
+256-	def __on_match(
+257-		self,
+258-		expr_id: int,

@@ -1,0 +1,80 @@
+            this = source.next
+            if this is None:
+                break # end of pattern
+            if this in "|)":
+                break # end of subpattern
+            sourceget()
+    
+            if verbose:
+                # skip whitespace and comments
+                if this in WHITESPACE:
+                    continue
+                if this == "#":
+                    while True:
+                        this = sourceget()
+                        if this is None or this == "\n":
+                            break
+                    continue
+    
+            if this[0] == "\\":
+                code = _escape(source, this, state)
+                subpatternappend(code)
+    
+            elif this not in SPECIAL_CHARS:
+                subpatternappend((LITERAL, _ord(this)))
+    
+            elif this == "[":
+                here = source.tell() - 1
+                # character set
+                set = []
+                setappend = set.append
+    ##          if sourcematch(":"):
+    ##              pass # handle character classes
+                if source.next == '[':
+                    import warnings
+>                   warnings.warn(
+                        'Possible nested set at position %d' % source.tell(),
+                        FutureWarning, stacklevel=nested + 6
+                    )
+E                   FutureWarning: Possible nested set at position 11
+
+C:\Python314\Lib\re\_parser.py:559: FutureWarning
+_ BracketLiteralTest.test_pattern_literals (factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, line='[[]draft].md', as_bytes=False, errors='literal') _
+
+self = <tests.test_10_gitignore_bracket_literals.BracketLiteralTest testMethod=test_pattern_literals>
+
+    def test_pattern_literals(self):
+    	for factory in (GitIgnoreBasicPattern, GitIgnoreSpecPattern, GitWildMatchPattern):
+    		for line, matches, misses in CASES:
+    			for as_bytes in (False, True):
+    				for errors in (None, 'literal', 'null', 'raise'):
+    					with self.subTest(factory=factory, line=line, as_bytes=as_bytes, errors=errors):
+    						re.purge()
+    						with warnings.catch_warnings():
+    							warnings.simplefilter('ignore', DeprecationWarning)
+    							warnings.simplefilter('error', FutureWarning)
+>   							pattern = factory(line.encode() if as_bytes else line, errors=errors)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_10_gitignore_bracket_literals.py:42: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+pathspec\patterns\gitignore\base.py:177: in __init__
+    super().__init__(pattern, include, errors=errors)
+pathspec\pattern.py:136: in __init__
+    regex = re.compile(raw_regex)
+            ^^^^^^^^^^^^^^^^^^^^^
+C:\Python314\Lib\re\__init__.py:289: in compile
+    return _compile(pattern, flags)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python314\Lib\re\__init__.py:350: in _compile
+    p = _compiler.compile(pattern, flags)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python314\Lib\re\_compiler.py:762: in compile
+    p = _parser.parse(p, flags)
+        ^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python314\Lib\re\_parser.py:973: in parse
+    p = _parse_sub(source, state, flags & SRE_FLAG_VERBOSE, 0)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python314\Lib\re\_parser.py:460: in _parse_sub
+    itemsappend(_parse(source, state, verbose, nested + 1,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _

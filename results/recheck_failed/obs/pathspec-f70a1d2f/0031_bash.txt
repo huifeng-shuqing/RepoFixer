@@ -1,0 +1,119 @@
+"""
+This module provides :class:`GitIgnoreSpecPattern` which implements Git's
+`gitignore`_ patterns, and handles edge-cases where Git's behavior differs from
+what's documented. Git allows including files from excluded directories which
+appears to contradict the documentation. Git discards patterns with invalid
+range notation. This is used by :class:`~pathspec.gitignore.GitIgnoreSpec` to
+fully replicate Git's handling.
+
+.. _`gitignore`: https://git-scm.com/docs/gitignore
+"""
+
+from typing import (
+	Literal,
+	Optional)  # Replaced by `X | None` in 3.10.
+
+from pathspec._typing import (
+	AnyStr,  # Removed in 3.18.
+	assert_unreachable,
+	override)  # Added in 3.12.
+
+from .base import (
+	GitIgnorePatternError,
+	_BYTES_ENCODING,
+	_GitIgnoreBasePattern,
+	_PosixClassError,
+	_RangeNotationError,
+	_TrailingBackslashError,
+	_strip_trailing_ws)
+
+_DIR_MARK = 'ps_d'
+"""
+The regex group name for the directory marker. This is only used by
+:class:`GitIgnoreSpec`.
+"""
+
+_DIR_MARK_CG = f'(?P<{_DIR_MARK}>/)'
+"""
+This regular expression matches the directory marker.
+"""
+
+_DIR_MARK_OPT = rf'(?:{_DIR_MARK_CG}|\Z)'
+"""
+This regular expression matches the optional directory marker and sub-path.
+"""
+
+_MATCH_ALL = f'^(?s:.+/)?[^/]+{_DIR_MARK_OPT}'
+"""
+This regular expression matches every path. It is the expansion of the patterns
+"*" and "**" (i.e., "**/{any name}"), and it has to capture the directory marker
+like any other pattern so that :class:`.GitIgnoreSpec` can tell a directory
+match from a file match.
+"""
+
+
+class GitIgnoreSpecPattern(_GitIgnoreBasePattern):
+	"""
+	The :class:`GitIgnoreSpecPattern` class represents a compiled gitignore
+	pattern with special handling for edge-cases to replicate Git's behavior.
+
+	This is registered under the deprecated name "gitwildmatch" for backward
+	compatibility with v0.12. The registered name will be removed in a future
+	version.
+	"""
+
+	# Keep the dict-less class hierarchy.
+	__slots__ = ()
+
+	@staticmethod
+	def __normalize_segments(
+		is_dir_pattern: bool,
+		pattern_segs: list[str],
+		requires_dir_descendant: bool,
+	) -> tuple[Optional[list[str]], Optional[str]]:
+		"""
+		Normalize the pattern segments to make processing easier.
+
+		*is_dir_pattern* (:class:`bool`) is whether the pattern is a directory
+		pattern (i.e., ends with a slash '/').
+
+		*pattern_segs* (:class:`list` of :class:`str`) contains the pattern
+30:_DIR_MARK = 'ps_d'
+31-"""
+32-The regex group name for the directory marker. This is only used by
+33-:class:`GitIgnoreSpec`.
+--
+36:_DIR_MARK_CG = f'(?P<{_DIR_MARK}>/)'
+37-"""
+38-This regular expression matches the directory marker.
+39-"""
+--
+41:_DIR_MARK_OPT = rf'(?:{_DIR_MARK_CG}|\Z)'
+42-"""
+43-This regular expression matches the optional directory marker and sub-path.
+44-"""
+--
+46:_MATCH_ALL = f'^(?s:.+/)?[^/]+{_DIR_MARK_OPT}'
+47-"""
+48-This regular expression matches every path. It is the expansion of the patterns
+49-"*" and "**" (i.e., "**/{any name}"), and it has to capture the directory marker
+--
+140:				return (None, _DIR_MARK_CG)
+141-			else:
+142-				# The pattern "**" will match every path. Special case this pattern.
+143-				return (None, _MATCH_ALL)
+--
+165:				return (None, _DIR_MARK_CG)
+166-			else:
+167-				return (None, '/')
+168-
+--
+400:						out_parts.append(_DIR_MARK_CG)
+401-					else:
+402-						out_parts.append('/[^/]')
+403-
+--
+426:					out_parts.append(_DIR_MARK_OPT)
+427-
+428-				need_slash = True
+429-

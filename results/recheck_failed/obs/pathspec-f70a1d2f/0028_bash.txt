@@ -1,0 +1,108 @@
+			with sub_test() as spec:
+				# The terminal-descendant rule applies to negated patterns too.
+				for path in ("d/", "d/top.txt"):
+					result = spec.check_file(path)
+					self.assertIsNone(result.include)
+					self.assertIsNone(result.index)
+				for path in (
+					"d/child/",
+					"d/child/file.txt",
+					"d/child/grand/deep.txt",
+				):
+					with self.subTest(negated_pattern_path=path):
+						result = spec.check_file(path)
+						self.assertFalse(result.include)
+						self.assertEqual(result.index, 0)
+
+
+class GitIgnoreSpecIssue139Test(GitIgnoreSpecMixin, TestCase):
+	"""
+	The :class:`GitIgnoreSpecIssue139Test` class tests the :class:`.GitIgnoreSpec`
+	implementation for issue #139.
+	"""
+
+	def test_1(self):
+		"""
+		Test that glob-stars match newlines in names.
+		"""
+		for pattern, path in [
+			("target", "line\nbreak/target"),
+			("*/target", "line\nbreak/target"),
+			("**/target", "line\nbreak/target"),
+			("root/*/target", "root/line\nbreak/target"),
+			("root/**/target", "root/line\nbreak/target"),
+			("*/target", "\n/target"),
+			("**/target", "\n/target"),
+		]:
+			for sub_test in self.parameterize_from_lines([pattern]):
+				with sub_test() as spec:
+					self.assertTrue(spec.match_file(path))
+
+
+class GitIgnoreSpecIssue150Test(GitIgnoreSpecMixin, TestCase):
+	"""
+	The :class:`GitIgnoreSpecIssue150Test` class tests the :class:`.GitIgnoreSpec`
+	implementation for issue #150.
+	"""
+
+	def test_1_stream_lines(self):
+		"""
+		Test handling of trailing tabs, non-breaking spaces, and em-spaces.
+		"""
+		for suffix, ending in itertools.product(
+			('\t', '\xa0', '\u2003'),
+			('\n', '\r\n'),
+		):
+			name = f"foo{suffix}"
+			for sub_test in self.parameterize_from_lines(
+				[name + ending],
+				sub_params=dict(suffix=suffix, ending=ending),
+			):
+				with sub_test() as spec:
+					self.assertTrue(spec.match_file(name))
+					self.assertFalse(spec.match_file('foo'))
+
+	def test_2_negation_and_directories_1(self):
+		"""
+		Test handling of negation and directories.
+		"""
+		for suffix in ('\t', '\xa0', '\u2003'):
+			name = f"foo{suffix}"
+			for sub_test in self.parameterize_from_lines(
+				["*", f"!{name}"],
+				sub_params=dict(suffix=suffix),
+			):
+				with sub_test() as spec:
+					self.assertFalse(spec.match_file(name))
+					self.assertTrue(spec.match_file('foo'))
+
+	def test_2_negation_and_directories_2(self):
+		"""
+		Test handling of negation and directories.
+		"""
+		for suffix in ('\t', '\xa0', '\u2003'):
+			name = f"foo{suffix}"
+			for sub_test in self.parameterize_from_lines(
+				[f"{name}/"],
+				sub_params=dict(suffix=suffix),
+			):
+				with sub_test() as spec:
+					self.assertTrue(spec.match_file(f"{name}/"))
+					self.assertTrue(spec.match_file(f"{name}/child"))
+					self.assertFalse(spec.match_file(name))
+					self.assertFalse(spec.match_file("foo/child"))
+
+	def test_3_character_after_slash(self):
+		"""
+		Test handling of characters after a slash.
+		"""
+		for suffix in ('\t', '\xa0', '\u2003'):
+			name = f"foo/{suffix}"
+			for sub_test in self.parameterize_from_lines(
+				[name],
+				sub_params=dict(suffix=suffix),
+			):
+				with sub_test() as spec:
+					self.assertTrue(spec.match_file(name))
+					self.assertFalse(spec.match_file('foo/'))
+					self.assertFalse(spec.match_file('foo/other'))

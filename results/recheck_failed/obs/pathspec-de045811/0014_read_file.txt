@@ -1,0 +1,47 @@
+   100 | 						else:
+   101 | 							is_self = True
+   102 | 
+   103 | 					if is_ancestor and (dir_include is None or not is_reversed):
+   104 | 						dir_include = include
+   105 | 						dir_index = index
+   106 | 
+   107 | 					if is_self and (file_include is None or not is_reversed):
+   108 | 						file_include = include
+   109 | 						file_index = index
+   110 | 				elif file_include is None or not is_reversed:
+   111 | 					# Pattern matched by a file pattern.
+   112 | 					file_include = include
+   113 | 					file_index = index
+   114 | 
+   115 | 		if dir_include and check_ancestors and self._ancestor_excluded(file):
+   116 | 			return (dir_include, dir_index)
+   117 | 		elif file_include is not None:
+   118 | 			return (file_include, file_index)
+   119 | 		elif dir_include:
+   120 | 			# An ancestor matched an exclude pattern, but the spec as a whole
+   121 | 			# re-includes that ancestor, so the rule does not apply.
+   122 | 			return (None, None)
+   123 | 		else:
+   124 | 			return (dir_include, dir_index)
+   125 | 
+   126 | 	def _ancestor_excluded(self, file: str) -> bool:
+   127 | 		"""
+   128 | 		Whether any strict ancestor directory of *file* is excluded. Git stops
+   129 | 		descending at the first excluded directory, so the ancestors are asked
+   130 | 		outermost first, each as a directory query (trailing slash included).
+   131 | 		By the time an ancestor is asked, every ancestor above it is known not to
+   132 | 		be excluded, so it is matched without checking its own ancestors again;
+   133 | 		otherwise each level re-asks all the levels above it and the work grows
+   134 | 		exponentially with depth.
+   135 | 		"""
+   136 | 		index = file.find('/')
+   137 | 		while index != -1 and index + 1 < len(file):
+   138 | 			ancestor_include, _ancestor_index = self._match(
+   139 | 				file[:index + 1], check_ancestors=False,
+   140 | 			)
+   141 | 			if ancestor_include:
+   142 | 				return True
+   143 | 			index = file.find('/', index + 1)
+   144 | 
+   145 | 		return False
+   146 | 

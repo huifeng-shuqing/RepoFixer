@@ -1,0 +1,105 @@
+
+def _is_separating_line_value(value):
+    return type(value) is str and value.strip() == SEPARATING_LINE
+
+
+def _is_separating_line(row):
+    row_type = type(row)
+    return (row_type is list or row_type is str) and (
+        (len(row) >= 1 and _is_separating_line_value(row[0]))
+        or (len(row) >= 2 and _is_separating_line_value(row[1]))
+    )
+
+
+def _pipe_segment_with_colons(align, colwidth):
+    """Return a segment of a horizontal line with optional colons which
+    indicate column's alignment (as in `pipe` output format)."""
+    w = colwidth
+    if align in ["right", "decimal"]:
+        return ("-" * (w - 1)) + ":"
+    elif align == "center":
+        return ":" + ("-" * (w - 2)) + ":"
+    elif align == "left":
+        return ":" + ("-" * (w - 1))
+    else:
+        return "-" * w
+
+
+def _pipe_line_with_colons(colwidths, colaligns):
+    """Return a horizontal line with optional colons to indicate column's
+    alignment (as in `pipe` output format)."""
+    if not colaligns:  # e.g. printing an empty data frame (github issue #15)
+        colaligns = [""] * len(colwidths)
+    segments = "|".join(_pipe_segment_with_colons(a, w) for a, w in zip(colaligns, colwidths))
+    return f"|{segments}|"
+
+
+def _grid_segment_with_colons(colwidth, align):
+    """Return a segment of a horizontal line with optional colons which indicate
+    column's alignment in a grid table."""
+    width = colwidth
+    if align == "right":
+        return ("=" * (width - 1)) + ":"
+    elif align == "center":
+        return ":" + ("=" * (width - 2)) + ":"
+    elif align == "left":
+        return ":" + ("=" * (width - 1))
+    else:
+        return "=" * width
+
+
+def _grid_line_with_colons(colwidths, colaligns):
+    """Return a horizontal line with optional colons to indicate column's alignment
+    in a grid table."""
+    if not colaligns:
+        colaligns = [""] * len(colwidths)
+    segments = "+".join(_grid_segment_with_colons(w, a) for a, w in zip(colaligns, colwidths))
+    return f"+{segments}+"
+
+
+def _mediawiki_row_with_attrs(separator, cell_values, colwidths, colaligns):
+    alignment = {
+79:#     --- linebelowheader ---
+110:        "linebelowheader",
+357:        linebelowheader=Line("", "-", "  ", ""),
+367:        linebelowheader=None,
+377:        linebelowheader=Line("+", "=", "+", "+"),
+387:        linebelowheader=Line("├", "─", "┼", "┤"),
+397:        linebelowheader=Line("├", "─", "┼", "┤"),
+407:        linebelowheader=Line("┣", "━", "╋", "┫"),
+417:        linebelowheader=Line("┝", "━", "┿", "┥"),
+427:        linebelowheader=Line("╠", "═", "╬", "╣"),
+437:        linebelowheader=Line("╞", "═", "╪", "╡"),
+447:        linebelowheader=_grid_line_with_colons,
+457:        linebelowheader=Line("+", "=", "+", "+"),
+467:        linebelowheader=Line("├", "─", "┼", "┤"),
+477:        linebelowheader=Line("├", "─", "┼", "┤"),
+487:        linebelowheader=Line("┣", "━", "╋", "┫"),
+497:        linebelowheader=Line("┝", "━", "┿", "┥"),
+507:        linebelowheader=Line("╠", "═", "╬", "╣"),
+517:        linebelowheader=Line("╞", "═", "╪", "╡"),
+527:        linebelowheader=Line("|", "-", "|", "|"),
+537:        linebelowheader=_pipe_line_with_colons,
+547:        linebelowheader=Line("|", "-", "+", "|"),
+557:        linebelowheader=None,
+567:        linebelowheader=Line("", "-", "+", ""),
+577:        linebelowheader=Line("+", "-", "+", "+"),
+587:        linebelowheader=Line("|", "-", "+", "|"),
+597:        linebelowheader=Line("", "=", "  ", ""),
+612:        linebelowheader=Line("|-", "", "", ""),
+622:        linebelowheader=None,
+632:        linebelowheader="",
+642:        linebelowheader="",
+652:        linebelowheader=Line("\\hline", "", "", ""),
+662:        linebelowheader=Line("\\hline", "", "", ""),
+672:        linebelowheader=Line("\\midrule", "", "", ""),
+682:        linebelowheader=Line("\\hline\n\\endhead", "", "", ""),
+692:        linebelowheader=None,
+702:        linebelowheader=None,
+712:        linebelowheader=None,
+2571:def _build_line(colwidths, colaligns, linefmt):
+2584:    lines.append(_build_line(colwidths, colaligns, linefmt))
+2601:def _format_table(
+2625:        if fmt.linebelowheader and "linebelowheader" not in hidden:
+2626:            _append_line(lines, padded_widths, colaligns, fmt.linebelowheader)
+2653:            or fmt.linebelowheader

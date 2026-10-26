@@ -1,0 +1,61 @@
+    60 | 
+    61 | class SpooledIOBase(IOBase):
+    62 |     """
+    63 |     A base class shared by the SpooledBytesIO and SpooledStringIO classes.
+    64 | 
+    65 |     The SpooledTemporaryFile class is missing several attributes and methods
+    66 |     present in the StringIO implementation. This brings the api as close to
+    67 |     parity as possible so that classes derived from SpooledIOBase can be used
+    68 |     as near drop-in replacements to save memory.
+    69 |     """
+    70 |     __metaclass__ = ABCMeta
+    71 | 
+    72 |     def __init__(self, max_size=5000000, dir=None):
+    73 |         self._max_size = max_size
+    74 |         self._dir = dir
+    75 | 
+    76 |     def _checkClosed(self, msg=None):
+    77 |         """Raise a ValueError if file is closed"""
+    78 |         if self.closed:
+    79 |             raise ValueError('I/O operation on closed file.'
+    80 |                              if msg is None else msg)
+    81 |     @abstractmethod
+    82 |     def read(self, n=-1):
+    83 |         """Read n characters from the buffer"""
+    84 | 
+    85 |     @abstractmethod
+    86 |     def write(self, s):
+    87 |         """Write into the buffer"""
+    88 | 
+    89 |     @abstractmethod
+    90 |     def seek(self, pos, mode=0):
+    91 |         """Seek to a specific point in a file"""
+    92 | 
+    93 |     @abstractmethod
+    94 |     def readline(self, length=None):
+    95 |         """Returns the next available line"""
+    96 | 
+    97 |     @abstractmethod
+    98 |     def readlines(self, sizehint=0):
+    99 |         """Returns a list of all lines from the current position forward"""
+   100 | 
+   101 |     def writelines(self, lines):
+   102 |         """
+   103 |         Write lines to the file from an interable.
+   104 | 
+   105 |         NOTE: writelines() does NOT add line separators.
+   106 |         """
+   107 |         self._checkClosed()
+   108 |         for line in lines:
+   109 |             self.write(line)
+   110 | 
+   111 |     @abstractmethod
+   112 |     def rollover(self):
+   113 |         """Roll file-like-object over into a real temporary file"""
+   114 | 
+   115 |     @abstractmethod
+   116 |     def tell(self):
+   117 |         """Return the current position"""
+   118 | 
+   119 |     @abstractproperty
+... [468 more lines; pass offset=120 for next page]

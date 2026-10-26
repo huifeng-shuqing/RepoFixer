@@ -1,0 +1,101 @@
+   200 | 
+   201 | 		# EDGE CASE: Git strips trailing spaces from a pattern unless they are
+   202 | 		# escaped with a backslash. Escape them so an escaped filename that ends
+   203 | 		# with a space still matches that file.
+   204 | 		stripped = out_string.rstrip(' ')
+   205 | 		trailing = len(out_string) - len(stripped)
+   206 | 		if trailing:
+   207 | 			out_string = stripped + '\\ ' * trailing
+   208 | 
+   209 | 		if return_type is bytes:
+   210 | 			out_bytes = out_string.encode(_BYTES_ENCODING)
+   211 | 			return out_bytes  # type: ignore[return-value]
+   212 | 		else:
+   213 | 			return out_string  # type: ignore[return-value]
+   214 | 
+   215 | 	@staticmethod
+   216 | 	def _translate_segment_glob(
+   217 | 		pattern: str,
+   218 | 		errors: Literal['literal', 'raise'],
+   219 | 	) -> str:
+   220 | 		"""
+   221 | 		Translates the glob pattern to a regular expression. This is used in the
+   222 | 		constructor to translate a path segment glob pattern to its corresponding
+   223 | 		regular expression.
+   224 | 
+   225 | 		*pattern* (:class:`str`) is the glob pattern.
+   226 | 
+   227 | 		*errors* (:class:`str`) is how to handle invalid pattern notation in the
+   228 | 		pattern:
+   229 | 
+   230 | 		-	``'literal'``: Invalid notation will be treated as a literal string.
+   231 | 
+   232 | 		-	``'raise'``: Invalid notation will raise an exception.
+   233 | 
+   234 | 		Raises :exc:`._PosixClassError` when an invalid POXIS class is found and
+   235 | 		*errors* is ``'raise'``.
+   236 | 
+   237 | 		Raises :exc:`._RangeNotationError` when an invalid range notation is found
+   238 | 		and *errors* is ``'raise'``.
+   239 | 
+   240 | 		Raises :exc:`._TrailingBackslashError` when a trailing backslash is found at
+   241 | 		the end of the pattern, regardless of the value of *errors*.
+   242 | 
+   243 | 		Returns the regular expression (:class:`str`).
+   244 | 		"""
+   245 | 		# NOTE: This is derived from `fnmatch.translate()` and is similar to the
+   246 | 		# POSIX function `fnmatch()` with the `FNM_PATHNAME` flag set.
+   247 | 
+   248 | 		escape = False
+   249 | 		regex = ''
+   250 | 		i, end = 0, len(pattern)
+   251 | 		while i < end:
+   252 | 			# Get next character.
+   253 | 			char = pattern[i]
+   254 | 			i += 1
+   255 | 
+   256 | 			if escape:
+   257 | 				# Escape the character.
+   258 | 				escape = False
+   259 | 				regex += re.escape(char)
+   260 | 
+   261 | 			elif char == '\\':
+   262 | 				# Escape character, escape next character.
+   263 | 				escape = True
+   264 | 
+   265 | 			elif char == '*':
+   266 | 				# Multi-character wildcard. Match any string (except slashes), including
+   267 | 				# an empty string.
+   268 | 				regex += '[^/]*'
+   269 | 
+   270 | 			elif char == '?':
+   271 | 				# Single-character wildcard. Match any single character (except a
+   272 | 				# slash).
+   273 | 				regex += '[^/]'
+   274 | 
+   275 | 			elif char == '[':
+   276 | 				# Bracket expression (range notation) wildcard. Except for the beginning
+   277 | 				# exclamation mark, the whole bracket expression can be used directly as
+   278 | 				# regex, but we have to find where the expression ends.
+   279 | 				# - "[][!]" matches ']', '[' and '!'.
+   280 | 				# - "[]-]" matches ']' and '-'.
+   281 | 				# - "[!]a-]" matches any character except ']', 'a' and '-'.
+   282 | 				bracket_start = i - 1
+   283 | 				j = i
+   284 | 
+   285 | 				# Pass bracket expression negation.
+   286 | 				if j < end and (pattern[j] == '!' or pattern[j] == '^'):
+   287 | 					j += 1
+   288 | 
+   289 | 				# Pass first closing bracket if it is at the beginning of the
+   290 | 				# expression.
+   291 | 				if j < end and pattern[j] == ']':
+   292 | 					j += 1
+   293 | 
+   294 | 				# Find closing bracket. Stop once we reach the end or find it.
+   295 | 				while j < end and pattern[j] != ']':
+   296 | 					if pattern[j] == '\\':
+   297 | 						# Skip over an escaped character so an escaped closing bracket
+   298 | 						# ("\]") does not end the bracket expression.
+   299 | 						j += 2
+... [140 more lines; pass offset=300 for next page]

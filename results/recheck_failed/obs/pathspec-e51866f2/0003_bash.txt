@@ -1,0 +1,42 @@
+/c/Users/wuqiong/Documents/deepseek-harness/default-workspace/repair-agent/dataset/repos/pathspec-e51866f2
+total 230
+drwxr-xr-x 1 吴琼 197121     0 10月 26 20:27 .
+drwxr-xr-x 1 吴琼 197121     0 10月 23 16:01 ..
+drwxr-xr-x 1 吴琼 197121     0 10月 26 20:27 .git
+drwxr-xr-x 1 吴琼 197121     0 10月 23 16:01 .github
+-rw-r--r-- 1 吴琼 197121   183 10月 23 16:01 .gitignore
+-rw-r--r-- 1 吴琼 197121   216 10月 23 16:01 .readthedocs.yaml
+drwxr-xr-x 1 吴琼 197121     0 10月 26 20:27 .repofixer
+drwxr-xr-x 1 吴琼 197121     0 10月 23 16:01 benchmarks
+-rw-r--r-- 1 吴琼 197121  7139 10月 23 16:01 benchmarks_backends.md
+-rw-r--r-- 1 吴琼 197121 26393 10月 23 16:01 CHANGES.rst
+-rw-r--r-- 1 吴琼 197121 15324 10月 23 16:01 CHANGES_0.in.rst
+-rw-r--r-- 1 吴琼 197121 11033 10月 23 16:01 CHANGES_1.in.rst
+drwxr-xr-x 1 吴琼 197121     0 10月 23 16:01 dev
+-rw-r--r-- 1 吴琼 197121  4508 10月 23 16:01 DEV.md
+drwxr-xr-x 1 吴琼 197121     0 10月 23 16:01 doc
+-rw-r--r-- 1 吴琼 197121  3846 10月 23 16:01 justfile
+-rw-r--r-- 1 吴琼 197121  1074 10月 23 16:01 LICENSE-MIT
+-rw-r--r-- 1 吴琼 197121 17099 10月 23 16:01 LICENSE-MPL-2.0
+-rw-r--r-- 1 吴琼 197121   650 10月 23 16:01 LICENSING.md
+-rw-r--r-- 1 吴琼 197121   283 10月 23 16:01 MANIFEST.in
+drwxr-xr-x 1 吴琼 197121     0 10月 23 18:10 pathspec
+-rw-r--r-- 1 吴琼 197121  4087 10月 23 16:01 prebuild.py
+-rw-r--r-- 1 吴琼 197121  2059 10月 23 16:01 pyproject.in.toml
+-rw-r--r-- 1 吴琼 197121  2106 10月 23 16:01 pyproject.toml
+-rw-r--r-- 1 吴琼 197121  8060 10月 23 16:01 README.rst
+-rw-r--r-- 1 吴琼 197121 14750 10月 23 16:01 README-dist.rst
+-rw-r--r-- 1 吴琼 197121   606 10月 23 16:01 SECURITY.md
+-rw-r--r-- 1 吴琼 197121  1267 10月 23 16:01 setup.cfg
+-rw-r--r-- 1 吴琼 197121   178 10月 23 16:01 setup.py
+-rw-r--r-- 1 吴琼 197121  1566 10月 23 16:01 testpypi_prepublish.py
+drwxr-xr-x 1 吴琼 197121     0 10月 23 18:10 tests
+-rw-r--r-- 1 吴琼 197121  3763 10月 23 16:01 tox.toml
+-rw-r--r-- 1 吴琼 197121   244 10月 23 16:01 tox-ci-constraints.txt
+-rw-r--r-- 1 吴琼 197121  1051 10月 23 16:01 tox-ci-py39.ini
+-rw-r--r-- 1 吴琼 197121  1809 10月 23 16:01 UPGRADING.rst
+4f5559a build: apply test patch + stub _version (source fix removed)
+669e796 Update CI and testing versions
+2c2a7eb Update CI and testing versions
+6661d09 Update CI and testing versions
+7eac7a4 Clean up #164

@@ -1,0 +1,61 @@
+   125 |             plural[0].upper() + plural[1:]
+   126 |         ))
+   127 |         PLURALS.insert(0, (
+   128 |             r"%s%s$" % (plural[0].lower(), caseinsensitive(plural[1:])),
+   129 |             plural[0].lower() + plural[1:]
+   130 |         ))
+   131 |         SINGULARS.insert(0, (
+   132 |             r"%s%s$" % (plural[0].upper(), caseinsensitive(plural[1:])),
+   133 |             singular[0].upper() + singular[1:]
+   134 |         ))
+   135 |         SINGULARS.insert(0, (
+   136 |             r"%s%s$" % (plural[0].lower(), caseinsensitive(plural[1:])),
+   137 |             singular[0].lower() + singular[1:]
+   138 |         ))
+   139 | 
+   140 | 
+   141 | def camelize(string, uppercase_first_letter=True):
+   142 |     """
+   143 |     Convert strings to CamelCase.
+   144 | 
+   145 |     Examples::
+   146 | 
+   147 |         >>> camelize("device_type")
+   148 |         "DeviceType"
+   149 |         >>> camelize("device_type", False)
+   150 |         "deviceType"
+   151 | 
+   152 |     :func:`camelize` can be though as a inverse of :func:`underscore`, although
+   153 |     there are some cases where that does not hold::
+   154 | 
+   155 |         >>> camelize(underscore("IOError"))
+   156 |         "IoError"
+   157 | 
+   158 |     :param uppercase_first_letter: if set to `True` :func:`camelize` converts
+   159 |         strings to UpperCamelCase. If set to `False` :func:`camelize` produces
+   160 |         lowerCamelCase. Defaults to `True`.
+   161 |     """
+   162 |     if uppercase_first_letter:
+   163 |         return re.sub(r"(?:^|_)(.)", lambda m: m.group(1).upper(), string)
+   164 |     else:
+   165 |         return string[0].lower() + camelize(string)[1:]
+   166 | 
+   167 | 
+   168 | def dasherize(word):
+   169 |     """Replace underscores with dashes in the string.
+   170 | 
+   171 |     Example::
+   172 | 
+   173 |         >>> dasherize("puni_puni")
+   174 |         "puni-puni"
+   175 | 
+   176 |     """
+   177 |     return word.replace('_', '-')
+   178 | 
+   179 | 
+   180 | def humanize(word):
+   181 |     """
+   182 |     Capitalize the first word and turn underscores into spaces and strip a
+   183 |     trailing ``"_id"``, if any. Like :func:`titleize`, this is meant for
+   184 |     creating pretty output.
+... [239 more lines; pass offset=185 for next page]

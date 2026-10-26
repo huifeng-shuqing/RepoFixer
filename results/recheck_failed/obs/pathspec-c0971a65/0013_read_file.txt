@@ -1,0 +1,101 @@
+   110 | 	"""
+   111 | 	range_start, range_end, escape_char, class_negated, class_name = match.groups()
+   112 | 
+   113 | 	# Character range. A bracket expression cannot match a directory separator.
+   114 | 	if range_start is not None:
+   115 | 		range_start, range_end = range_start[-1], range_end[-1]
+   116 | 		if range_start < '/' < range_end:
+   117 | 			return re.escape(range_start) + '-.0-' + re.escape(range_end)
+   118 | 		return re.escape(range_start) + '-' + re.escape(range_end)
+   119 | 
+   120 | 	# Backslash escaped character.
+   121 | 	if escape_char:
+   122 | 		return re.escape(escape_char)
+   123 | 
+   124 | 	# POSIX bracket character class.
+   125 | 	class_regex = _POSIX_CLASS_TO_REGEX.get(class_name)
+   126 | 	if class_regex is not None and not class_negated:
+   127 | 		return class_regex
+   128 | 
+   129 | 	raise _PosixClassError((
+   130 | 		f"Invalid character class={match.group(0)!r} found in pattern="
+   131 | 		f"{match.string!r}."
+   132 | 	))  # _PosixClassError
+   133 | 
+   134 | 
+   135 | class _GitIgnoreBasePattern(RegexPattern):
+   136 | 	"""
+   137 | 	.. warning:: This class is not part of the public API. It is subject to
+   138 | 		change.
+   139 | 
+   140 | 	The :class:`_GitIgnoreBasePattern` class is the base implementation for a
+   141 | 	compiled gitignore pattern.
+   142 | 	"""
+   143 | 
+   144 | 	# Keep the dict-less class hierarchy.
+   145 | 	__slots__ = ()
+   146 | 
+   147 | 	def __init__(
+   148 | 		self,
+   149 | 		pattern: Union[AnyStr, re.Pattern, None],
+   150 | 		include: Optional[bool] = None,
+   151 | 		*,
+   152 | 		errors: Optional[Literal['literal', 'null', 'raise']] = None,
+   153 | 	) -> None:
+   154 | 		"""
+   155 | 		Initializes the :class:`_GitIgnoreBasePattern` instance.
+   156 | 
+   157 | 		*pattern* (:class:`str`, :class:`bytes`, :class:`re.Pattern`, or
+   158 | 		:data:`None`) is the pattern to compile into a regular expression.
+   159 | 
+   160 | 		*include* (:class:`bool` or :data:`None`) must be :data:`None` unless
+   161 | 		*pattern* is a precompiled regular expression (:class:`re.Pattern`) in which
+   162 | 		case it is whether matched files should be included (:data:`True`), excluded
+   163 | 		(:data:`False`), or is a null operation (:data:`None`).
+   164 | 
+   165 | 		*errors* (:class:`str` :data:`None`) is how to handle invalid notation in
+   166 | 		the pattern. Default is :data:`None` for ``'null'`` because that is the
+   167 | 		behavior of Git.
+   168 | 
+   169 | 		-	``'literal'``: Most invalid notation will be treated as a literal string.
+   170 | 			In cases where the gitignore documentation clearly states the pattern
+   171 | 			should never match, a null-operation will be returned.
+   172 | 
+   173 | 		-	``'null'``: Invalid notation will result in a null-operation.
+   174 | 
+   175 | 		-	``'raise'``: Invalid notation will raise a :exc:`GitIgnorePatternError`.
+   176 | 		"""
+   177 | 		super().__init__(pattern, include, errors=errors)
+   178 | 
+   179 | 	@staticmethod
+   180 | 	def escape(s: AnyStr) -> AnyStr:
+   181 | 		"""
+   182 | 		Escape special characters in the given string.
+   183 | 
+   184 | 		*s* (:class:`str` or :class:`bytes`) a filename or a string that you want to
+   185 | 		escape, usually before adding it to a ".gitignore".
+   186 | 
+   187 | 		Returns the escaped string (:class:`str` or :class:`bytes`).
+   188 | 		"""
+   189 | 		if isinstance(s, str):
+   190 | 			return_type = str
+   191 | 			string = s
+   192 | 		elif isinstance(s, bytes):
+   193 | 			return_type = bytes
+   194 | 			string = s.decode(_BYTES_ENCODING)
+   195 | 		else:
+   196 | 			raise TypeError(f"s:{s!r} is not a unicode or byte string.")
+   197 | 
+   198 | 		# Reference: https://git-scm.com/docs/gitignore#_pattern_format
+   199 | 		out_string = ''.join((f"\\{x}" if x in '\\[]!*#?' else x) for x in string)
+   200 | 
+   201 | 		# EDGE CASE: Git strips trailing spaces from a pattern unless they are
+   202 | 		# escaped with a backslash. Escape them so an escaped filename that ends
+   203 | 		# with a space still matches that file.
+   204 | 		stripped = out_string.rstrip(' ')
+   205 | 		trailing = len(out_string) - len(stripped)
+   206 | 		if trailing:
+   207 | 			out_string = stripped + '\\ ' * trailing
+   208 | 
+   209 | 		if return_type is bytes:
+... [230 more lines; pass offset=210 for next page]

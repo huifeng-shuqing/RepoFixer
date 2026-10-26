@@ -1,0 +1,155 @@
+"""
+This module provides the simple backend for :class:`~pathspec.pathspec.PathSpec`.
+
+WARNING: The *pathspec._backends.simple* package is not part of the public API.
+Its contents and structure are likely to change.
+"""
+
+from collections.abc import (
+	Sequence)
+from typing import (
+	Optional)  # Replaced by `X | None` in 3.10.
+
+from pathspec.backend import (
+	_Backend)
+from pathspec.pattern import (
+	Pattern)
+from pathspec._typing import (
+	override)  # Added in 3.12.
+from pathspec.util import (
+	check_match_file)
+
+from .._utils import (
+	enumerate_patterns)
+
+
+class SimplePsBackend(_Backend):
+	"""
+	The :class:`SimplePsBackend` class is the default (or simple) implementation
+	used by :class:`~pathspec.pathspec.PathSpec` for matching files.
+	"""
+
+	def __init__(
+		self,
+		patterns: Sequence[Pattern],
+		*,
+		no_filter: Optional[bool] = None,
+		no_reverse: Optional[bool] = None,
+	) -> None:
+		"""
+		Initialize the :class:`SimplePsBackend` instance.
+
+		*patterns* (:class:`Sequence` of :class:`.Pattern`) contains the compiled
+		patterns.
+
+		*no_filter* (:class:`bool`) is whether to keep no-op patterns (:data:`True`),
+		or remove them (:data:`False`).
+
+		*no_reverse* (:class:`bool`) is whether to keep the pattern order
+		(:data:`True`), or reverse the order (:data:`True`).
+		"""
+
+		self._is_reversed: bool = not no_reverse
+		"""
+		*_is_reversed* (:class:`bool`) is whether to the pattern order was reversed.
+		"""
+
+		self._patterns: list[tuple[int, Pattern]] = enumerate_patterns(
+			patterns, filter=not no_filter, reverse=not no_reverse,
+		)
+		"""
+		*_patterns* (:class:`list` of :class:`tuple`) contains the enumerated
+		patterns.
+		"""
+
+	@override
+	def match_file(self, file: str) -> tuple[Optional[bool], Optional[int]]:
+		"""
+		Check the file against the patterns.
+
+		*file* (:class:`str`) is the normalized file path to check.
+
+		Returns a :class:`tuple` containing whether to include *file* (:class:`bool`
+		or :data:`None`), and the index of the last matched pattern (:class:`int` or
+		:data:`None`).
+		"""
+		return check_match_file(self._patterns, file, self._is_reversed)
+"""
+This module provides the base definition for patterns.
+"""
+from __future__ import annotations
+
+import re
+from collections.abc import (
+	Iterable,
+	Iterator)
+from dataclasses import (
+	dataclass)
+from typing import (
+	Any,
+	Optional,  # Replaced by `X | None` in 3.10.
+	TypeVar,
+	Union)  # Replaced by `X | Y` in 3.10.
+
+from ._typing import (
+	AnyStr,  # Removed in 3.18.
+	deprecated,  # Added in 3.13.
+	override)  # Added in 3.12.
+
+RegexPatternSelf = TypeVar("RegexPatternSelf", bound='RegexPattern')
+"""
+:class:`.RegexPattern` self type hint to support Python v<3.11 using PEP 673
+recommendation.
+"""
+
+class Pattern(object):
+	"""
+	The :class:`Pattern` class is the abstract definition of a pattern.
+	"""
+
+	# Make the class dict-less.
+	__slots__ = (
+		'include',
+	)
+
+	def __init__(self, include: Optional[bool]) -> None:
+		"""
+		Initializes the :class:`Pattern` instance.
+
+		*include* (:class:`bool` or :data:`None`) is whether the matched files
+		should be included (:data:`True`), excluded (:data:`False`), or is a
+		null-operation (:data:`None`).
+		"""
+
+		self.include = include
+		"""
+		*include* (:class:`bool` or :data:`None`) is whether the matched files
+		should be included (:data:`True`), excluded (:data:`False`), or is a
+		null-operation (:data:`None`).
+		"""
+
+	@deprecated((
+		"Pattern.match() is deprecated. Use Pattern.match_file() with a loop for "
+		"similar results."
+	))
+	def match(self, files: Iterable[str]) -> Iterator[str]:
+		"""
+		.. version-deprecated:: 0.10.0
+			This method is no longer used. Use the :meth:`self.match_file <.Pattern.match_file>`
+			method with a loop for similar results.
+
+		Matches this pattern against the specified files.
+
+		*files* (:class:`~collections.abc.Iterable` of :class:`str`) contains each
+		file relative to the root directory.
+
+		Returns an :class:`~collections.abc.Iterable` yielding each matched file
+		path (:class:`str`).
+		"""
+		for file in files:
+			if self.match_file(file) is not None:
+				yield file
+
+	def match_file(self, file: str) -> Optional[Any]:
+		"""
+		Matches this pattern against the specified file.

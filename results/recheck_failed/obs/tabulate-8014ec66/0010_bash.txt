@@ -1,0 +1,82 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+________ test_simple_headerless_with_sep_line_with_padding_in_tablefmt ________
+
+    def test_simple_headerless_with_sep_line_with_padding_in_tablefmt():
+        "Output: simple without headers with sep line with padding in tablefmt"
+        expected = "\n".join(
+            [
+                "|:-----|---------:|",
+                "| spam |  41.9999 |",
+                "|:-----|---------:|",
+                "| eggs | 451      |",
+            ]
+        )
+        result = tabulate(_test_table_with_sep_line, tablefmt="github")
+>       assert_equal(expected, result)
+
+test\test_output.py:379: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+expected = '|:-----|---------:|\n| spam |  41.9999 |\n|:-----|---------:|\n| eggs | 451      |'
+result = '|------|----------|\n| spam |  41.9999 |\n|------|----------|\n| eggs | 451      |'
+
+    def assert_equal(expected, result):
+        print("Expected:\n%r\n" % expected)
+        print("Got:\n%r\n" % result)
+>       assert expected == result
+               ^^^^^^^^^^^^^^^^^^
+E       AssertionError
+
+test\common.py:10: AssertionError
+---------------------------- Captured stdout call -----------------------------
+Expected:
+'|:-----|---------:|\n| spam |  41.9999 |\n|:-----|---------:|\n| eggs | 451      |'
+
+Got:
+'|------|----------|\n| spam |  41.9999 |\n|------|----------|\n| eggs | 451      |'
+
+=========================== short test summary info ===========================
+FAILED test\test_output.py::test_simple_headerless_with_sep_line_with_padding_in_tablefmt
+1 failed in 0.11s
+            "eggs  451",
+            "----  --------",
+        ]
+    )
+    result = tabulate(_test_table_with_sep_line, tablefmt="simple")
+    assert_equal(expected, result)
+
+
+def test_simple_headerless_with_sep_line_with_padding_in_tablefmt():
+    "Output: simple without headers with sep line with padding in tablefmt"
+    expected = "\n".join(
+        [
+            "|:-----|---------:|",
+            "| spam |  41.9999 |",
+            "|:-----|---------:|",
+            "| eggs | 451      |",
+        ]
+    )
+    result = tabulate(_test_table_with_sep_line, tablefmt="github")
+    assert_equal(expected, result)
+
+
+def test_simple_headerless_with_sep_line_with_linebetweenrows_in_tablefmt():
+    "Output: simple without headers with sep line with linebetweenrows in tablefmt"
+    expected = "\n".join(
+        [
+            "+------+----------+",
+            "| spam |  41.9999 |",
+            "+------+----------+",
+            "+------+----------+",
+            "| eggs | 451      |",
+            "+------+----------+",
+        ]
+    )
+    result = tabulate(_test_table_with_sep_line, tablefmt="grid")
+    assert_equal(expected, result)
+
+
+def test_simple_multiline_headerless():
+    "Output: simple with multiline cells without headers"
+    table = [["foo bar\nbaz\nbau", "hello"], ["", "multiline\nworld"]]

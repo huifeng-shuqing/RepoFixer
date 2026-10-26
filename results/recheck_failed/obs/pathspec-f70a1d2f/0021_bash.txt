@@ -1,0 +1,199 @@
+"""
+This script tests :class:`.GitIgnoreSpec`.
+"""
+
+import itertools
+from collections.abc import (
+	Iterable,
+	Iterator,
+	Sequence)
+from contextlib import (
+	AbstractContextManager,
+	contextmanager)
+from functools import (
+	partial)
+from typing import (
+	Any,
+	Callable,  # Replaced by `collections.abc.Callable` in 3.9.2.
+	Optional,  # Replaced by `X | None` in 3.10.
+	Protocol)
+from unittest import (
+	SkipTest,
+	TestCase)
+
+from pathspec.backend import (
+	BackendNamesHint,
+	_Backend)
+from pathspec._backends.hyperscan.gitignore import (
+	HyperscanGiBackend)
+from pathspec._backends.re2.gitignore import (
+	Re2GiBackend)
+from pathspec._backends.simple.gitignore import (
+	SimpleGiBackend)
+from pathspec.gitignore import (
+	GitIgnoreSpec)
+from pathspec.pattern import (
+	Pattern)
+from pathspec._typing import (
+	AnyStr)  # Removed in 3.18.
+
+from .util import (
+	debug_results,
+	get_includes,
+	require_backend,
+	reverse_inplace,
+	shuffle_inplace)
+
+BACKENDS: list[BackendNamesHint] = [
+	'hyperscan',
+	're2',
+]
+"""
+The backend parameters.
+"""
+
+
+class SubTestContext(Protocol):
+	def __call__(self) -> AbstractContextManager[GitIgnoreSpec]:
+		...
+
+
+class GitIgnoreSpecMixin(object):
+	"""
+	The :class:`GitIgnoreSpecMixin` class provides utility methods used by the
+	tests.
+	"""
+
+	def parameterize_from_lines(
+		self,
+		lines: Iterable[AnyStr],
+		sub_params: Optional[dict[str, Any]] = None,
+	) -> Iterator[SubTestContext]:
+		"""
+		Parameterize `GitIgnoreSpec.from_lines()` for each backend and configuration
+		to begin a subtest.
+
+		*lines* (:class:`Iterable` of :class:`str`) yields the lines.
+
+		*sub_params* (:class:`dict`) contains additional parameters for the
+		subtest.
+
+		Yields each subtest context (:class:`SubTestContext`) for the
+		:class:`GitIgnoreSpec`.
+		"""
+		lines = list(lines)
+
+		if sub_params is None:
+			sub_params = {}
+
+		configs: list[tuple[
+			str, BackendNamesHint, Optional[Callable[[Sequence[Pattern]], _Backend]]
+		]] = []
+
+		# Simple backend, no optimizations.
+		configs.append((
+			"simple (unopt)",
+			'simple',
+			partial(SimpleGiBackend, no_filter=True, no_reverse=True),
+		))
+
+		# Simple backend, minimal optimizations.
+		configs.append((
+			"simple (minopt)",
+			'simple',
+			None,
+		))
+
+		# Add additional backends.
+		for backend in BACKENDS:
+			if backend == 'hyperscan':
+				configs.append((
+					f"hyperscan (forward)",
+					backend,
+					partial(HyperscanGiBackend, _debug_exprs=True),
+				))
+				configs.append((
+					f"hyperscan (reverse)",
+					backend,
+					partial(HyperscanGiBackend, _debug_exprs=True, _test_sort=reverse_inplace)
+				))
+				configs.append((
+					f"hyperscan (shuffle)",
+					backend,
+					partial(HyperscanGiBackend, _debug_exprs=True, _test_sort=shuffle_inplace)
+				))
+			elif backend == 're2':
+				configs.append((
+					f"re2 (forward)",
+					backend,
+					partial(Re2GiBackend, _debug_regex=True),
+				))
+				configs.append((
+					f"re2 (reverse)",
+					backend,
+					partial(Re2GiBackend, _debug_regex=True, _test_sort=reverse_inplace)
+				))
+				configs.append((
+					f"re2 (shuffle)",
+					backend,
+					partial(Re2GiBackend, _debug_regex=True, _test_sort=shuffle_inplace)
+				))
+			else:
+				configs.append((
+					backend,
+					backend,
+					None,
+				))
+
+		for label, backend, backend_factory in configs:
+			try:
+				require_backend(backend)
+			except SkipTest:
+				with self.subTest(label, **sub_params):
+					raise
+				continue
+
+			@contextmanager
+			def _sub_test(
+				_backend=backend,
+				_backend_factory=backend_factory,
+				_label=label,
+			):
+				has_error = False
+				with self.subTest(_label, **sub_params):
+					try:
+						spec = GitIgnoreSpec.from_lines(
+							lines,
+							backend=_backend,
+							_test_backend_factory=_backend_factory,
+						)
+					except Exception:
+						has_error = True
+						raise
+
+					yield spec
+
+				if has_error:
+					raise Exception("Subtest failed.")
+
+			yield _sub_test
+
+
+class GitIgnoreSpecTest(GitIgnoreSpecMixin, TestCase):
+	"""
+	The :class:`GitIgnoreSpecTest` class tests the :class:`.GitIgnoreSpec` class.
+	"""
+
+	def test_01_reversed_args(self):
+		"""
+		Test reversed args for `.from_lines()`.
+		"""
+		spec = GitIgnoreSpec.from_lines('gitignore', ['*.txt'])
+		files = {
+			'a.txt',
+			'b.bin',
+		}
+
+		results = list(spec.check_files(files))
+		ignores = get_includes(results)
+		debug = debug_results(spec, results)

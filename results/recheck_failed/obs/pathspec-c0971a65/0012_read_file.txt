@@ -1,0 +1,101 @@
+    54 | 	'lower': 'a-z',
+    55 | 	'print': '\\x20-\\x2e\\x30-\\x7e',
+    56 | 	'punct': '!-.:-@\\[-`{-~',
+    57 | 	'space': '\\t\\n\\r ',
+    58 | 	'upper': 'A-Z',
+    59 | 	'xdigit': '0-9A-Fa-f',
+    60 | }
+    61 | """
+    62 | Maps each POSIX bracket character class name to ASCII regex ranges, excluding
+    63 | the directory separator as required by git's wildmatch behavior.
+    64 | """
+    65 | 
+    66 | 
+    67 | def _strip_trailing_ws(pattern: str) -> str:
+    68 | 	"""
+    69 | 	Strip trailing spaces and line endings from the pattern while considering
+    70 | 	that they can be escaped. Other whitespace is part of the filename.
+    71 | 
+    72 | 	*pattern* (:class:`str`) is the pattern.
+    73 | 
+    74 | 	Returns the modified pattern (:class:`str`).
+    75 | 	"""
+    76 | 	i = len(pattern) - 1
+    77 | 	if i == -1 or pattern[i] not in ' \r\n':
+    78 | 		# Fast path: pattern does not end with a space or line ending.
+    79 | 		return pattern
+    80 | 
+    81 | 	# Scan past spaces and line endings.
+    82 | 	i -= 1
+    83 | 	while i >= 0 and pattern[i] in ' \r\n':
+    84 | 		i -= 1
+    85 | 
+    86 | 	last_ws = i + 1
+    87 | 
+    88 | 	# Count backslashes.
+    89 | 	while i >= 0 and pattern[i] == '\\':
+    90 | 		i -= 1
+    91 | 
+    92 | 	bs_count = last_ws - i - 1
+    93 | 	if bs_count % 2 == 1:
+    94 | 		# Odd count, first whitespace character is escaped, strip the rest.
+    95 | 		last_ws += 1
+    96 | 
+    97 | 	# Strip trailing whitespace.
+    98 | 	return pattern[:last_ws]
+    99 | 
+   100 | 
+   101 | def _sub_bracket_token(match: re.Match[str]) -> str:
+   102 | 	"""
+   103 | 	Translate a single token matched by :data:`_BRACKET_TOKEN_REGEX`. A token can
+   104 | 	be a range (groups 1 and 2), a backslash escaped character (group 3), or a
+   105 | 	POSIX bracket character class (groups 4 and 5).
+   106 | 
+   107 | 	*match* (:class:`re.Match`) is the match object.
+   108 | 
+   109 | 	Returns the replacement string (:class:`str`).
+   110 | 	"""
+   111 | 	range_start, range_end, escape_char, class_negated, class_name = match.groups()
+   112 | 
+   113 | 	# Character range. A bracket expression cannot match a directory separator.
+   114 | 	if range_start is not None:
+   115 | 		range_start, range_end = range_start[-1], range_end[-1]
+   116 | 		if range_start < '/' < range_end:
+   117 | 			return re.escape(range_start) + '-.0-' + re.escape(range_end)
+   118 | 		return re.escape(range_start) + '-' + re.escape(range_end)
+   119 | 
+   120 | 	# Backslash escaped character.
+   121 | 	if escape_char:
+   122 | 		return re.escape(escape_char)
+   123 | 
+   124 | 	# POSIX bracket character class.
+   125 | 	class_regex = _POSIX_CLASS_TO_REGEX.get(class_name)
+   126 | 	if class_regex is not None and not class_negated:
+   127 | 		return class_regex
+   128 | 
+   129 | 	raise _PosixClassError((
+   130 | 		f"Invalid character class={match.group(0)!r} found in pattern="
+   131 | 		f"{match.string!r}."
+   132 | 	))  # _PosixClassError
+   133 | 
+   134 | 
+   135 | class _GitIgnoreBasePattern(RegexPattern):
+   136 | 	"""
+   137 | 	.. warning:: This class is not part of the public API. It is subject to
+   138 | 		change.
+   139 | 
+   140 | 	The :class:`_GitIgnoreBasePattern` class is the base implementation for a
+   141 | 	compiled gitignore pattern.
+   142 | 	"""
+   143 | 
+   144 | 	# Keep the dict-less class hierarchy.
+   145 | 	__slots__ = ()
+   146 | 
+   147 | 	def __init__(
+   148 | 		self,
+   149 | 		pattern: Union[AnyStr, re.Pattern, None],
+   150 | 		include: Optional[bool] = None,
+   151 | 		*,
+   152 | 		errors: Optional[Literal['literal', 'null', 'raise']] = None,
+   153 | 	) -> None:
+... [286 more lines; pass offset=154 for next page]

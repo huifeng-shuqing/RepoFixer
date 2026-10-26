@@ -1,0 +1,62 @@
+3:--- a/pathspec/_backends/hyperscan/gitignore.py
+4:+++ b/pathspec/_backends/hyperscan/gitignore.py
+9:-		:meth:`_ancestor_excluded` for why it can be skipped.
+10:+		:meth:`_match_ancestor` for why it can be skipped.
+18:-		if dir_include and check_ancestors and self._ancestor_excluded(file):
+19:-			out_include, out_index = dir_include, dir_index
+20:-		elif file_include is not None:
+21:+		if check_ancestors and (dir_include is not None or file_include is not None):
+22:+			# Neither file nor directory negations override an excluded ancestor.
+23:+			# Some patterns (e.g. "a/**") match without a directory marker.
+24:+			ancestor_index = self._match_ancestor(file)
+25:+			if ancestor_index is not None:
+26:+				return (True, ancestor_index)
+27:+
+28:+		if file_include is not None:
+36:-	def _ancestor_excluded(self, file: str) -> bool:
+37:+	def _match_ancestor(self, file: str) -> Optional[int]:
+39:-		Whether any strict ancestor directory of *file* is excluded. Git stops
+40:-		descending at the first excluded directory, so the ancestors are asked
+41:-		outermost first, each as a directory query (trailing slash included).
+42:+		Return the excluding pattern index for a strict ancestor, or :data:`None`.
+43:+		Git stops descending at the first excluded directory, so the ancestors are
+44:+		asked outermost first, each as a directory query (trailing slash included).
+52:-			ancestor_include, _ancestor_index = self._match(
+53:+			ancestor_include, ancestor_index = self._match(
+57:-				return True
+58:+				return ancestor_index
+61:-		return False
+62:+		return None
+68:--- a/pathspec/_backends/re2/gitignore.py
+69:+++ b/pathspec/_backends/re2/gitignore.py
+74:-		:meth:`_ancestor_excluded` for why it can be skipped.
+75:+		:meth:`_match_ancestor` for why it can be skipped.
+83:-		if dir_include and check_ancestors and self._ancestor_excluded(file):
+84:-			return (dir_include, dir_index)
+85:-		elif file_include is not None:
+86:+		if check_ancestors and (dir_include is not None or file_include is not None):
+87:+			# Neither file nor directory negations override an excluded ancestor.
+88:+			# Some patterns (e.g. "a/**") match without a directory marker.
+89:+			ancestor_index = self._match_ancestor(file)
+90:+			if ancestor_index is not None:
+91:+				return (True, ancestor_index)
+92:+
+93:+		if file_include is not None:
+101:-	def _ancestor_excluded(self, file: str) -> bool:
+102:+	def _match_ancestor(self, file: str) -> Optional[int]:
+104:-		Whether any strict ancestor directory of *file* is excluded. Git stops
+105:-		descending at the first excluded directory, so the ancestors are asked
+106:-		outermost first, each as a directory query (trailing slash included).
+107:+		Return the excluding pattern index for a strict ancestor, or :data:`None`.
+108:+		Git stops descending at the first excluded directory, so the ancestors are
+109:+		asked outermost first, each as a directory query (trailing slash included).
+117:-			ancestor_include, _ancestor_index = self._match(
+118:+			ancestor_include, ancestor_index = self._match(
+122:-				return True
+123:+				return ancestor_index
+126:-		return False
+127:+		return None
+
+[stderr]
+warning: in the working copy of 'pathspec/_backends/hyperscan/gitignore.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'pathspec/_backends/re2/gitignore.py', LF will be replaced by CRLF the next time Git touches it

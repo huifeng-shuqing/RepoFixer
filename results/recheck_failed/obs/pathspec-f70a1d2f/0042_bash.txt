@@ -1,0 +1,94 @@
+"""
+This module provides private utility functions for backends.
+
+WARNING: The *pathspec._backends* package is not part of the public API. Its
+contents and structure are likely to change.
+"""
+
+import operator
+import re
+from collections.abc import (
+	Iterable)
+from functools import (
+	reduce)
+from typing import (
+	Union,  # Replaced by `X | Y` in 3.10.
+	TypeVar,
+	overload)
+
+from pathspec.pattern import (
+	Pattern,
+	RegexPattern)
+
+_END_ANCHOR_BYTES = re.compile(rb'\\.', re.DOTALL)
+"""
+Regular expression to match an escaped character.
+"""
+
+_END_ANCHOR_STR = re.compile(r'\\.', re.DOTALL)
+"""
+Regular expression to match an escaped character.
+"""
+
+_ASCII_FLAGS = int(re.ASCII)
+"""
+The compile flags that both engines satisfy by default because their character
+classes and word boundaries are ASCII-only.
+
+`re.ASCII` cannot be relied upon this way when it is combined with
+`re.IGNORECASE`: the engines fold the case of Unicode characters that Python
+would leave alone.
+"""
+
+_NOOP_FLAGS = int(re.UNICODE | re.DEBUG)
+r"""
+The compile flags that need no translation.
+
+-	`re.UNICODE` is implied for str patterns, and both engines match `\w`, `\d`,
+	`\s`, and `\b` as ASCII regardless.
+
+-	`re.DEBUG` only affects how Python compiles the expression.
+"""
+
+_TRANSLATABLE_FLAGS = [
+	(int(re.IGNORECASE), 'i'),
+	(int(re.MULTILINE), 'm'),
+	(int(re.DOTALL), 's'),
+]
+"""
+The compile flags that both RE2 and Hyperscan understand as global inline flags
+at the start of an expression (`(?ims)`).
+
+RE2 rejects `(?x)` (it has no verbose mode), and both engines reject `(?a)`,
+`(?u)`, `(?U)`, and `(?L)`. Note that RE2 reads `(?U)` as *non-greedy*, which
+is not what Python's `re.UNICODE` means.
+"""
+
+_INCOMPATIBLE_FLAGS = ~(
+	_ASCII_FLAGS
+	| _NOOP_FLAGS
+	| reduce(operator.or_, [flag for flag, _letter in _TRANSLATABLE_FLAGS])
+)
+"""
+The compile flags that the Hyperscan and RE2 backends do not support.
+"""
+
+TPattern = TypeVar("TPattern", bound=Pattern)
+
+
+def enumerate_patterns(
+	patterns: Iterable[TPattern],
+79:def enumerate_patterns(
+108:def get_regex_flags(regex: Union[re.Pattern, str, bytes, None]) -> int:
+125:def has_unsupported_flags(patterns: Iterable[Pattern]) -> bool:
+150:def translate_end_anchor(regex: str) -> str:
+155:def translate_end_anchor(regex: bytes) -> bytes:
+160:def translate_end_anchor(regex: Union[str, bytes]) -> Union[str, bytes]:
+164:def translate_end_anchor(regex: Union[str, bytes]) -> Union[str, bytes]:
+180:def _sub_end_anchor_bytes(match: re.Match) -> bytes:
+195:def _sub_end_anchor_str(match: re.Match) -> str:
+210:def supports_regex_flags(flags: int) -> bool:
+228:def translate_regex_flags(regex: str, flags: int) -> str:
+233:def translate_regex_flags(regex: bytes, flags: int) -> bytes:
+238:def translate_regex_flags(regex: Union[str, bytes], flags: int) -> Union[str, bytes]:
+242:def translate_regex_flags(

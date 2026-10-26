@@ -1,0 +1,73 @@
+506            RESUME                   0
+
+541            LOAD_SMALL_INT           0
+               LOAD_CONST               1 (None)
+               IMPORT_NAME              0 (math)
+               STORE_FAST               3 (math)
+
+543            LOAD_FAST_BORROW         3 (math)
+               LOAD_ATTR                3 (isfinite + NULL|self)
+               LOAD_FAST_BORROW         0 (value)
+               CALL                     1
+               TO_BOOL
+               POP_JUMP_IF_TRUE        12 (to L1)
+               NOT_TAKEN
+
+544            LOAD_GLOBAL              5 (_format_not_finite + NULL)
+               LOAD_FAST_BORROW         0 (value)
+               CALL                     1
+               RETURN_VALUE
+
+545    L1:     LOAD_FAST_BORROW         0 (value)
+               LOAD_SMALL_INT           0
+               COMPARE_OP             119 (bool(!=))
+               POP_JUMP_IF_FALSE       42 (to L2)
+               NOT_TAKEN
+               LOAD_FAST_BORROW         3 (math)
+               LOAD_ATTR                7 (floor + NULL|self)
+               LOAD_FAST_BORROW         3 (math)
+               LOAD_ATTR                9 (log10 + NULL|self)
+               LOAD_GLOBAL             11 (abs + NULL)
+               LOAD_FAST_BORROW         0 (value)
+               CALL                     1
+               CALL                     1
+               CALL                     1
+               JUMP_FORWARD             1 (to L3)
+       L2:     LOAD_SMALL_INT           0
+       L3:     STORE_FAST               4 (exponent)
+
+547            LOAD_FAST_BORROW         4 (exponent)
+               LOAD_SMALL_INT          33
+               COMPARE_OP             188 (bool(>=))
+               POP_JUMP_IF_TRUE         8 (to L4)
+               NOT_TAKEN
+               LOAD_FAST_BORROW         4 (exponent)
+               LOAD_CONST               9 (-30)
+               COMPARE_OP              18 (bool(<))
+               POP_JUMP_IF_FALSE       26 (to L5)
+               NOT_TAKEN
+
+548    L4:     LOAD_GLOBAL             13 (scientific + NULL)
+               LOAD_FAST_BORROW_LOAD_FAST_BORROW 2 (value, precision)
+               LOAD_SMALL_INT           1
+               BINARY_OP               10 (-)
+               CALL                     2
+               LOAD_FAST_BORROW         1 (unit)
+               BINARY_OP                0 (+)
+               RETURN_VALUE
+
+550    L5:     LOAD_FAST_BORROW         4 (exponent)
+               LOAD_SMALL_INT           3
+               BINARY_OP                2 (//)
+               LOAD_SMALL_INT           3
+               BINARY_OP                5 (*)
+               STORE_FAST               5 (old_bucket)
+
+551            LOAD_FAST_BORROW         0 (value)
+               LOAD_SMALL_INT          10
+               LOAD_FAST_BORROW         5 (old_bucket)
+               BINARY_OP                8 (**)
+               BINARY_OP               24 (/=)
+               STORE_FAST               0 (value)
+
+552            LOAD_GLOBAL

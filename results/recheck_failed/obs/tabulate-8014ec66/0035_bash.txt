@@ -1,0 +1,60 @@
+415-    "mixed_grid": TableFormat(
+416-        lineabove=Line("┍", "━", "┯", "┑"),
+417-        linebelowheader=Line("┝", "━", "┿", "┥"),
+418-        linebetweenrows=Line("├", "─", "┼", "┤"),
+419-        linebelow=Line("┕", "━", "┷", "┙"),
+420-        headerrow=DataRow("│", "│", "│"),
+421-        datarow=DataRow("│", "│", "│"),
+422-        padding=1,
+423-        with_header_hide=None,
+424-    ),
+425-    "double_grid": TableFormat(
+426-        lineabove=Line("╔", "═", "╦", "╗"),
+427-        linebelowheader=Line("╠", "═", "╬", "╣"),
+428-        linebetweenrows=Line("╠", "═", "╬", "╣"),
+429-        linebelow=Line("╚", "═", "╩", "╝"),
+430-        headerrow=DataRow("║", "║", "║"),
+431-        datarow=DataRow("║", "║", "║"),
+432-        padding=1,
+433-        with_header_hide=None,
+434-    ),
+435-    "fancy_grid": TableFormat(
+436-        lineabove=Line("╒", "═", "╤", "╕"),
+437-        linebelowheader=Line("╞", "═", "╪", "╡"),
+438-        linebetweenrows=Line("├", "─", "┼", "┤"),
+439-        linebelow=Line("╘", "═", "╧", "╛"),
+440-        headerrow=DataRow("│", "│", "│"),
+441-        datarow=DataRow("│", "│", "│"),
+442-        padding=1,
+443-        with_header_hide=None,
+444-    ),
+445:    "colon_grid": TableFormat(
+--
+708-        with_header_hide=None,
+709-    ),
+710-    "asciidoc": TableFormat(
+711-        lineabove=partial(_asciidoc_row, False),
+712-        linebelowheader=None,
+713-        linebetweenrows=None,
+714-        linebelow=Line("|====", "", "", ""),
+715-        headerrow=partial(_asciidoc_row, True),
+716-        datarow=partial(_asciidoc_row, False),
+717-        padding=1,
+718-        with_header_hide=["lineabove"],
+719-    ),
+720-}
+721-
+722-
+723-tabulate_formats = sorted(_table_formats.keys())
+724-
+725-# The table formats for which multiline cells will be folded into subsequent
+726-# table rows. The key is the original format specified at the API. The value is
+727-# the format that will be used to represent the original format.
+728-multiline_formats = {
+729-    "plain": "plain",
+730-    "simple": "simple",
+731-    "grid": "grid",
+732-    "simple_grid": "simple_grid",
+733-    "rounded_grid": "rounded_grid",
+734-    "heavy_grid": "heavy_grid",
+735-    "mixed_grid": "mixed_grid",

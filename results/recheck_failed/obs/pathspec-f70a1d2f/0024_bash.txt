@@ -1,0 +1,301 @@
+				}
+
+				results = list(spec.check_files(files))
+				ignores = get_includes(results)
+				debug = debug_results(spec, results)
+
+				self.assertEqual(ignores, {
+					'test1/a.txt',
+					'test1/b.bin',
+					'test1/c/c.txt',
+					'test2/b.bin',
+				}, debug)
+				self.assertEqual(files - ignores, {
+					'test2/a.txt',
+					'test2/c/c.txt',
+				}, debug)
+
+
+class GitIgnoreSpecIssue81Test(GitIgnoreSpecMixin, TestCase):
+	"""
+	The :class:`GitIgnoreSpecIssue81Test` class tests the :class:`.GitIgnoreSpec`
+	implementation for issue #81.
+	"""
+
+	def test_a(self):
+		"""
+		Test issue 81 whitelist, scenario A.
+		"""
+		for sub_test in self.parameterize_from_lines([
+			"*",
+			"!libfoo",
+			"!libfoo/**",
+		]):
+			with sub_test() as spec:
+				# Confirmed results with git (v2.42.0).
+				files = {
+					"ignore.txt",          # 1:*
+					"libfoo/__init__.py",  # 3:!libfoo/**
+				}
+
+				results = list(spec.check_files(files))
+				ignores = get_includes(results)
+				debug = debug_results(spec, results)
+
+				self.assertEqual(ignores, {
+					"ignore.txt",
+				}, debug)
+				self.assertEqual(files - ignores, {
+					"libfoo/__init__.py",
+				}, debug)
+
+	def test_b(self):
+		"""
+		Test issue 81 whitelist, scenario B.
+		"""
+		for sub_test in self.parameterize_from_lines([
+			"*",
+			"!libfoo",
+			"!libfoo/*",
+		]):
+			with sub_test() as spec:
+				# Confirmed results with git (v2.42.0).
+				files = {
+					"ignore.txt",          # 1:*
+					"libfoo/__init__.py",  # 3:!libfoo/*
+				}
+
+				results = list(spec.check_files(files))
+				ignores = get_includes(results)
+				debug = debug_results(spec, results)
+
+				self.assertEqual(ignores, {
+					"ignore.txt",
+				}, debug)
+				self.assertEqual(files - ignores, {
+					"libfoo/__init__.py",
+				}, debug)
+
+	def test_c(self):
+		"""
+		Test issue 81 whitelist, scenario C.
+		"""
+		for sub_test in self.parameterize_from_lines([
+			"*",
+			"!libfoo",
+			"!libfoo/",
+		]):
+			with sub_test() as spec:
+				# Confirmed results with git (v2.42.0).
+				files = {
+					"ignore.txt",          # 1:*
+					"libfoo/__init__.py",  # 1:*
+				}
+				results = list(spec.check_files(files))
+				ignores = get_includes(results)
+				debug = debug_results(spec, results)
+				self.assertEqual(ignores, {
+					"ignore.txt",
+					"libfoo/__init__.py",
+				}, debug)
+				self.assertEqual(files - ignores, set())
+
+
+class GitIgnoreSpecIssue100Test(GitIgnoreSpecMixin, TestCase):
+	"""
+	The :class:`GitIgnoreSpecIssue100Test` class tests the :class:`.GitIgnoreSpec`
+	implementation for issue #100.
+	"""
+
+	def test_1(self):
+		"""
+		Test an empty list of patterns.
+		"""
+		for sub_test in self.parameterize_from_lines([]):
+			with sub_test() as spec:
+				files = {'foo'}
+				results = list(spec.check_files(files))
+				includes = get_includes(results)
+				debug = debug_results(spec, results)
+				self.assertEqual(includes, set(), debug)
+
+
+class GitIgnoreSpecIssue129Test(GitIgnoreSpecMixin, TestCase):
+	"""
+	The :class:`GitIgnoreSpecIssue129Test` class tests the :class:`.GitIgnoreSpec`
+	implementation for issue #129.
+	"""
+
+	def test_a1(self):
+		"""
+		Test issue 129, a file negation under an excluded directory.
+		"""
+		for sub_test in self.parameterize_from_lines([
+			"build",
+			"!keep.log",
+		]):
+			with sub_test() as spec:
+				# Confirmed results with git (v2.55.0).
+				files = {
+					"build/keep.log",  # 1:build
+					"keep.log",        # 2:!keep.log
+				}
+				results = list(spec.check_files(files))
+				ignores = get_includes(results)
+				debug = debug_results(spec, results)
+				self.assertEqual(ignores, {
+					"build/keep.log",
+				}, debug)
+				self.assertEqual(files - ignores, {
+					"keep.log",
+				}, debug)
+
+	def test_a2(self):
+		"""
+		Test issue 129, a file negation under an excluded directory.
+		"""
+		for sub_test in self.parameterize_from_lines([
+			"build/*",
+			"!keep.log",
+		]):
+			with sub_test() as spec:
+				# Confirmed results with git (v2.55.0).
+				files = {
+					"build/keep.log",  # 2:!keep.log
+					"keep.log",        # 2:!keep.log
+				}
+				results = list(spec.check_files(files))
+				ignores = get_includes(results)
+				debug = debug_results(spec, results)
+				self.assertEqual(ignores, set(), debug)
+				self.assertEqual(files - ignores, {
+					"build/keep.log",
+					"keep.log",
+				}, debug)
+
+	def test_a3(self):
+		"""
+		Test issue 129, a file negation under an excluded directory.
+		"""
+		for sub_test in self.parameterize_from_lines([
+			"build/**",
+			"!keep.log",
+		]):
+			with sub_test() as spec:
+				# Confirmed results with git (v2.55.0).
+				files = {
+					"build/keep.log",  # 2:!keep.log
+					"keep.log",        # 2:!keep.log
+				}
+				results = list(spec.check_files(files))
+				ignores = get_includes(results)
+				debug = debug_results(spec, results)
+				self.assertEqual(ignores, set(), debug)
+				self.assertEqual(files - ignores, {
+					"build/keep.log",
+					"keep.log",
+				}, debug)
+
+	def test_b(self):
+		"""
+		Test issue 129, a file negation naming the excluded directory, and a
+		grandparent.
+		"""
+		for sub_test in self.parameterize_from_lines([
+			"build",
+			"!build/keep.log",
+			"a",
+			"!a/b/keep.log",
+		]):
+			with sub_test() as spec:
+				# Confirmed results with git (v2.54.0).
+				files = {
+					"build/keep.log",  # 1:build
+					"a/b/keep.log",    # 3:a
+				}
+				results = list(spec.check_files(files))
+				ignores = get_includes(results)
+				debug = debug_results(spec, results)
+				self.assertEqual(ignores, files, debug)
+
+	def test_c1(self):
+		"""
+		Test issue 129, re-inclusion that must keep working: the directory itself is
+		not excluded, or its exclusion is undone before the file negation.
+		"""
+		for sub_test in self.parameterize_from_lines([
+			"build/*",
+			"!build/keep.log",
+			"log",
+			"!log/",
+			"!log/keep.log",
+		]):
+			with sub_test() as spec:
+				# Confirmed results with git (v2.55.0).
+				files = {
+					"build/keep.log",  # 2:!build/keep.log
+					"build/drop.log",  # 1:build/*
+					"log/keep.log",    # 5:!log/keep.log
+				}
+				results = list(spec.check_files(files))
+				ignores = get_includes(results)
+				debug = debug_results(spec, results)
+				self.assertEqual(ignores, {
+					"build/drop.log",
+				}, debug)
+				self.assertEqual(files - ignores, {
+					"build/keep.log",
+					"log/keep.log",
+				}, debug)
+
+	def test_c2(self):
+		"""
+		Test issue 129, re-inclusion that must keep working: the directory itself is
+		not excluded, or its exclusion is undone before the file negation.
+		"""
+		for sub_test in self.parameterize_from_lines([
+			"build/**",
+			"!build/keep.log",
+			"log",
+			"!log/",
+			"!log/keep.log",
+		]):
+			with sub_test() as spec:
+				# Confirmed results with git (v2.55.0).
+				files = {
+					"build/keep.log",  # 2:!build/keep.log
+					"build/drop.log",  # 1:build/**
+					"log/keep.log",    # 5:!log/keep.log
+				}
+				results = list(spec.check_files(files))
+				ignores = get_includes(results)
+				debug = debug_results(spec, results)
+				self.assertEqual(ignores, {
+					"build/drop.log",
+				}, debug)
+				self.assertEqual(files - ignores, {
+					"build/keep.log",
+					"log/keep.log",
+				}, debug)
+
+
+class GitIgnoreSpecIssue134Test(GitIgnoreSpecMixin, TestCase):
+	"""
+	The :class:`GitIgnoreSpecIssue134Test` class tests the :class:`.GitIgnoreSpec`
+	implementation for issue #134.
+	"""
+
+	def test_1(self):
+		"""
+		Test a forward and reverse evaluation discrepancy.
+		"""
+		for sub_test in self.parameterize_from_lines([
+			"!**/node_modules/**",
+			"/node_modules",
+		]):
+			with sub_test() as spec:
+				# Confirmed results with git (v2.55.0).
+				files = {
+					"node_modules",           # 2:/node_modules
+					"node_modules/",          # 2:/node_modules
+					"node_modules/leaf.txt",  # 2:/node_modules

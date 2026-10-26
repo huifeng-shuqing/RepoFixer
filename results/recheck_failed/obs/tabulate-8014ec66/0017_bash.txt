@@ -1,0 +1,112 @@
+        textwrap.TextWrapper.__init__(self, *args, **kwargs)
+
+    @staticmethod
+    def _len(item):
+        """Custom len that gets console column width for wide
+        and non-wide characters as well as ignores color codes"""
+        stripped = _strip_ansi(item)
+        if wcwidth:
+            return wcwidth.wcswidth(stripped)
+        else:
+            return len(stripped)
+
+    def _update_lines(self, lines, new_line):
+        """Adds a new line to the list of lines the text is being wrapped into
+        This function will also track any ANSI color codes in this string as well
+        as add any colors from previous lines order to preserve the same formatting
+        as a single unwrapped string.
+        """
+        code_matches = [x for x in _ansi_codes.finditer(new_line)]
+        color_codes = [code.string[code.span()[0] : code.span()[1]] for code in code_matches]
+
+        # Add color codes from earlier in the unwrapped line, and then track any new ones we add.
+        new_line = "".join(self._active_codes) + new_line
+
+        for code in color_codes:
+            if code != _ansi_color_reset_code:
+                self._active_codes.append(code)
+            else:  # A single reset code resets everything
+                self._active_codes = []
+
+        # Always ensure each line is color terminated if any colors are
+def _build_simple_row(padded_cells, rowfmt):
+    "Format row according to DataRow format without padding."
+    begin, sep, end = rowfmt
+    return (begin + sep.join(padded_cells) + end).rstrip()
+
+
+def _build_row(padded_cells, colwidths, colaligns, rowfmt):
+    "Return a string which represents a row of data cells."
+    if not rowfmt:
+        return None
+    if callable(rowfmt):
+        return rowfmt(padded_cells, colwidths, colaligns)
+    else:
+        return _build_simple_row(padded_cells, rowfmt)
+
+
+def _append_basic_row(lines, padded_cells, colwidths, colaligns, rowfmt, rowalign=None):
+    # NOTE: rowalign is ignored and exists for api compatibility with _append_multiline_row
+    lines.append(_build_row(padded_cells, colwidths, colaligns, rowfmt))
+    return lines
+
+
+def _align_cell_veritically(text_lines, num_lines, column_width, row_alignment):
+    delta_lines = num_lines - len(text_lines)
+    blank = [" " * column_width]
+    if row_alignment == "bottom":
+        return blank * delta_lines + text_lines
+    elif row_alignment == "center":
+        top_delta = delta_lines // 2
+        bottom_delta = delta_lines - top_delta
+        return top_delta * blank + text_lines + bottom_delta * blank
+    else:
+        return text_lines + blank * delta_lines
+
+
+def _append_multiline_row(
+    lines, padded_multiline_cells, padded_widths, colaligns, rowfmt, pad, rowalign=None
+):
+    colwidths = [w - 2 * pad for w in padded_widths]
+    cells_lines = [c.splitlines() for c in padded_multiline_cells]
+    nlines = max(map(len, cells_lines))  # number of lines in the row
+    # vertically pad cells where some lines are missing
+    # cells_lines = [
+    #     (cl + [" " * w] * (nlines - len(cl))) for cl, w in zip(cells_lines, colwidths)
+    # ]
+
+    cells_lines = [
+        _align_cell_veritically(cl, nlines, w, rowalign) for cl, w in zip(cells_lines, colwidths)
+    ]
+    lines_cells = [[cl[i] for cl in cells_lines] for i in range(nlines)]
+    for ln in lines_cells:
+        padded_ln = _pad_row(ln, pad)
+        _append_basic_row(lines, padded_ln, colwidths, colaligns, rowfmt)
+    return lines
+
+
+def _build_line(colwidths, colaligns, linefmt):
+    "Return a string which represents a horizontal line."
+    if not linefmt:
+        return None
+    if callable(linefmt):
+        return linefmt(colwidths, colaligns)
+    else:
+        begin, fill, sep, end = linefmt
+        cells = [fill * w for w in colwidths]
+        return _build_simple_row(cells, (begin, sep, end))
+
+
+def _append_line(lines, colwidths, colaligns, linefmt):
+    lines.append(_build_line(colwidths, colaligns, linefmt))
+    return lines
+
+
+class JupyterHTMLStr(str):
+    """Wrap the string with a _repr_html_ method so that Jupyter
+    displays the HTML table"""
+
+    def _repr_html_(self):
+        return self
+
+    @property

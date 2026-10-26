@@ -1,0 +1,86 @@
+	def test_c_1_valid(self):
+		"""
+		Test patterns with valid range notation.
+		"""
+		for raw_pattern, regex in [
+			('[!a-z]', f'^(?s:.+/)?[^/a-z]{_DIR_OPT}'),
+			('[^a-z]', f'^(?s:.+/)?[^/a-z]{_DIR_OPT}'),
+			('[a-z]', f'^(?s:.+/)?[a-z]{_DIR_OPT}'),
+			('a[!a-z]', f'^(?s:.+/)?a[^/a-z]{_DIR_OPT}'),
+			('a[^a-z]', f'^(?s:.+/)?a[^/a-z]{_DIR_OPT}'),
+			('a[a-z]', f'^(?s:.+/)?a[a-z]{_DIR_OPT}'),
+		]:
+			with self.subTest(f"p={raw_pattern!r}"):
+				pattern = GitIgnoreBasicPattern(raw_pattern)
+				self.assertIs(pattern.include, True)
+				self.assertEqual(pattern.regex.pattern, regex)
+
+	def test_c_2_invalid(self):
+		"""
+		Test patterns with invalid range notation.
+		"""
+		# The basic pattern treats invalid range notation as a literal.
+		for raw_pattern, regex in [
+			('[!]', f'^(?s:.+/)?\\[!\\]{_DIR_OPT}'),
+			('[^]', f'^(?s:.+/)?\\[\\^\\]{_DIR_OPT}'),
+			('a[!]', f'^(?s:.+/)?a\\[!\\]{_DIR_OPT}'),
+			('a[^]', f'^(?s:.+/)?a\\[\\^\\]{_DIR_OPT}'),
+		]:
+			with self.subTest(f"p={raw_pattern!r}"):
+				pattern = GitIgnoreBasicPattern(raw_pattern)
+				self.assertIs(pattern.include, True)
+				self.assertEqual(pattern.regex.pattern, regex)
+
+		# The `re` module fails to compile these.
+		for raw_pattern in [
+			'[z-a]',
+			'a[z-a]',
+		]:
+			with self.subTest(f"p={raw_pattern!r}"):
+				with self.assertRaises(re_PatternError):
+					GitIgnoreBasicPattern(raw_pattern)
+
+	def test_c_3_unclosed(self):
+		"""
+		Test patterns with unclosed range notation.
+		"""
+		for raw_pattern, regex in [
+			('[!', f'^(?s:.+/)?\\[!{_DIR_OPT}'),
+			('[', f'^(?s:.+/)?\\[{_DIR_OPT}'),
+			('[-', f'^(?s:.+/)?\\[\\-{_DIR_OPT}'),
+			('[^', f'^(?s:.+/)?\\[\\^{_DIR_OPT}'),
+			('[a', f'^(?s:.+/)?\\[a{_DIR_OPT}'),
+			('[a-', f'^(?s:.+/)?\\[a\\-{_DIR_OPT}'),
+			('[a-z', f'^(?s:.+/)?\\[a\\-z{_DIR_OPT}'),
+			('a[!', f'^(?s:.+/)?a\\[!{_DIR_OPT}'),
+			('a[', f'^(?s:.+/)?a\\[{_DIR_OPT}'),
+			('a[-', f'^(?s:.+/)?a\\[\\-{_DIR_OPT}'),
+			('a[^', f'^(?s:.+/)?a\\[\\^{_DIR_OPT}'),
+			('a[a-', f'^(?s:.+/)?a\\[a\\-{_DIR_OPT}'),
+			('a[a-z', f'^(?s:.+/)?a\\[a\\-z{_DIR_OPT}'),
+		]:
+			with self.subTest(f"p={raw_pattern!r}"):
+				pattern = GitIgnoreBasicPattern(raw_pattern)
+				self.assertIs(pattern.include, True)
+				self.assertEqual(pattern.regex.pattern, regex)
+
+
+class GitIgnoreBasicPatternIssue150Test(TestCase):
+	"""
+	The :class:`GitIgnoreBasicPatternIssue150Test` class tests the
+	:class:`.GitIgnoreBasicPattern` implementation for issue #150.
+	"""
+
+	def test_1_literal_whitespace(self):
+		"""
+		Test that other whitespace characters (not space or newlines) are matched.
+		"""
+		for suffix in ('\t', '\v', '\f', '\x85', '\xa0', '\u2003'):
+			name = 'foo' + suffix
+			for ending in ('', ' ', '\n', '\r\n'):
+				with self.subTest(suffix=suffix, ending=ending):
+					pattern = GitIgnoreBasicPattern(name + ending)
+					self.assertTrue(pattern.match_file(name))
+					self.assertIsNone(pattern.match_file('foo'))
+					escaped = GitIgnoreBasicPattern(GitIgnoreBasicPattern.escape(name))
+					self.assertTrue(escaped.match_file(name))

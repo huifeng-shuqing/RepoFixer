@@ -1,0 +1,63 @@
+949:class GitIgnoreBasicPatternIssue93Test(TestCase):
+950-	"""
+951:	The :class:`GitIgnoreBasicPatternIssue93Test` class tests the
+952-	:class:`.GitIgnoreBasicPattern` implementation for issue #93.
+953-	"""
+954-
+955-	def test_a_1(self):
+956-		"""
+957-		Test patterns with trailing double asterisks in a segment.
+958-		"""
+959-		pattern = GitIgnoreBasicPattern('foo**')
+960-		self.assertIs(pattern.include, True)
+961-		self.assertEqual(pattern.regex.pattern, f'^(?s:.+/)?foo[^/]*[^/]*{_DIR_OPT}')
+962-		self.assertTrue(pattern.match_file('foosrodah'))
+963-
+964-	def test_a_2(self):
+965-		"""
+966-		Test patterns with trailing double asterisks in a segment.
+967-		"""
+968-		pattern = GitIgnoreBasicPattern('foo**/bar')
+969-		self.assertIs(pattern.include, True)
+970-		self.assertEqual(pattern.regex.pattern, f'^foo[^/]*[^/]*/bar{_DIR_OPT}')
+971-		self.assertFalse(pattern.match_file('foobar'))
+972-		self.assertTrue(pattern.match_file('foosrodah/bar'))
+973-
+974-	def test_b_1_single(self):
+975-		"""
+976-		Test patterns with leading spaces.
+977-		"""
+978-		pattern = GitIgnoreBasicPattern(' foo')
+979-		self.assertIs(pattern.include, True)
+980-		self.assertEqual(pattern.regex.pattern, f'^(?s:.+/)?\\ foo{_DIR_OPT}')
+981-		self.assertFalse(pattern.match_file('foo'))
+982-		self.assertTrue(pattern.match_file(' foo'))
+983-
+984-	def test_b_2_double(self):
+985-		"""
+986-		Test patterns with leading spaces.
+987-		"""
+988-		pattern = GitIgnoreBasicPattern('  foo')
+989-		self.assertIs(pattern.include, True)
+990-		self.assertEqual(pattern.regex.pattern, f'^(?s:.+/)?\\ \\ foo{_DIR_OPT}')
+991-		self.assertFalse(pattern.match_file('foo'))
+992-		self.assertFalse(pattern.match_file(' foo'))
+993-		self.assertTrue(pattern.match_file('  foo'))
+994-
+995-	def test_c_1_valid(self):
+996-		"""
+997-		Test patterns with valid range notation.
+998-		"""
+999-		for raw_pattern, regex in [
+1000-			('[!a-z]', f'^(?s:.+/)?[^/a-z]{_DIR_OPT}'),
+1001-			('[^a-z]', f'^(?s:.+/)?[^/a-z]{_DIR_OPT}'),
+1002-			('[a-z]', f'^(?s:.+/)?[a-z]{_DIR_OPT}'),
+1003-			('a[!a-z]', f'^(?s:.+/)?a[^/a-z]{_DIR_OPT}'),
+1004-			('a[^a-z]', f'^(?s:.+/)?a[^/a-z]{_DIR_OPT}'),
+1005-			('a[a-z]', f'^(?s:.+/)?a[a-z]{_DIR_OPT}'),
+1006-		]:
+1007-			with self.subTest(f"p={raw_pattern!r}"):
+1008-				pattern = GitIgnoreBasicPattern(raw_pattern)
+1009-				self.assertIs(pattern.include, True)
+1010-				self.assertEqual(pattern.regex.pattern, regex)
+1011-

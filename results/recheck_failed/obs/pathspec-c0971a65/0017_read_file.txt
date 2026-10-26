@@ -1,0 +1,101 @@
+   245 | 		# NOTE: This is derived from `fnmatch.translate()` and is similar to the
+   246 | 		# POSIX function `fnmatch()` with the `FNM_PATHNAME` flag set.
+   247 | 
+   248 | 		escape = False
+   249 | 		regex = ''
+   250 | 		i, end = 0, len(pattern)
+   251 | 		while i < end:
+   252 | 			# Get next character.
+   253 | 			char = pattern[i]
+   254 | 			i += 1
+   255 | 
+   256 | 			if escape:
+   257 | 				# Escape the character.
+   258 | 				escape = False
+   259 | 				regex += re.escape(char)
+   260 | 
+   261 | 			elif char == '\\':
+   262 | 				# Escape character, escape next character.
+   263 | 				escape = True
+   264 | 
+   265 | 			elif char == '*':
+   266 | 				# Multi-character wildcard. Match any string (except slashes), including
+   267 | 				# an empty string.
+   268 | 				regex += '[^/]*'
+   269 | 
+   270 | 			elif char == '?':
+   271 | 				# Single-character wildcard. Match any single character (except a
+   272 | 				# slash).
+   273 | 				regex += '[^/]'
+   274 | 
+   275 | 			elif char == '[':
+   276 | 				# Bracket expression (range notation) wildcard. Except for the beginning
+   277 | 				# exclamation mark, the whole bracket expression can be used directly as
+   278 | 				# regex, but we have to find where the expression ends.
+   279 | 				# - "[][!]" matches ']', '[' and '!'.
+   280 | 				# - "[]-]" matches ']' and '-'.
+   281 | 				# - "[!]a-]" matches any character except ']', 'a' and '-'.
+   282 | 				bracket_start = i - 1
+   283 | 				j = i
+   284 | 
+   285 | 				# Pass bracket expression negation.
+   286 | 				if j < end and (pattern[j] == '!' or pattern[j] == '^'):
+   287 | 					j += 1
+   288 | 
+   289 | 				# Pass first closing bracket if it is at the beginning of the
+   290 | 				# expression.
+   291 | 				if j < end and pattern[j] == ']':
+   292 | 					j += 1
+   293 | 
+   294 | 				# Find closing bracket. Stop once we reach the end or find it.
+   295 | 				while j < end and pattern[j] != ']':
+   296 | 					if pattern[j] == '\\':
+   297 | 						# Skip over an escaped character so an escaped closing bracket
+   298 | 						# ("\]") does not end the bracket expression.
+   299 | 						j += 2
+   300 | 					elif pattern[j:j+2] == '[:':
+   301 | 						# Skip over a POSIX character class token ("[:name:]") so its
+   302 | 						# internal closing bracket is not mistaken for the end of the whole
+   303 | 						# bracket expression.
+   304 | 						close = pattern.find(':]', j + 2)
+   305 | 						if close == -1:
+   306 | 							j = end
+   307 | 							break
+   308 | 						j = close + 2
+   309 | 					else:
+   310 | 						j += 1
+   311 | 
+   312 | 				if j < end:
+   313 | 					# Found end of bracket expression. Increment j to be one past the
+   314 | 					# closing bracket:
+   315 | 					#
+   316 | 					#  [...]
+   317 | 					#   ^   ^
+   318 | 					#   i   j
+   319 | 					#
+   320 | 					j += 1
+   321 | 					expr = '['
+   322 | 					is_expr_negated = False
+   323 | 
+   324 | 					if pattern[i] == '!':
+   325 | 						# Bracket expression needs to be negated.
+   326 | 						expr += '^'
+   327 | 						is_expr_negated = True
+   328 | 						i += 1
+   329 | 					elif pattern[i] == '^':
+   330 | 						# POSIX declares that the regex bracket expression negation "[^...]"
+   331 | 						# is undefined in a glob pattern. Python's `fnmatch.translate()`
+   332 | 						# escapes the caret ('^') as a literal. Git supports the using a
+   333 | 						# caret for negation. Maintain consistency with Git because that is
+   334 | 						# the expected behavior.
+   335 | 						expr += '^'
+   336 | 						is_expr_negated = True
+   337 | 						i += 1
+   338 | 
+   339 | 					# Build regex bracket expression.
+   340 | 					#
+   341 | 					# A backslash escapes the next character (e.g. "[\]]" matches ']'),
+   342 | 					# the same as outside of a bracket expression.
+   343 | 					#
+   344 | 					# Translate POSIX character classes (e.g. "[:alpha:]") into their
+... [95 more lines; pass offset=345 for next page]

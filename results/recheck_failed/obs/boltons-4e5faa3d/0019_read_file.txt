@@ -1,0 +1,61 @@
+   476 |     @property
+   477 |     def _rolled(self):
+   478 |         return not isinstance(self.buffer.stream, BytesIO)
+   479 | 
+   480 |     def rollover(self):
+   481 |         """Roll the buffer over to a TempFile"""
+   482 |         if not self._rolled:
+   483 |             tmp = EncodedFile(TemporaryFile(dir=self._dir),
+   484 |                               data_encoding='utf-8')
+   485 |             pos = self.buffer.tell()
+   486 |             tmp.write(self.buffer.getvalue())
+   487 |             tmp.seek(pos)
+   488 |             self.buffer.close()
+   489 |             self._buffer = tmp
+   490 | 
+   491 |     def tell(self):
+   492 |         """Return the codepoint position"""
+   493 |         self._checkClosed()
+   494 |         return self._tell
+   495 | 
+   496 |     @property
+   497 |     def len(self):
+   498 |         """Determine the number of codepoints in the file"""
+   499 |         pos = self.buffer.tell()
+   500 |         self.buffer.seek(0)
+   501 |         total = 0
+   502 |         while True:
+   503 |             ret = self.read(READ_CHUNK_SIZE)
+   504 |             if not ret:
+   505 |                 break
+   506 |             total += len(ret)
+   507 |         self.buffer.seek(pos)
+   508 |         return total
+   509 | 
+   510 | 
+   511 | def is_text_fileobj(fileobj):
+   512 |     if getattr(fileobj, 'encoding', False):
+   513 |         # codecs.open and io.TextIOBase
+   514 |         return True
+   515 |     if getattr(fileobj, 'getvalue', False):
+   516 |         # StringIO.StringIO / io.StringIO
+   517 |         try:
+   518 |             if isinstance(fileobj.getvalue(), str):
+   519 |                 return True
+   520 |         except Exception:
+   521 |             pass
+   522 |     return False
+   523 | 
+   524 | 
+   525 | class MultiFileReader:
+   526 |     """Takes a list of open files or file-like objects and provides an
+   527 |     interface to read from them all contiguously. Like
+   528 |     :func:`itertools.chain()`, but for reading files.
+   529 | 
+   530 |        >>> mfr = MultiFileReader(BytesIO(b'ab'), BytesIO(b'cd'), BytesIO(b'e'))
+   531 |        >>> mfr.read(3).decode('ascii')
+   532 |        u'abc'
+   533 |        >>> mfr.read(3).decode('ascii')
+   534 |        u'de'
+   535 | 
+... [52 more lines; pass offset=536 for next page]

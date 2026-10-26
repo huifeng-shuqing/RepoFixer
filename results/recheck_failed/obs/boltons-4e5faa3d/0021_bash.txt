@@ -1,0 +1,32 @@
+E           TypeError: bytes expected, got memoryview
+E           TypeError: bytes expected, got memoryview
+E           TypeError: bytes expected, got memoryview
+E           TypeError: bytes expected, got memoryview
+E           TypeError: bytes expected, got memoryview
+E                   AssertionError: None != 3
+E                   AssertionError: None != 3
+E                       AssertionError: ValueError not raised
+E                       AssertionError: ValueError not raised
+E                       AssertionError: ValueError not raised
+E                       AssertionError: ValueError not raised
+E                   AssertionError: '' != '\u2603b'
+E                   + \u2603b
+E                   AssertionError: '' != '\u2603b'
+E                   + \u2603b
+E                   AssertionError: None != 3
+E                   AssertionError: None != 3
+FAILED tests/test_ioutils.py::TestSpooledBytesIO::test_buffer_write_rollover_uses_byte_count
+SUBFAILED(rolled=False) tests/test_ioutils.py::TestSpooledBytesIO::test_buffered_writer_flush
+SUBFAILED(rolled=True) tests/test_ioutils.py::TestSpooledBytesIO::test_buffered_writer_flush
+FAILED tests/test_ioutils.py::TestSpooledBytesIO::test_rollover_custom_directory
+SUBFAILED(rolled=False) tests/test_ioutils.py::TestSpooledBytesIO::test_write_returns_byte_count
+SUBFAILED(rolled=True) tests/test_ioutils.py::TestSpooledBytesIO::test_write_returns_byte_count
+SUBFAILED(rolled=False, offset=-1, whence=0) tests/test_ioutils.py::TestSpooledStringIO::test_negative_destination_rejected_without_moving
+SUBFAILED(rolled=False, offset=-3, whence=1) tests/test_ioutils.py::TestSpooledStringIO::test_negative_destination_rejected_without_moving
+SUBFAILED(rolled=True, offset=-1, whence=0) tests/test_ioutils.py::TestSpooledStringIO::test_negative_destination_rejected_without_moving
+SUBFAILED(rolled=True, offset=-3, whence=1) tests/test_ioutils.py::TestSpooledStringIO::test_negative_destination_rejected_without_moving
+SUBFAILED(rolled=False) tests/test_ioutils.py::TestSpooledStringIO::test_relative_backwards_seek_uses_character_position
+SUBFAILED(rolled=True) tests/test_ioutils.py::TestSpooledStringIO::test_relative_backwards_seek_uses_character_position
+SUBFAILED(rolled=False) tests/test_ioutils.py::TestSpooledStringIO::test_write_returns_character_count
+SUBFAILED(rolled=True) tests/test_ioutils.py::TestSpooledStringIO::test_write_returns_character_count
+Binary file (standard input) matches

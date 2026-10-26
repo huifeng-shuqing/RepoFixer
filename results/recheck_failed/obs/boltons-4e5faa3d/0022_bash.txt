@@ -1,0 +1,50 @@
+.F                                                                       [100%]
+================================== FAILURES ===================================
+_____________ TestSpooledStringIO.test_rollover_custom_directory ______________
+
+self = <tests.test_ioutils.TestSpooledStringIO testMethod=test_rollover_custom_directory>
+
+    def test_rollover_custom_directory(self):
+        """dir keyword argument is passed to TemporaryFile instantiation"""
+        custom_dir = mkdtemp()
+        try:
+            # Re-instantiate self.spooled_flo with the custom dir argument
+            _spooled_flo = type(self.spooled_flo)(dir=custom_dir)
+            self.assertEqual(_spooled_flo._dir, custom_dir)
+            # TemporaryFile is kind of a black box, we can't really test it
+            # since the directory entry for the file is removed immediately
+            # after the file is created. So we can't check path using fd.name
+            # or listdir(custom_dir). We could either convert rollover() to
+            # use NamedtemporaryFile-s or assume it's well tested enough that
+            # passing dir= into the constructor will work as expected. We'll
+            # call rollover() with the dir attribute set just to ensure
+            # nothing has gone absurdly wrong.
+            _spooled_flo.write(self.test_str)
+            _spooled_flo.rollover()
+            self.assertEqual(_spooled_flo.getvalue(), self.test_str)
+            self.assertTrue(_spooled_flo._rolled)
+            _spooled_flo.close()
+        finally:
+>           os.rmdir(custom_dir)
+E           OSError: [WinError 145] Ŀ¼���ǿյġ�: 'C:\\Users\\wuqiong\\Documents\\deepseek-harness\\default-workspace\\repair-agent\\dataset\\repos\\boltons-4e5faa3d\\tmp_nf7pz97'
+
+tests\test_ioutils.py:62: OSError
+=========================== short test summary info ===========================
+FAILED tests/test_ioutils.py::TestSpooledStringIO::test_rollover_custom_directory
+1 failed, 1 passed, 86 deselected in 0.07s
+41:    def test_rollover_custom_directory(self):
+42-        """dir keyword argument is passed to TemporaryFile instantiation"""
+43-        custom_dir = mkdtemp()
+44-        try:
+45-            # Re-instantiate self.spooled_flo with the custom dir argument
+46-            _spooled_flo = type(self.spooled_flo)(dir=custom_dir)
+47-            self.assertEqual(_spooled_flo._dir, custom_dir)
+48-            # TemporaryFile is kind of a black box, we can't really test it
+49-            # since the directory entry for the file is removed immediately
+50-            # after the file is created. So we can't check path using fd.name
+51-            # or listdir(custom_dir). We could either convert rollover() to
+52-            # use NamedtemporaryFile-s or assume it's well tested enough that
+53-            # passing dir= into the constructor will work as expected. We'll
+54-            # call rollover() with the dir attribute set just to ensure
+55-            # nothing has gone absurdly wrong.
+56-            _spooled_flo.write(self.test_str)

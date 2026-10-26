@@ -1,0 +1,81 @@
+   200 | 
+   201 |     def seekable(self):
+   202 |         return True
+   203 | 
+   204 |     def readable(self):
+   205 |         return True
+   206 | 
+   207 |     def writable(self):
+   208 |         return True
+   209 | 
+   210 |     def __next__(self):
+   211 |         self._checkClosed()
+   212 |         line = self.readline()
+   213 |         if not line:
+   214 |             pos = self.buffer.tell()
+   215 |             self.buffer.seek(0, os.SEEK_END)
+   216 |             if pos == self.buffer.tell():
+   217 |                 raise StopIteration
+   218 |             else:
+   219 |                 self.buffer.seek(pos)
+   220 |         return line
+   221 | 
+   222 |     next = __next__
+   223 | 
+   224 |     def __len__(self):
+   225 |         return self.len
+   226 | 
+   227 |     def __iter__(self):
+   228 |         self._checkClosed()
+   229 |         return self
+   230 | 
+   231 |     def __enter__(self):
+   232 |         self._checkClosed()
+   233 |         return self
+   234 | 
+   235 |     def __exit__(self, *args):
+   236 |         self._file.close()
+   237 | 
+   238 |     def __eq__(self, other):
+   239 |         if isinstance(other, self.__class__):
+   240 |             self_pos = self.tell()
+   241 |             other_pos = other.tell()
+   242 |             try:
+   243 |                 self.seek(0)
+   244 |                 other.seek(0)
+   245 |                 eq = True
+   246 |                 for self_line, other_line in zip_longest(self, other):
+   247 |                     if self_line != other_line:
+   248 |                         eq = False
+   249 |                         break
+   250 |                 self.seek(self_pos)
+   251 |                 other.seek(other_pos)
+   252 |             except Exception:
+   253 |                 # Attempt to return files to original position if there were any errors
+   254 |                 try:
+   255 |                     self.seek(self_pos)
+   256 |                 except Exception:
+   257 |                     pass
+   258 |                 try:
+   259 |                     other.seek(other_pos)
+   260 |                 except Exception:
+   261 |                     pass
+   262 |                 raise
+   263 |             else:
+   264 |                 return eq
+   265 |         return False
+   266 | 
+   267 |     def __ne__(self, other):
+   268 |         return not self.__eq__(other)
+   269 | 
+   270 |     def __bool__(self):
+   271 |         return True
+   272 | 
+   273 |     def __del__(self):
+   274 |         """Can fail when called at program exit so suppress traceback."""
+   275 |         try:
+   276 |             self.close()
+   277 |         except Exception:
+   278 |             pass
+   279 | 
+... [308 more lines; pass offset=280 for next page]

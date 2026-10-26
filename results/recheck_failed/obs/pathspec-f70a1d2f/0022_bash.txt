@@ -1,0 +1,221 @@
+
+		self.assertEqual(ignores, {
+			'a.txt',
+		}, debug)
+
+	def test_02_dir_exclusions(self):
+		"""
+		Test directory exclusions.
+		"""
+		for sub_test in self.parameterize_from_lines([
+			'*.txt',
+			'!test1/',
+		]):
+			with sub_test() as spec:
+				files = {
+					'test1/a.txt',
+					'test1/b.bin',
+					'test1/c/c.txt',
+					'test2/a.txt',
+					'test2/b.bin',
+					'test2/c/c.txt',
+				}
+
+				results = list(spec.check_files(files))
+				ignores = get_includes(results)
+				debug = debug_results(spec, results)
+
+				self.assertEqual(ignores, {
+					'test1/a.txt',
+					'test1/c/c.txt',
+					'test2/a.txt',
+					'test2/c/c.txt',
+				}, debug)
+				self.assertEqual(files - ignores, {
+					'test1/b.bin',
+					'test2/b.bin',
+				}, debug)
+
+	def test_02_dir_reinclusion_whitelist(self):
+		"""
+		Test that a directory re-included by a directory-only pattern is not
+		reported as ignored.
+
+		The whitelist idiom ("*" ignores everything, "!*/" keeps descending into
+		directories, "!*.py" keeps the files of interest) only works if asking
+		about the directory answers what Git answers. A consumer asks about the
+		directory precisely to decide whether to descend, so reporting "sub/" as
+		ignored silently drops every file below it.
+		"""
+		for sub_test in self.parameterize_from_lines([
+			'*',
+			'!*/',
+			'!*.py',
+		]):
+			with sub_test() as spec:
+				# Confirmed results with git check-ignore (v2.55.0).
+				dirs = {
+					'sub/',    # 2:!*/
+					'sub/d/',  # 2:!*/
+				}
+				self.assertEqual({_dir for _dir in dirs if spec.match_file(_dir)}, set())
+
+				# Confirmed results with git check-ignore (v2.55.0).
+				files = {
+					'a.py',        # 3:!*.py
+					'a.txt',       # 1:*
+					'sub/b.py',    # 3:!*.py
+					'sub/b.txt',   # 1:*
+					'sub/d/c.py',  # 3:!*.py
+				}
+
+				results = list(spec.check_files(files))
+				ignores = get_includes(results)
+				debug = debug_results(spec, results)
+
+				self.assertEqual(ignores, {
+					'a.txt',
+					'sub/b.txt',
+				}, debug)
+
+	def test_02_file_exclusions(self):
+		"""
+		Test file exclusions.
+		"""
+		for sub_test in self.parameterize_from_lines([
+			'*.txt',
+			'!b.txt',
+		]):
+			with sub_test() as spec:
+				files = {
+					'X/a.txt',
+					'X/b.txt',
+					'X/Z/c.txt',
+					'Y/a.txt',
+					'Y/b.txt',
+					'Y/Z/c.txt',
+				}
+
+				results = list(spec.check_files(files))
+				ignores = get_includes(results)
+				debug = debug_results(spec, results)
+
+				self.assertEqual(ignores, {
+					'X/a.txt',
+					'X/Z/c.txt',
+					'Y/a.txt',
+					'Y/Z/c.txt',
+				}, debug)
+				self.assertEqual(files - ignores, {
+					'X/b.txt',
+					'Y/b.txt',
+				}, debug)
+
+	def test_03_subdir(self):
+		"""
+		Test matching files in a subdirectory of an included directory.
+		"""
+		for sub_test in self.parameterize_from_lines([
+			"dirG/",
+		]):
+			with sub_test() as spec:
+				files = {
+					'fileA',
+					'fileB',
+					'dirD/fileE',
+					'dirD/fileF',
+					'dirG/dirH/fileI',
+					'dirG/dirH/fileJ',
+					'dirG/fileO',
+				}
+
+				results = list(spec.check_files(files))
+				ignores = get_includes(results)
+				debug = debug_results(spec, results)
+
+				self.assertEqual(ignores, {
+					'dirG/dirH/fileI',
+					'dirG/dirH/fileJ',
+					'dirG/fileO',
+				}, debug)
+				self.assertEqual(files - ignores, {
+					'fileA',
+					'fileB',
+					'dirD/fileE',
+					'dirD/fileF',
+				}, debug)
+
+
+class GitIgnoreSpecIssue19Test(GitIgnoreSpecMixin, TestCase):
+	"""
+	The :class:`GitIgnoreSpecIssue19Test` class tests the :class:`.GitIgnoreSpec`
+	implementation for issue #19.
+	"""
+
+	def test_a(self):
+		"""
+		Test matching files in a subdirectory of an included directory, scenario A.
+		"""
+		for sub_test in self.parameterize_from_lines([
+			"dirG/",
+		]):
+			with sub_test() as spec:
+				files = {
+					'fileA',
+					'fileB',
+					'dirD/fileE',
+					'dirD/fileF',
+					'dirG/dirH/fileI',
+					'dirG/dirH/fileJ',
+					'dirG/fileO',
+				}
+
+				results = list(spec.check_files(files))
+				ignores = get_includes(results)
+				debug = debug_results(spec, results)
+
+				self.assertEqual(ignores, {
+					'dirG/dirH/fileI',
+					'dirG/dirH/fileJ',
+					'dirG/fileO',
+				}, debug)
+				self.assertEqual(files - ignores, {
+					'fileA',
+					'fileB',
+					'dirD/fileE',
+					'dirD/fileF',
+				}, debug)
+
+	def test_b(self):
+		"""
+		Test matching files in a subdirectory of an included directory, scenario B.
+		"""
+		for sub_test in self.parameterize_from_lines([
+			"dirG/*",
+		]):
+			with sub_test() as spec:
+				files = {
+					'fileA',
+					'fileB',
+					'dirD/fileE',
+					'dirD/fileF',
+					'dirG/dirH/fileI',
+					'dirG/dirH/fileJ',
+					'dirG/fileO',
+				}
+
+				results = list(spec.check_files(files))
+				ignores = get_includes(results)
+				debug = debug_results(spec, results)
+
+				self.assertEqual(ignores, {
+					'dirG/dirH/fileI',
+					'dirG/dirH/fileJ',
+					'dirG/fileO',
+				}, debug)
+				self.assertEqual(files - ignores, {
+					'fileA',
+					'fileB',
+					'dirD/fileE',
+					'dirD/fileF',
+				}, debug)

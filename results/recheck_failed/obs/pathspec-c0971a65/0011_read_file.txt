@@ -1,0 +1,101 @@
+     1 | """
+     2 | This module provides common classes for the gitignore patterns.
+     3 | """
+     4 | from __future__ import annotations
+     5 | 
+     6 | import re
+     7 | from typing import (
+     8 | 	Literal,
+     9 | 	Optional,  # Replaced by `X | None` in 3.10.
+    10 | 	Union)  # Replaced by `X | Y` in 3.10.
+    11 | 
+    12 | from pathspec.pattern import (
+    13 | 	RegexPattern)
+    14 | from pathspec._typing import (
+    15 | 	AnyStr)  # Removed in 3.18.
+    16 | 
+    17 | _BRACKET_TOKEN_REGEX = re.compile((
+    18 | 	# Range, including escaped endpoints, but not the start of a POSIX class.
+    19 | 	r'(\\.|[^\\])-(?!\[:)(\\.|[^\\])'
+    20 | 	# Escaped character.
+    21 | 	r'|\\(.)'
+    22 | 	# POSIX class.
+    23 | 	r'|\[:(\^?)([^:\]]*):\]'
+    24 | ), re.DOTALL)
+    25 | """
+    26 | Matches tokens inside a bracket expression:
+    27 | 
+    28 | - A character range (groups 1 and 2).
+    29 | 
+    30 | - A backslash escaped character (group 3).
+    31 | 
+    32 | -	Matches a POSIX bracket character class token such as ``[:alpha:]`` inside a
+    33 | 	bracket expression. Group 4 captures a leading caret (unsupported by git);
+    34 | 	group 5 captures the class name.
+    35 | """
+    36 | 
+    37 | _BYTES_ENCODING = 'latin1'
+    38 | """
+    39 | The encoding to use when parsing a byte string pattern.
+    40 | """
+    41 | 
+    42 | _POSIX_CLASS_TO_REGEX: dict[str, str] = {
+    43 | 	# Git's wildmatch implements POSIX bracket character classes using its own
+    44 | 	# ASCII (locale-independent) ``is*`` functions, so each class maps to an
+    45 | 	# explicit ASCII set. These are NOT the Unicode-aware equivalents (``\w``,
+    46 | 	# ``\d``, ``\s``); using those would over-match non-ASCII characters that git
+    47 | 	# never matches.
+    48 | 	'alnum': '0-9A-Za-z',
+    49 | 	'alpha': 'A-Za-z',
+    50 | 	'blank': '\\t ',
+    51 | 	'cntrl': '\\x00-\\x1f\\x7f',
+    52 | 	'digit': '0-9',
+    53 | 	'graph': '\\x21-\\x2e\\x30-\\x7e',
+    54 | 	'lower': 'a-z',
+    55 | 	'print': '\\x20-\\x2e\\x30-\\x7e',
+    56 | 	'punct': '!-.:-@\\[-`{-~',
+    57 | 	'space': '\\t\\n\\r ',
+    58 | 	'upper': 'A-Z',
+    59 | 	'xdigit': '0-9A-Fa-f',
+    60 | }
+    61 | """
+    62 | Maps each POSIX bracket character class name to ASCII regex ranges, excluding
+    63 | the directory separator as required by git's wildmatch behavior.
+    64 | """
+    65 | 
+    66 | 
+    67 | def _strip_trailing_ws(pattern: str) -> str:
+    68 | 	"""
+    69 | 	Strip trailing spaces and line endings from the pattern while considering
+    70 | 	that they can be escaped. Other whitespace is part of the filename.
+    71 | 
+    72 | 	*pattern* (:class:`str`) is the pattern.
+    73 | 
+    74 | 	Returns the modified pattern (:class:`str`).
+    75 | 	"""
+    76 | 	i = len(pattern) - 1
+    77 | 	if i == -1 or pattern[i] not in ' \r\n':
+    78 | 		# Fast path: pattern does not end with a space or line ending.
+    79 | 		return pattern
+    80 | 
+    81 | 	# Scan past spaces and line endings.
+    82 | 	i -= 1
+    83 | 	while i >= 0 and pattern[i] in ' \r\n':
+    84 | 		i -= 1
+    85 | 
+    86 | 	last_ws = i + 1
+    87 | 
+    88 | 	# Count backslashes.
+    89 | 	while i >= 0 and pattern[i] == '\\':
+    90 | 		i -= 1
+    91 | 
+    92 | 	bs_count = last_ws - i - 1
+    93 | 	if bs_count % 2 == 1:
+    94 | 		# Odd count, first whitespace character is escaped, strip the rest.
+    95 | 		last_ws += 1
+    96 | 
+    97 | 	# Strip trailing whitespace.
+    98 | 	return pattern[:last_ws]
+    99 | 
+   100 | 
+... [339 more lines; pass offset=101 for next page]

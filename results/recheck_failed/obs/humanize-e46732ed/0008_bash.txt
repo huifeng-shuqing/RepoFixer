@@ -1,0 +1,72 @@
+    """
+    import math
+
+    if not math.isfinite(value):
+        return _format_not_finite(value)
+    exponent = math.floor(math.log10(abs(value))) if value != 0 else 0
+
+    if exponent >= 33 or exponent < -30:
+        return scientific(value, precision - 1) + unit
+
+    old_bucket = exponent // 3 * 3
+    value /= 10**old_bucket
+    digits = int(max(0, precision - exponent % 3 - 1))
+    if exponent < 30 and round(abs(value), digits) >= 1000:
+        exponent += 3 - exponent % 3
+        new_bucket = exponent // 3 * 3
+        value /= 10 ** (new_bucket - old_bucket)
+        digits = int(max(0, precision - exponent % 3 - 1))
+
+    if exponent >= 3:
+        ordinal_ = "kMGTPEZYRQ"[exponent // 3 - 1]
+    elif exponent < 0:
+        ordinal_ = "mμnpfazyrq"[(-exponent - 1) // 3]
+    else:
+        ordinal_ = ""
+    value_ = format(value, f".{digits}f")
+    if not (unit or ordinal_) or unit in ("°", "′", "″"):
+        space = ""
+    else:
+        space = " "
+
+    return f"{value_}{space}{ordinal_}{unit}"
+---
+        ([0.00012], "120 μ"),
+        ([1e-23], "10.0 y"),
+        ([1e-24], "1.00 y"),
+        ([1e-25], "100 r"),
+        ([1e-26], "10.0 r"),
+        ([1, "°"], "1.00°"),
+        ([0.1, "°"], "100m°"),
+        ([100], "100"),
+        ([0.1], "100 m"),
+        ([1.5123, "", 0], "2"),
+        ([10.5123, "", 0], "11"),
+        ([10.5123, "", 1], "11"),
+        ([10.5123, "", 2], "11"),
+        ([10.5123, "", 3], "10.5"),
+        ([1, "", 0], "1"),
+        ([10, "", 0], "10"),
+        ([100, "", 0], "100"),
+        ([1000, "", 0], "1 k"),
+        ([1, "", 1], "1"),
+        ([10, "", 1], "10"),
+        ([100, "", 1], "100"),
+        ([1000, "", 1], "1 k"),
+        ([1, "", 2], "1.0"),
+        ([10, "", 2], "10"),
+        ([100, "", 2], "100"),
+        ([1000, "", 2], "1.0 k"),
+        ([1, "", 3], "1.00"),
+        ([10, "", 3], "10.0"),
+        ([100, "", 3], "100"),
+        ([1000, "", 3], "1.00 k"),
+        ([math.nan], "NaN"),
+        ([math.nan, "m"], "NaN"),
+        ([math.inf], "+Inf"),
+        ([-math.inf], "-Inf"),
+    ],
+    ids=str,
+)
+def test_metric(test_args: list[typing.Any], expected: str) -> None:
+    assert humanize.metric(*test_args) == expected

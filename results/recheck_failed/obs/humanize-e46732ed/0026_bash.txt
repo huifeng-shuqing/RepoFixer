@@ -1,0 +1,62 @@
+               LOAD_FAST_BORROW         5 (old_bucket)
+               BINARY_OP                8 (**)
+               BINARY_OP               24 (/=)
+               STORE_FAST               0 (value)
+
+552            LOAD_GLOBAL             15 (int + NULL)
+               LOAD_GLOBAL             17 (max + NULL)
+               LOAD_SMALL_INT           0
+               LOAD_FAST_BORROW_LOAD_FAST_BORROW 36 (precision, exponent)
+               LOAD_SMALL_INT           3
+               BINARY_OP                6 (%)
+               BINARY_OP               10 (-)
+               LOAD_SMALL_INT           1
+               BINARY_OP               10 (-)
+               CALL                     2
+               CALL                     1
+               STORE_FAST               6 (digits)
+
+553            LOAD_FAST_BORROW         4 (exponent)
+               LOAD_SMALL_INT          30
+               COMPARE_OP              18 (bool(<))
+               POP_JUMP_IF_FALSE      129 (to L6)
+               NOT_TAKEN
+               LOAD_GLOBAL             19 (round + NULL)
+               LOAD_GLOBAL             11 (abs + NULL)
+               LOAD_FAST_BORROW         0 (value)
+               CALL                     1
+               LOAD_FAST_BORROW         6 (digits)
+               CALL                     2
+               LOAD_CONST               2 (1000)
+               COMPARE_OP             188 (bool(>=))
+               POP_JUMP_IF_FALSE      103 (to L6)
+               NOT_TAKEN
+
+554            LOAD_FAST_BORROW         4 (exponent)
+               LOAD_SMALL_INT           3
+               LOAD_FAST_BORROW         4 (exponent)
+               LOAD_SMALL_INT           3
+               BINARY_OP                6 (%)
+               BINARY_OP               10 (-)
+               BINARY_OP               13 (+=)
+               STORE_FAST               4 (exponent)
+
+555            LOAD_FAST_BORROW         4 (exponent)
+               LOAD_SMALL_INT           3
+               BINARY_OP                2 (//)
+               LOAD_SMALL_INT           3
+               BINARY_OP                5 (*)
+               STORE_FAST               7 (new_bucket)
+
+556            LOAD_FAST_BORROW         0 (value)
+               LOAD_SMALL_INT          10
+               LOAD_FAST_BORROW_LOAD_FAST_BORROW 117 (new_bucket, old_bucket)
+               BINARY_OP               10 (-)
+               BINARY_OP                8 (**)
+               BINARY_OP               24 (/=)
+               STORE_FAST               0 (value)
+
+559            LOAD_GLOBAL             15 (int + NULL)
+               LOAD_GLOBAL             17 (max + NULL)
+               LOAD_SMALL_INT           0
+               LOAD_FAST_BORROW_LOAD_

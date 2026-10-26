@@ -1,0 +1,71 @@
+445:    "colon_grid": TableFormat(
+446-        lineabove=Line("+", "-", "+", "+"),
+447-        linebelowheader=_grid_line_with_colons,
+448-        linebetweenrows=Line("+", "-", "+", "+"),
+449-        linebelow=Line("+", "-", "+", "+"),
+450-        headerrow=DataRow("|", "|", "|"),
+451-        datarow=DataRow("|", "|", "|"),
+452-        padding=1,
+453-        with_header_hide=None,
+454-    ),
+455-    "outline": TableFormat(
+456-        lineabove=Line("+", "-", "+", "+"),
+457-        linebelowheader=Line("+", "=", "+", "+"),
+--
+738:    "colon_grid": "colon_grid",
+739-    "pipe": "pipe",
+740-    "orgtbl": "orgtbl",
+741-    "jira": "jira",
+742-    "presto": "presto",
+743-    "pretty": "pretty",
+744-    "psql": "psql",
+745-    "rst": "rst",
+746-    "github": "github",
+747-    "outline": "outline",
+748-    "simple_outline": "simple_outline",
+749-    "rounded_outline": "rounded_outline",
+750-    "heavy_outline": "heavy_outline",
+--
+1960:    "colon_grid" is similar to "grid" but uses colons only to define
+1961-    columnwise content alignment, without whitespace padding,
+1962-    similar to the alignment specification of Pandoc `grid_tables`:
+1963-
+1964-    >>> print(tabulate([["spam", 41.9999], ["eggs", "451.0"]],
+1965:    ...                ["strings", "numbers"], "colon_grid"))
+1966-    +-----------+-----------+
+1967-    | strings   | numbers   |
+1968-    +:==========+:==========+
+1969-    | spam      | 41.9999   |
+1970-    +-----------+-----------+
+1971-    | eggs      | 451       |
+1610:def test_colon_grid_with_empty_cells():
+1611-    table = [["A", ""], ["", "B"]]
+1612-    headers = ["H1", "H2"]
+1613-    alignments = ["center", "right"]
+1614-    expected = "\n".join(
+1615-        [
+1616-            "+------+------+",
+1617-            "| H1   | H2   |",
+1618-            "+:====:+=====:+",
+1619-            "| A    |      |",
+1620-            "+------+------+",
+1621-            "|      | B    |",
+1622-            "+------+------+",
+1623-        ]
+1624-    )
+1625-    result = tabulate(table, headers, tablefmt="colon_grid", colalign=alignments)
+1626-    assert_equal(expected, result)
+1627-
+1628-
+1629-def test_outline():
+1630-    "Output: outline with headers"
+1631-    expected = "\n".join(
+1632-        [
+1633-            "+-----------+-----------+",
+1634-            "| strings   |   numbers |",
+1635-            "+===========+===========+",
+1636-            "| spam      |   41.9999 |",
+1637-            "| eggs      |  451      |",
+1638-            "+-----------+-----------+",
+1639-        ]
+1640-    )

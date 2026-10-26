@@ -1,0 +1,69 @@
+74:	def test_negated_rule(self):
+75-		for backend in ('simple', 're2', 'hyperscan'):
+76-			with self.subTest(backend=backend):
+77-				require_backend(backend)
+78-				for line in ('a[!x]b', 'a[.-0]b', 'a[[:punct:]]b'):
+79-					with self.subTest(line=line):
+80-						spec = GitIgnoreSpec.from_lines(['*', '!' + line], backend=backend)
+81-						self.assertFalse(spec.match_file('a.b'))
+82-						self.assertTrue(spec.match_file('a/b'))
+....                                            [100%]
+================================== FAILURES ===================================
+____ BracketSlashTest.test_negated_rule (line='a[!x]b', backend='simple') _____
+
+self = <tests.test_08_gitignore_bracket_slash.BracketSlashTest testMethod=test_negated_rule>
+
+    def test_negated_rule(self):
+    	for backend in ('simple', 're2', 'hyperscan'):
+    		with self.subTest(backend=backend):
+    			require_backend(backend)
+    			for line in ('a[!x]b', 'a[.-0]b', 'a[[:punct:]]b'):
+    				with self.subTest(line=line):
+    					spec = GitIgnoreSpec.from_lines(['*', '!' + line], backend=backend)
+    					self.assertFalse(spec.match_file('a.b'))
+>   					self.assertTrue(spec.match_file('a/b'))
+E        AssertionError: False is not true
+
+tests\test_08_gitignore_bracket_slash.py:82: AssertionError
+____ BracketSlashTest.test_negated_rule (line='a[.-0]b', backend='simple') ____
+
+self = <tests.test_08_gitignore_bracket_slash.BracketSlashTest testMethod=test_negated_rule>
+
+    def test_negated_rule(self):
+    	for backend in ('simple', 're2', 'hyperscan'):
+    		with self.subTest(backend=backend):
+    			require_backend(backend)
+    			for line in ('a[!x]b', 'a[.-0]b', 'a[[:punct:]]b'):
+    				with self.subTest(line=line):
+    					spec = GitIgnoreSpec.from_lines(['*', '!' + line], backend=backend)
+    					self.assertFalse(spec.match_file('a.b'))
+>   					self.assertTrue(spec.match_file('a/b'))
+E        AssertionError: False is not true
+
+tests\test_08_gitignore_bracket_slash.py:82: AssertionError
+_ BracketSlashTest.test_negated_rule (line='a[[:punct:]]b', backend='simple') _
+
+self = <tests.test_08_gitignore_bracket_slash.BracketSlashTest testMethod=test_negated_rule>
+
+    def test_negated_rule(self):
+    	for backend in ('simple', 're2', 'hyperscan'):
+    		with self.subTest(backend=backend):
+    			require_backend(backend)
+    			for line in ('a[!x]b', 'a[.-0]b', 'a[[:punct:]]b'):
+    				with self.subTest(line=line):
+    					spec = GitIgnoreSpec.from_lines(['*', '!' + line], backend=backend)
+    					self.assertFalse(spec.match_file('a.b'))
+>   					self.assertTrue(spec.match_file('a/b'))
+E        AssertionError: False is not true
+
+tests\test_08_gitignore_bracket_slash.py:82: AssertionError
+_ BracketSlashTest.test_pattern_separator (factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, bracket='[!x]', as_bytes=False) _
+
+self = <tests.test_08_gitignore_bracket_slash.BracketSlashTest testMethod=test_pattern_separator>
+
+    def test_pattern_separator(self):
+    	for factory in (GitIgnoreBasicPattern, GitIgnoreSpecPattern, GitWildMatchPattern):
+    		for bracket, matched in (
+    			('[!x]', '.0'),
+    			('[^x]', '.0'),
+    			('[!]-]', '.0'),

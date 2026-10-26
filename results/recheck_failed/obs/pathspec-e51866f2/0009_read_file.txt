@@ -1,0 +1,82 @@
+     1 | """Test that bracket expressions only match within a path segment."""
+     2 | 
+     3 | import unittest
+     4 | import warnings
+     5 | 
+     6 | from pathspec import GitIgnoreSpec, PathSpec
+     7 | from pathspec.patterns.gitignore import GitIgnorePatternError
+     8 | from pathspec.patterns.gitignore.basic import GitIgnoreBasicPattern
+     9 | from pathspec.patterns.gitignore.spec import GitIgnoreSpecPattern
+    10 | from pathspec.patterns.gitwildmatch import GitWildMatchPattern
+    11 | 
+    12 | from .util import require_backend
+    13 | 
+    14 | 
+    15 | class BracketSlashTest(unittest.TestCase):
+    16 | 
+    17 | 	def test_invalid_posix_after_range(self):
+    18 | 		for factory in (GitIgnoreBasicPattern, GitIgnoreSpecPattern):
+    19 | 			for line in ('[z-[:bogus:]]', '[z-[:^alpha:]]', '[.-[:bogus:]]'):
+    20 | 				with self.subTest(factory=factory, line=line):
+    21 | 					pattern = factory(line, errors='literal')
+    22 | 					self.assertIsNotNone(pattern.match_file(line))
+    23 | 					self.assertIsNone(factory(line, errors='null').regex)
+    24 | 					with self.assertRaises(GitIgnorePatternError):
+    25 | 						factory(line, errors='raise')
+    26 | 
+    27 | 	def test_pattern_separator(self):
+    28 | 		for factory in (GitIgnoreBasicPattern, GitIgnoreSpecPattern, GitWildMatchPattern):
+    29 | 			for bracket, matched in (
+    30 | 				('[!x]', '.0'),
+    31 | 				('[^x]', '.0'),
+    32 | 				('[!]-]', '.0'),
+    33 | 				('[!-x]', '.0'),
+    34 | 				('[.-0]', '.0'),
+    35 | 				(r'[\.-\0]', '.0'),
+    36 | 				('[!0-9]', '.x'),
+    37 | 				('[[:punct:]]', '.!'),
+    38 | 				('[[:graph:]]', '.0'),
+    39 | 				('[[:print:]]', '. '),
+    40 | 				('[[:digit:].]', '.0'),
+    41 | 			):
+    42 | 				for as_bytes in (False, True):
+    43 | 					with self.subTest(factory=factory, bracket=bracket, as_bytes=as_bytes):
+    44 | 						line = 'a' + bracket + 'b'
+    45 | 						with warnings.catch_warnings():
+    46 | 							warnings.simplefilter('ignore', DeprecationWarning)
+    47 | 							pattern = factory(line.encode() if as_bytes else line)
+    48 | 						for char in matched + '/':
+    49 | 							path = 'a' + char + 'b'
+    50 | 							self.assertEqual(
+    51 | 								bool(pattern.match_file(path.encode() if as_bytes else path)),
+    52 | 								char != '/',
+    53 | 								path,
+    54 | 							)
+    55 | 
+    56 | 	def test_spec_separator(self):
+    57 | 		for backend in ('simple', 're2', 'hyperscan'):
+    58 | 			with self.subTest(backend=backend):
+    59 | 				require_backend(backend)
+    60 | 				for line in ('a[!x]b', 'a[.-0]b', 'a[[:punct:]]b'):
+    61 | 					with warnings.catch_warnings():
+    62 | 						warnings.simplefilter('ignore', DeprecationWarning)
+    63 | 						specs = (
+    64 | 							GitIgnoreSpec.from_lines([line], backend=backend),
+    65 | 							PathSpec.from_lines('gitignore', [line], backend=backend),
+    66 | 							PathSpec.from_lines('gitwildmatch', [line], backend=backend),
+    67 | 						)
+    68 | 					for spec in specs:
+    69 | 						for prefix in ('', 'dir/'):
+    70 | 							with self.subTest(line=line, spec=spec, prefix=prefix):
+    71 | 								self.assertTrue(spec.match_file(prefix + 'a.b'))
+    72 | 								self.assertFalse(spec.match_file(prefix + 'a/b'))
+    73 | 
+    74 | 	def test_negated_rule(self):
+    75 | 		for backend in ('simple', 're2', 'hyperscan'):
+    76 | 			with self.subTest(backend=backend):
+    77 | 				require_backend(backend)
+    78 | 				for line in ('a[!x]b', 'a[.-0]b', 'a[[:punct:]]b'):
+    79 | 					with self.subTest(line=line):
+    80 | 						spec = GitIgnoreSpec.from_lines(['*', '!' + line], backend=backend)
+    81 | 						self.assertFalse(spec.match_file('a.b'))
+    82 | 						self.assertTrue(spec.match_file('a/b'))

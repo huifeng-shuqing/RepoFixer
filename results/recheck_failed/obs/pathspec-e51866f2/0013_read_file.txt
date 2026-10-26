@@ -1,0 +1,201 @@
+    56 | }
+    57 | """
+    58 | Maps each POSIX bracket character class name to the ASCII regex range that
+    59 | reproduces git's wildmatch behavior.
+    60 | """
+    61 | 
+    62 | 
+    63 | def _strip_trailing_ws(pattern: str) -> str:
+    64 | 	"""
+    65 | 	Strip trailing spaces and line endings from the pattern while considering
+    66 | 	that they can be escaped. Other whitespace is part of the filename.
+    67 | 
+    68 | 	*pattern* (:class:`str`) is the pattern.
+    69 | 
+    70 | 	Returns the modified pattern (:class:`str`).
+    71 | 	"""
+    72 | 	i = len(pattern) - 1
+    73 | 	if i == -1 or pattern[i] not in ' \r\n':
+    74 | 		# Fast path: pattern does not end with a space or line ending.
+    75 | 		return pattern
+    76 | 
+    77 | 	# Scan past spaces and line endings.
+    78 | 	i -= 1
+    79 | 	while i >= 0 and pattern[i] in ' \r\n':
+    80 | 		i -= 1
+    81 | 
+    82 | 	last_ws = i + 1
+    83 | 
+    84 | 	# Count backslashes.
+    85 | 	while i >= 0 and pattern[i] == '\\':
+    86 | 		i -= 1
+    87 | 
+    88 | 	bs_count = last_ws - i - 1
+    89 | 	if bs_count % 2 == 1:
+    90 | 		# Odd count, first whitespace character is escaped, strip the rest.
+    91 | 		last_ws += 1
+    92 | 
+    93 | 	# Strip trailing whitespace.
+    94 | 	return pattern[:last_ws]
+    95 | 
+    96 | 
+    97 | def _sub_bracket_token(match: re.Match[str]) -> str:
+    98 | 	"""
+    99 | 	Translate a single token matched by :data:`_BRACKET_TOKEN_REGEX`. A token can
+   100 | 	be a backslash escaped character (group 1), a POSIX bracket character class
+   101 | 	(groups 2 and 3).
+   102 | 
+   103 | 	*match* (:class:`re.Match`) is the match object.
+   104 | 
+   105 | 	Returns the replacement string (:class:`str`).
+   106 | 	"""
+   107 | 	escape_char, class_negated, class_name = match.groups()
+   108 | 
+   109 | 	# Backslash escaped character.
+   110 | 	if escape_char:
+   111 | 		return re.escape(escape_char)
+   112 | 
+   113 | 	# POSIX bracket character class.
+   114 | 	class_regex = _POSIX_CLASS_TO_REGEX.get(class_name)
+   115 | 	if class_regex is not None and not class_negated:
+   116 | 		return class_regex
+   117 | 
+   118 | 	raise _PosixClassError((
+   119 | 		f"Invalid character class={match.group(0)!r} found in pattern="
+   120 | 		f"{match.string!r}."
+   121 | 	))  # _PosixClassError
+   122 | 
+   123 | 
+   124 | class _GitIgnoreBasePattern(RegexPattern):
+   125 | 	"""
+   126 | 	.. warning:: This class is not part of the public API. It is subject to
+   127 | 		change.
+   128 | 
+   129 | 	The :class:`_GitIgnoreBasePattern` class is the base implementation for a
+   130 | 	compiled gitignore pattern.
+   131 | 	"""
+   132 | 
+   133 | 	# Keep the dict-less class hierarchy.
+   134 | 	__slots__ = ()
+   135 | 
+   136 | 	def __init__(
+   137 | 		self,
+   138 | 		pattern: Union[AnyStr, re.Pattern, None],
+   139 | 		include: Optional[bool] = None,
+   140 | 		*,
+   141 | 		errors: Optional[Literal['literal', 'null', 'raise']] = None,
+   142 | 	) -> None:
+   143 | 		"""
+   144 | 		Initializes the :class:`_GitIgnoreBasePattern` instance.
+   145 | 
+   146 | 		*pattern* (:class:`str`, :class:`bytes`, :class:`re.Pattern`, or
+   147 | 		:data:`None`) is the pattern to compile into a regular expression.
+   148 | 
+   149 | 		*include* (:class:`bool` or :data:`None`) must be :data:`None` unless
+   150 | 		*pattern* is a precompiled regular expression (:class:`re.Pattern`) in which
+   151 | 		case it is whether matched files should be included (:data:`True`), excluded
+   152 | 		(:data:`False`), or is a null operation (:data:`None`).
+   153 | 
+   154 | 		*errors* (:class:`str` :data:`None`) is how to handle invalid notation in
+   155 | 		the pattern. Default is :data:`None` for ``'null'`` because that is the
+   156 | 		behavior of Git.
+   157 | 
+   158 | 		-	``'literal'``: Most invalid notation will be treated as a literal string.
+   159 | 			In cases where the gitignore documentation clearly states the pattern
+   160 | 			should never match, a null-operation will be returned.
+   161 | 
+   162 | 		-	``'null'``: Invalid notation will result in a null-operation.
+   163 | 
+   164 | 		-	``'raise'``: Invalid notation will raise a :exc:`GitIgnorePatternError`.
+   165 | 		"""
+   166 | 		super().__init__(pattern, include, errors=errors)
+   167 | 
+   168 | 	@staticmethod
+   169 | 	def escape(s: AnyStr) -> AnyStr:
+   170 | 		"""
+   171 | 		Escape special characters in the given string.
+   172 | 
+   173 | 		*s* (:class:`str` or :class:`bytes`) a filename or a string that you want to
+   174 | 		escape, usually before adding it to a ".gitignore".
+   175 | 
+   176 | 		Returns the escaped string (:class:`str` or :class:`bytes`).
+   177 | 		"""
+   178 | 		if isinstance(s, str):
+   179 | 			return_type = str
+   180 | 			string = s
+   181 | 		elif isinstance(s, bytes):
+   182 | 			return_type = bytes
+   183 | 			string = s.decode(_BYTES_ENCODING)
+   184 | 		else:
+   185 | 			raise TypeError(f"s:{s!r} is not a unicode or byte string.")
+   186 | 
+   187 | 		# Reference: https://git-scm.com/docs/gitignore#_pattern_format
+   188 | 		out_string = ''.join((f"\\{x}" if x in '\\[]!*#?' else x) for x in string)
+   189 | 
+   190 | 		# EDGE CASE: Git strips trailing spaces from a pattern unless they are
+   191 | 		# escaped with a backslash. Escape them so an escaped filename that ends
+   192 | 		# with a space still matches that file.
+   193 | 		stripped = out_string.rstrip(' ')
+   194 | 		trailing = len(out_string) - len(stripped)
+   195 | 		if trailing:
+   196 | 			out_string = stripped + '\\ ' * trailing
+   197 | 
+   198 | 		if return_type is bytes:
+   199 | 			out_bytes = out_string.encode(_BYTES_ENCODING)
+   200 | 			return out_bytes  # type: ignore[return-value]
+   201 | 		else:
+   202 | 			return out_string  # type: ignore[return-value]
+   203 | 
+   204 | 	@staticmethod
+   205 | 	def _translate_segment_glob(
+   206 | 		pattern: str,
+   207 | 		errors: Literal['literal', 'raise'],
+   208 | 	) -> str:
+   209 | 		"""
+   210 | 		Translates the glob pattern to a regular expression. This is used in the
+   211 | 		constructor to translate a path segment glob pattern to its corresponding
+   212 | 		regular expression.
+   213 | 
+   214 | 		*pattern* (:class:`str`) is the glob pattern.
+   215 | 
+   216 | 		*errors* (:class:`str`) is how to handle invalid pattern notation in the
+   217 | 		pattern:
+   218 | 
+   219 | 		-	``'literal'``: Invalid notation will be treated as a literal string.
+   220 | 
+   221 | 		-	``'raise'``: Invalid notation will raise an exception.
+   222 | 
+   223 | 		Raises :exc:`._PosixClassError` when an invalid POXIS class is found and
+   224 | 		*errors* is ``'raise'``.
+   225 | 
+   226 | 		Raises :exc:`._RangeNotationError` when an invalid range notation is found
+   227 | 		and *errors* is ``'raise'``.
+   228 | 
+   229 | 		Raises :exc:`._TrailingBackslashError` when a trailing backslash is found at
+   230 | 		the end of the pattern, regardless of the value of *errors*.
+   231 | 
+   232 | 		Returns the regular expression (:class:`str`).
+   233 | 		"""
+   234 | 		# NOTE: This is derived from `fnmatch.translate()` and is similar to the
+   235 | 		# POSIX function `fnmatch()` with the `FNM_PATHNAME` flag set.
+   236 | 
+   237 | 		escape = False
+   238 | 		regex = ''
+   239 | 		i, end = 0, len(pattern)
+   240 | 		while i < end:
+   241 | 			# Get next character.
+   242 | 			char = pattern[i]
+   243 | 			i += 1
+   244 | 
+   245 | 			if escape:
+   246 | 				# Escape the character.
+   247 | 				escape = False
+   248 | 				regex += re.escape(char)
+   249 | 
+   250 | 			elif char == '\\':
+   251 | 				# Escape character, escape next character.
+   252 | 				escape = True
+   253 | 
+   254 | 			elif char == '*':
+   255 | 				# Multi-character wildcard. Match any string (except slashes), including
+... [163 more lines; pass offset=256 for next page]

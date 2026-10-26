@@ -1,0 +1,81 @@
+            "-  --------------  ----",
+        ]
+    )
+    result = tabulate(table, tablefmt="simple")
+    assert_equal(expected, result)
+
+
+def test_github():
+    "Output: github with headers"
+    expected = "\n".join(
+        [
+            "| strings   |   numbers |",
+            "|:----------|----------:|",
+            "| spam      |   41.9999 |",
+            "| eggs      |  451      |",
+        ]
+    )
+    result = tabulate(_test_table, _test_table_headers, tablefmt="github")
+    assert_equal(expected, result)
+
+
+def test_github_multiline():
+    "Output: github with multiline cells with headers"
+    table = [[2, "foo\nbar"]]
+    headers = ("more\nspam eggs", "more spam\n& eggs")
+    expected = "\n".join(
+        [
+            "|        more | more spam   |",
+            "|   spam eggs | & eggs      |",
+            "|------------:|:------------|",
+            "|           2 | foo         |",
+            "|             | bar         |",
+        ]
+    )
+    result = tabulate(table, headers, tablefmt="github")
+    assert_equal(expected, result)
+
+
+def test_github_with_colalign():
+    "Output: github with explicit column alignment"
+    expected = "\n".join(
+        [
+            "| Name   |   Age |",
+            "|:-------|------:|",
+            "| Alice  |    24 |",
+            "| Bob    |    19 |",
+        ]
+    )
+    result = tabulate(
+        [["Alice", 24], ["Bob", 19]],
+        ["Name", "Age"],
+        tablefmt="github",
+        colalign=("left", "right"),
+    )
+    assert_equal(expected, result)
+
+
+def test_github_no_alignment():
+    "Output: github without alignment hints when numalign/stralign are disabled"
+    expected = "\n".join(
+        [
+            "| strings | numbers |",
+            "|-----------|-----------|",
+            "| spam | 41.9999 |",
+            "| eggs | 451 |",
+        ]
+    )
+    result = tabulate(
+        _test_table,
+        _test_table_headers,
+        tablefmt="github",
+        numalign=None,
+        stralign=None,
+    )
+    assert_equal(expected, result)
+
+
+def test_grid():
+    "Output: grid with headers"
+    expected = "\n".join(
+        [
