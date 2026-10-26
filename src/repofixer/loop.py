@@ -61,6 +61,7 @@ class AgentRun:
     policy_denials: list[dict] = field(default_factory=list)
     review_rounds: int = 0
     review_feedback: str | None = None
+    review_triggered: bool = False
     snapshots: list[str] = field(default_factory=list)
 
     @property
@@ -132,12 +133,14 @@ def run_agent(
     obs_dir: Path | None = None,
     state_path: Path | None = None,
     policy: SafetyPolicy | None = None,
-    loop_guard: int = 4,
+    loop_guard: int = 6,
+    loop_warn_at: int = 3,
     solved_check: Callable[[], bool] | None = None,
     notes: str | None = None,
     snapshot: bool = False,
     review: bool = False,
     max_review_rounds: int = 1,
+    review_min_steps: int = 15,
 ) -> AgentRun:
     cm = ContextManager(obs_dir, context_budget)
     step_start = 1
@@ -159,7 +162,11 @@ def run_agent(
 
     tw = TraceWriter(trace_path)
     run = AgentRun()
-    recent_calls: deque[str] = deque(maxlen=loop_guard)
+    # two-level loop guard: warn after N consecutive identical tool calls,
+    # kill after M (per-call granularity, interleaved edits reset the counter)
+    last_call_sig: str | None = None
+    consecutive_identical = 0
+    loop_warned = False
     # no_progress: true probe loops show tiny bash outputs repeatedly; real
     # investigation (sed/pytest) produces large outputs. Track per-step bash
     # output size; -1 marks a step that used any non-bash tool.
@@ -226,7 +233,9 @@ def run_agent(
                     )
                 )
                 cm.add_tool(call["id"], call["name"], result.output)
-                recent_calls.append(f"{call['name']}:{json.dumps(call['arguments'], sort_keys=True)}")
+                sig = f"{call['name']}:{json.dumps(call['arguments'], sort_keys=True)}"
+                consecutive_identical = consecutive_identical + 1 if sig == last_call_sig else 1
+                last_call_sig = sig
                 if call["name"] == "done" and result.ok:
                     run.done_summary = result.output
                     run.stopped_reason = "done"
@@ -238,10 +247,16 @@ def run_agent(
                 recent_bash_sizes.append(-1)
 
             if (
-                len(recent_calls) == recent_calls.maxlen
-                and len(set(recent_calls)) == 1
+                consecutive_identical >= loop_warn_at
+                and not loop_warned
                 and run.done_summary is None
             ):
+                loop_warned = True
+                cm.add_user(
+                    "Warning: you are repeating the same action. If you are stuck, "
+                    "change your approach or state what is blocking you."
+                )
+            if consecutive_identical >= loop_guard and run.done_summary is None:
                 run.stopped_reason = "loop_detected"
             elif (
                 step_no >= 12
@@ -258,7 +273,12 @@ def run_agent(
                 sha = _snapshot(getattr(registry.env, "workspace", None), step_no)
                 if sha:
                     run.snapshots.append(sha)
-            if solved_check is not None:
+            if solved_check is not None and any(
+                tc.name in ("edit_file", "write_file") for tc in st.tool_calls
+            ):
+                # verify only after steps that actually changed files: pure
+                # read/probe steps cannot have fixed anything, and skipping
+                # them halves verify frequency (and its flaky-test exposure)
                 try:
                     if solved_check():
                         run.stopped_reason = "solved_early"
@@ -266,12 +286,18 @@ def run_agent(
                     pass
             # Independent-context review: when the model declares done, a fresh
             # conversation judges the diff; critical issues reopen the loop for
-            # at most max_review_rounds correction rounds.
+            # at most max_review_rounds correction rounds. Gated to long or
+            # error-prone runs only (the review costs a full extra call).
+            had_tool_errors = any(
+                tc.error_type for s in run.steps for tc in s.tool_calls
+            )
             if (
                 run.done_summary is not None
                 and review
                 and run.review_rounds < max_review_rounds
+                and (len(run.steps) >= review_min_steps or had_tool_errors)
             ):
+                run.review_triggered = True
                 run.review_rounds += 1
                 diff = _get_diff(getattr(registry.env, "workspace", None))
                 if diff:

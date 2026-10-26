@@ -21,12 +21,20 @@ def _bash_call(rid: str, command: str) -> dict:
 
 
 def test_loop_guard_stops_repetition(ws):
-    llm = ScriptedLLM(
-        [LLMResponse(text="", tool_calls=[_bash_call(f"c{i}", "echo hi")], finish_reason="tool_calls") for i in range(10)]
-    )
-    run = run_agent("task", llm, ToolRegistry(LocalEnv(ws)), ws / "t.jsonl", max_steps=20)
+    """Two-level guard: warn at 3 identical calls, kill at 6."""
+    seen: list[list[dict]] = []
+
+    class RecLLM:
+        def complete(self, messages, tools=None, temperature=0.2, model=None):
+            seen.append(list(messages))
+            i = len(seen)
+            return LLMResponse(text="", tool_calls=[_bash_call(f"c{i}", "echo hi")], finish_reason="tool_calls")
+
+    run = run_agent("task", RecLLM(), ToolRegistry(LocalEnv(ws)), ws / "t.jsonl", max_steps=20)
     assert run.stopped_reason == "loop_detected"
-    assert len(run.steps) == 4
+    assert len(run.steps) == 6  # loop_guard default is now 6
+    warned = [m for msg in seen for m in msg if m.get("role") == "user" and "repeating" in str(m.get("content"))]
+    assert warned  # warning was injected at 3 repeats
 
 
 def test_resume_continues_from_state(ws):
@@ -61,8 +69,14 @@ def test_context_llm_compaction(ws):
 
 
 def test_solved_check_early_stop(ws):
+    (ws / "f.txt").write_text("hello", encoding="utf-8")
     llm = ScriptedLLM(
-        [LLMResponse(text="", tool_calls=[_bash_call(f"c{i}", "echo hi")], finish_reason="tool_calls") for i in range(10)]
+        [LLMResponse(
+            text="",
+            tool_calls=[{"id": "c1", "name": "edit_file",
+                         "arguments": {"path": "f.txt", "old_text": "hello", "new_text": "HELLO"}}],
+            finish_reason="tool_calls",
+        )]
     )
     run = run_agent(
         "task", llm, ToolRegistry(LocalEnv(ws)), ws / "t.jsonl", max_steps=20,
@@ -70,6 +84,27 @@ def test_solved_check_early_stop(ws):
     )
     assert run.stopped_reason == "solved_early"
     assert len(run.steps) == 1
+
+
+def test_solved_check_skipped_after_read_only_steps(ws):
+    """Verify must not run after steps with no edits (cost + flaky exposure)."""
+    calls = []
+
+    class RecLLM:
+        def complete(self, messages, tools=None, temperature=0.2, model=None):
+            if not hasattr(self, "n"):
+                self.n = 0
+            self.n += 1
+            if self.n == 1:
+                return LLMResponse(text="", tool_calls=[{"id": "c1", "name": "grep", "arguments": {"pattern": "x"}}], finish_reason="tool_calls")
+            return LLMResponse(text="", tool_calls=[{"id": "c2", "name": "done", "arguments": {"summary": "x"}}], finish_reason="tool_calls")
+
+    def check() -> bool:
+        calls.append(1)
+        return True
+
+    run_agent("task", RecLLM(), ToolRegistry(LocalEnv(ws)), ws / "t.jsonl", max_steps=5, solved_check=check)
+    assert calls == []  # no edit/write step -> verify never invoked
 
 
 def test_no_progress_guard_stops_probe_loops(ws):

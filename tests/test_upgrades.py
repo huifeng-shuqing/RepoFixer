@@ -135,11 +135,27 @@ def test_review_issues_reopen_loop(ws):
             LLMResponse(text="VERDICT: OK", finish_reason="stop"),
         ],
     )
-    run = run_agent("task", llm, ToolRegistry(LocalEnv(ws)), ws / "t.jsonl", review=True, max_steps=10)
+    run = run_agent("task", llm, ToolRegistry(LocalEnv(ws)), ws / "t.jsonl", review=True, max_steps=10, review_min_steps=1)
     assert run.review_rounds == 1  # max_review_rounds=1: one review, at most one correction round
     assert "missing test run" in (run.review_feedback or "")
     assert run.done_summary == "fixed v2"
     assert run.stopped_reason == "done"
+
+
+def test_review_gated_off_for_short_clean_runs(ws):
+    """Default gate: review only for long runs or runs with tool errors."""
+    _git_repo(ws)
+    llm = ReviewLLM(
+        main_responses=[
+            LLMResponse(text="", tool_calls=[_edit_call()], finish_reason="tool_calls"),
+            LLMResponse(text="", tool_calls=[_done_call("fixed")], finish_reason="tool_calls"),
+        ],
+        review_responses=[LLMResponse(text="VERDICT: OK", finish_reason="stop")],
+    )
+    run = run_agent("task", llm, ToolRegistry(LocalEnv(ws)), ws / "t.jsonl", review=True, max_steps=10)
+    assert run.review_triggered is False
+    assert run.review_rounds == 0
+    assert run.done_summary == "fixed"
 
 
 def test_review_ok_passes_through(ws):
@@ -151,7 +167,7 @@ def test_review_ok_passes_through(ws):
         ],
         review_responses=[LLMResponse(text="VERDICT: OK", finish_reason="stop")],
     )
-    run = run_agent("task", llm, ToolRegistry(LocalEnv(ws)), ws / "t.jsonl", review=True, max_steps=10)
+    run = run_agent("task", llm, ToolRegistry(LocalEnv(ws)), ws / "t.jsonl", review=True, max_steps=10, review_min_steps=1)
     assert run.review_rounds == 1
     assert run.review_feedback is None
     assert run.done_summary == "fixed"

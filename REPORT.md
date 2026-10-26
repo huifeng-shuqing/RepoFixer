@@ -103,3 +103,12 @@
 - **对比结果**（6 题子集，单次运行）：升级前 5/6（16.7 步，¥1.54），升级后 4/6（17.2 步，¥1.79）。差异在 n=6 的噪声范围内（±18pp），翻转题 inflection 与全量评测中的边缘翻转同源——**不能归因于升级，小样本无法定论**。详见 results/UPGRADE_COMPARISON.md。
 - **逐项对照核验**（七项升级 vs 已读参考源码）：计划清单↔opencode agent frontmatter、复审↔Claude Code reviewer、快照↔Cline checkpoints、笔记↔CLAUDE.md 约定、MCP↔gemini-cli/官方 SDK、路由↔aider 双模型、并行↔Anthropic 实践——一致或目标对齐，差异点见 UPGRADE_COMPARISON.md 第五节。
 - **待用户决策**：全量 29 题前后对比（约 ¥15）或边缘题复跑（约 ¥3–5）；openhands-sdk 参考仓库待补克隆。
+
+### Block 7.2 — 失败归因驱动的机制调整（2026-10-26）
+
+- **归因发现**：升级前后真实失败中循环打转类占 9/14；boltons-4e5faa3d 的「早停通过、终验失败」经复跑三次确认为 **flaky 测试**（测试自建目录残留，首跑通过、续跑必挂）——评测卫生问题而非 agent 能力问题，已修（验证前 git clean）。
+- **四项调整**（47 单测全绿）：
+  1. 验证驱动早停改为**仅编辑步骤后触发**（每步验证次数降 2–3 倍，同时降低 flaky 暴露面）；
+  2. 独立复审改为**条件触发**（≥15 步或出现工具错误才复审，`review_triggered` 字段可审计），解除对短平快任务的 +20% 成本；
+  3. 循环熔断**两级化**（3 次重复注入警示、6 次强杀，`loop_warn_at/loop_guard` 可配）；
+  4. 模型路由口径修正：`DEEPSEEK_SMALL_MODEL` 未配置时回落主模型，路由需第二家便宜模型才生效（.env.example 与简历口径已注明）。
