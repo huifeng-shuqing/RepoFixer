@@ -1,0 +1,140 @@
+"""Number tests."""
+
+from __future__ import annotations
+
+import math
+import typing
+
+import pytest
+
+import humanize
+from humanize import number
+
+
+@pytest.mark.parametrize(
+    "test_input, expected",
+    [
+        ("1", "1st"),
+        ("2", "2nd"),
+        ("3", "3rd"),
+        ("4", "4th"),
+        ("11", "11th"),
+        ("12", "12th"),
+        ("13", "13th"),
+        ("101", "101st"),
+        ("102", "102nd"),
+        ("103", "103rd"),
+        ("111", "111th"),
+        ("something else", "something else"),
+        (None, "None"),
+        (math.nan, "NaN"),
+        (math.inf, "+Inf"),
+        (-math.inf, "-Inf"),
+        ("nan", "NaN"),
+        ("-inf", "-Inf"),
+    ],
+)
+def test_ordinal(test_input: str, expected: str) -> None:
+    assert humanize.ordinal(test_input) == expected
+
+
+@pytest.mark.parametrize(
+    "test_args, expected",
+    [
+        ([100], "100"),
+        ([1000], "1,000"),
+        ([10123], "10,123"),
+        ([10311], "10,311"),
+        ([1_000_000], "1,000,000"),
+        ([1_234_567.25], "1,234,567.25"),
+        (["100"], "100"),
+        (["1000"], "1,000"),
+        (["10123"], "10,123"),
+        (["10311"], "10,311"),
+        (["1000000"], "1,000,000"),
+        (["1234567.1234567"], "1,234,567.1234567"),
+        (["1234567.1234567", 0], "1,234,567"),
+        (["1234567.1234567", 1], "1,234,567.1"),
+        (["1234567.1234567", 10], "1,234,567.1234567000"),
+        (["1234567", 1], "1,234,567.0"),
+        ([None], "None"),
+        ([14308.40], "14,308.4"),
+        ([14308.40, None], "14,308.4"),
+        ([14308.40, 1], "14,308.4"),
+        ([14308.40, 2], "14,308.40"),
+        ([14308.40, 3], "14,308.400"),
+        ([1234.5454545], "1,234.5454545"),
+        ([1234.5454545, None], "1,234.5454545"),
+        ([1234.5454545, 0], "1,235"),
+        ([1234.5454545, 1], "1,234.5"),
+        ([1234.5454545, 2], "1,234.55"),
+        ([1234.5454545, 3], "1,234.545"),
+        ([1234.5454545, 10], "1,234.5454545000"),
+        ([math.nan], "NaN"),
+        ([math.inf], "+Inf"),
+        ([-math.inf], "-Inf"),
+        (["nan"], "NaN"),
+        (["-inf"], "-Inf"),
+    ],
+)
+def test_intcomma(
+[build-system]
+build-backend = "hatchling.build"
+requires = [
+  "hatch-vcs",
+  "hatchling>=1.27",
+]
+
+[project]
+name = "humanize"
+description = "Python humanize utilities"
+readme = "README.md"
+keywords = [
+  "humanize time size",
+]
+license = "MIT"
+license-files = [ "LICENCE" ]
+maintainers = [ { name = "Hugo van Kemenade" } ]
+authors = [ { name = "Jason Moiron", email = "jmoiron@jmoiron.net" } ]
+requires-python = ">=3.10"
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.15",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+  "Topic :: Text Processing",
+  "Topic :: Text Processing :: General",
+]
+dynamic = [ "version" ]
+optional-dependencies.tests = [
+  "freezegun",
+  "pytest>=9",
+  "pytest-benchmark",
+  "pytest-codspeed",
+  "pytest-cov",
+]
+urls."Issue tracker" = "https://github.com/python-humanize/humanize/issues"
+urls."Release notes" = "https://github.com/python-humanize/humanize/releases"
+urls.Documentation = "https://humanize.readthedocs.io/"
+urls.Funding = "https://tidelift.com/subscription/pkg/pypi-humanize?utm_source=pypi-humanize&utm_medium=pypi"
+urls.Homepage = "https://github.com/python-humanize/humanize"
+urls.Source = "https://github.com/python-humanize/humanize"
+
+[tool.hatch]
+version.source = "vcs"
+version.raw-options.local_scheme = "no-local-version"
+build.artifacts = [ "*.mo" ]
+build.hooks.vcs.version-file = "src/humanize/_version.py"
+
+[tool.ruff]
+fix = true
+lint.select = [

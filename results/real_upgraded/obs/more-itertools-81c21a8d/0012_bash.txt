@@ -1,0 +1,40 @@
+........................F.................................. [ 16%]
+............................................................................................................. [ 30%]
+....................................................................................................................................................... [ 50%]
+.................................... [ 54%]
+............................................................ [ 62%]
+................................................................................ [ 73%]
+........................................................................ [ 82%]
+............................................ [ 88%]
+..........................................................................................                                                               [100%]
+================================== FAILURES ===================================
+________________ BucketTests.test_falsey_validator_is_honoured ________________
+
+self = <tests.test_more.BucketTests testMethod=test_falsey_validator_is_honoured>
+
+    def test_falsey_validator_is_honoured(self):
+        # A falsey callable is still a valid validator and must not be
+        # replaced by the default (see #1308).
+        class AllowedKeys(set):
+            def __call__(self, key):
+                return key in self
+    
+        allowed = AllowedKeys()
+        self.assertFalse(allowed)  # Sanity: the validator itself is falsey
+        D = mi.bucket(
+            iter([10, 20, 11, 21]), key=lambda x: x, validator=allowed
+        )
+>       self.assertEqual(list(D[10]), [])
+E       AssertionError: Lists differ: [10] != []
+E       
+E       First list contains 1 additional elements.
+E       First extra element 0:
+E       10
+E       
+E       - [10]
+E       + []
+
+tests\test_more.py:1124: AssertionError
+=========================== short test summary info ===========================
+FAILED tests\test_more.py::BucketTests::test_falsey_validator_is_honoured - A...
+1 failed, 767 passed, 21202 subtests passed in 30.63s

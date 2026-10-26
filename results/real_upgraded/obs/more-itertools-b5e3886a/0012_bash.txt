@@ -1,0 +1,55 @@
+docs
+LICENSE
+Makefile
+MANIFEST.in
+more_itertools
+pyproject.toml
+README.rst
+requirements
+setup.cfg
+tests
+tox.ini
+__init__.py
+__pycache__
+test_more.py
+test_recipes.py
+tests/test_more.py:3767:    def test_maxlen(self):
+tests/test_more.py:3770:        s = mi.seekable(iterable, maxlen=4)
+tests/test_more.py:3778:    def test_maxlen_zero(self):
+tests/test_more.py:3780:        s = mi.seekable(iterable, maxlen=0)
+tests/test_more.py:3784:    def test_maxlen_zero_peek_does_not_drop_items(self):
+tests/test_more.py:3785:        s = mi.seekable([10, 20, 30], maxlen=0)
+tests/test_more.py:3790:    def test_maxlen_zero_bool_does_not_drop_items(self):
+tests/test_more.py:3791:        s = mi.seekable([10, 20, 30], maxlen=0)
+tests/test_more.py:3795:        s = mi.seekable([], maxlen=0)
+tests/test_more.py:3825:    def test_getitem_maxlen(self):
+tests/test_more.py:3826:        s = mi.seekable((str(n) for n in range(10)), maxlen=2)
+tests/test_more.py:7077:def grow_to_window(data, maxlen):
+tests/test_more.py:7078:    "Return growing window views upto maxlen."
+tests/test_more.py:7080:        i = max(j - maxlen, 0)
+tests/test_more.py:7106:    def test_maxlen(self):
+tests/test_more.py:7111:            list(mi.running_min(iter(data), maxlen=0))
+tests/test_more.py:7114:        self.assertEqual(list(mi.running_min(iter(data), maxlen=1)), data)
+tests/test_more.py:7117:        for maxlen in range(2, 6):
+tests/test_more.py:7118:            with self.subTest(maxlen=maxlen):
+tests/test_more.py:7119:                actual = list(mi.running_min(iter(data), maxlen=maxlen))
+tests/test_more.py:7120:                expected = list(map(min, grow_to_window(data, maxlen)))
+tests/test_more.py:7125:            list(mi.running_min(iter(data), maxlen=len(data) * 2)),
+tests/test_more.py:7133:            list(map(type, mi.running_min(data, maxlen=2))),
+tests/test_more.py:7160:    def test_maxlen(self):
+tests/test_more.py:7165:            list(mi.running_max(iter(data), maxlen=0))
+tests/test_more.py:7168:        self.assertEqual(list(mi.running_max(iter(data), maxlen=1)), data)
+tests/test_more.py:7171:        for maxlen in range(2, 6):
+tests/test_more.py:7172:            with self.subTest(maxlen=maxlen):
+tests/test_more.py:7173:                actual = list(mi.running_max(iter(data), maxlen=maxlen))
+tests/test_more.py:7174:                expected = list(map(max, grow_to_window(data, maxlen)))
+tests/test_more.py:7179:            list(mi.running_max(iter(data), maxlen=len(data) * 2)),
+tests/test_more.py:7187:            list(map(type, mi.running_max(data, maxlen=2))),
+tests/test_more.py:7195:    # (i.e correctly pass *maxlen* to each and correctly send
+tests/test_more.py:7245:        it = mi.running_statistics(iter(data), maxlen=3)
+tests/test_more.py:7266:        w = [0, 8, 1]  # Window with maxlen=3
+tests/test_more.py:7277:        w = [8, 1, 6]  # Window with maxlen=3
+tests/test_more.py:7294:            mi.running_statistics([10, 5, 20], maxlen=0)  # Non-positive maxlen
+tests/test_more.py:7328:            list(mi.running_statistics(map(kind, data), maxlen=3))
+tests/test_more.py:7332:            list(mi.running_statistics(map(complex, data), maxlen=3))
+tests/test_recipes.py:1584:def grow_to_window(data, maxlen):

@@ -1,0 +1,101 @@
+     1 | """Finance."""
+     2 | 
+     3 | from .utils import validator
+     4 | 
+     5 | 
+     6 | def _cusip_checksum(cusip: str):
+     7 |     check, val = 0, None
+     8 | 
+     9 |     for idx in range(9):
+    10 |         c = cusip[idx]
+    11 |         if c >= "0" and c <= "9":
+    12 |             val = ord(c) - ord("0")
+    13 |         elif c >= "A" and c <= "Z":
+    14 |             val = 10 + ord(c) - ord("A")
+    15 |         elif c >= "a" and c <= "z":
+    16 |             val = 10 + ord(c) - ord("a")
+    17 |         elif c == "*":
+    18 |             val = 36
+    19 |         elif c == "@":
+    20 |             val = 37
+    21 |         elif c == "#":
+    22 |             val = 38
+    23 |         else:
+    24 |             return False
+    25 | 
+    26 |         if idx & 1:
+    27 |             val += val
+    28 | 
+    29 |         check = check + (val // 10) + (val % 10)
+    30 | 
+    31 |     return (check % 10) == 0
+    32 | 
+    33 | 
+    34 | def _isin_checksum(value: str):
+    35 |     # The check digit (last character) is always numeric.
+    36 |     if not value[-1].isdecimal():
+    37 |         return False
+    38 | 
+    39 |     # Expand the code into a string of digits, mapping each letter to its
+    40 |     # two-digit value (A=10, ..., Z=35) and leaving digits unchanged.
+    41 |     digits = ""
+    42 |     for idx in range(12):
+    43 |         c = value[idx]
+    44 |         if c >= "0" and c <= "9" and idx > 1:
+    45 |             digits += c
+    46 |         elif c >= "A" and c <= "Z":
+    47 |             digits += str(10 + ord(c) - ord("A"))
+    48 |         elif c >= "a" and c <= "z":
+    49 |             digits += str(10 + ord(c) - ord("a"))
+    50 |         else:
+    51 |             return False
+    52 | 
+    53 |     # Luhn checksum over the expanded digit string: starting from the
+    54 |     # rightmost digit, double every second digit and sum the resulting digits.
+    55 |     check = 0
+    56 |     for idx, c in enumerate(reversed(digits)):
+    57 |         val = ord(c) - ord("0")
+    58 |         if idx & 1:
+    59 |             val += val
+    60 |         check += (val // 10) + (val % 10)
+    61 | 
+    62 |     return (check % 10) == 0
+    63 | 
+    64 | 
+    65 | @validator
+    66 | def cusip(value: str):
+    67 |     """Return whether or not given value is a valid CUSIP.
+    68 | 
+    69 |     Checks if the value is a valid [CUSIP][1].
+    70 |     [1]: https://en.wikipedia.org/wiki/CUSIP
+    71 | 
+    72 |     Examples:
+    73 |         >>> cusip('037833DP2')
+    74 |         True
+    75 |         >>> cusip('037833DP3')
+    76 |         ValidationError(func=cusip, args={'value': '037833DP3'})
+    77 | 
+    78 |     Args:
+    79 |         value: CUSIP string to validate.
+    80 | 
+    81 |     Returns:
+    82 |         (Literal[True]): If `value` is a valid CUSIP string.
+    83 |         (ValidationError): If `value` is an invalid CUSIP string.
+    84 |     """
+    85 |     return len(value) == 9 and value[-1] in "0123456789" and _cusip_checksum(value)
+    86 | 
+    87 | 
+    88 | @validator
+    89 | def isin(value: str):
+    90 |     """Return whether or not given value is a valid ISIN.
+    91 | 
+    92 |     Checks if the value is a valid [ISIN][1].
+    93 |     [1]: https://en.wikipedia.org/wiki/International_Securities_Identification_Number
+    94 | 
+    95 |     Examples:
+    96 |         >>> isin('037833DP2')
+    97 |         ValidationError(func=isin, args={'value': '037833DP2'})
+    98 |         >>> isin('037833DP3')
+    99 |         ValidationError(func=isin, args={'value': '037833DP3'})
+   100 | 
+... [50 more lines; pass offset=101 for next page]

@@ -1,0 +1,70 @@
+total 143
+drwxr-xr-x 1 吴琼 197121     0 10月 26 18:44 .
+drwxr-xr-x 1 吴琼 197121     0 10月 23 16:01 ..
+drwxr-xr-x 1 吴琼 197121     0 10月 26 18:44 .git
+drwxr-xr-x 1 吴琼 197121     0 10月 23 16:00 .github
+-rw-r--r-- 1 吴琼 197121   471 10月 23 16:00 .gitignore
+drwxr-xr-x 1 吴琼 197121     0 10月 23 16:00 .omp
+drwxr-xr-x 1 吴琼 197121     0 10月 23 17:47 .pytest_cache
+-rw-r--r-- 1 吴琼 197121   665 10月 23 16:00 .readthedocs.yaml
+drwxr-xr-x 1 吴琼 197121     0 10月 26 18:33 boltons
+-rw-r--r-- 1 吴琼 197121 66277 10月 23 16:00 CHANGELOG.md
+drwxr-xr-x 1 吴琼 197121     0 10月 23 16:00 docs
+-rw-r--r-- 1 吴琼 197121  1497 10月 23 16:00 LICENSE
+drwxr-xr-x 1 吴琼 197121     0 10月 23 16:00 misc
+-rw-r--r-- 1 吴琼 197121  1877 10月 23 16:00 pyproject.toml
+-rw-r--r-- 1 吴琼 197121  5863 10月 23 16:00 README.md
+-rw-r--r-- 1 吴琼 197121    37 10月 23 16:00 setup.cfg
+drwxr-xr-x 1 吴琼 197121     0 10月 23 17:47 tests
+-rw-r--r-- 1 吴琼 197121  2583 10月 23 16:00 TODO.rst
+-rw-r--r-- 1 吴琼 197121   240 10月 23 16:00 tox.ini
+# Boltons
+
+*boltons should be builtins.*
+
+<a href="https://boltons.readthedocs.io/en/latest/"><img src="https://img.shields.io/badge/docs-latest-brightgreen.svg?style=flat"></a>
+<a href="https://pypi.python.org/pypi/boltons"><img src="https://img.shields.io/pypi/v/boltons.svg"></a>
+<a href="https://anaconda.org/conda-forge/boltons"><img src="https://img.shields.io/conda/vn/conda-forge/boltons.svg"></a>
+<a href="https://ports.macports.org/port/py-boltons/summary"><img src="https://repology.org/badge/version-for-repo/macports/python:boltons.svg?header=MacPorts"></a>
+<a href="https://pypi.python.org/pypi/boltons"><img src="https://img.shields.io/pypi/pyversions/boltons.svg"></a>
+<a href="http://calver.org"><img src="https://img.shields.io/badge/calver-YY.MINOR.MICRO-22bfda.svg"></a>
+
+**Boltons** is a set of over 230 BSD-licensed, pure-Python utilities
+in the same spirit as — and yet conspicuously missing from —
+[the standard library][stdlib], including:
+
+  * [Atomic file saving][atomic], bolted on with [fileutils][fileutils]
+  * A highly-optimized [OrderedMultiDict][omd], in [dictutils][dictutils]
+  * *Two* types of [PriorityQueue][pq], in [queueutils][queueutils]
+  * [Chunked][chunked] and [windowed][windowed] iteration, in [iterutils][iterutils]
+  * Recursive data structure [iteration and merging][remap], with [iterutils.remap][iterutils.remap]
+  * Exponential backoff functionality, including jitter, through [iterutils.backoff][iterutils.backoff]
+  * A full-featured [TracebackInfo][tbinfo] type, for representing stack traces,
+    in [tbutils][tbutils]
+
+**[Full and extensive docs are available on Read The Docs.][rtd]** See
+what's new [by checking the CHANGELOG][changelog].
+
+Boltons is tested against Python 3.7-3.14, as well as PyPy3.
+
+[stdlib]: https://docs.python.org/3/library/index.html
+[rtd]: https://boltons.readthedocs.org/en/latest/
+[changelog]: https://github.com/mahmoud/boltons/blob/master/CHANGELOG.md
+
+[atomic]: https://boltons.readthedocs.org/en/latest/fileutils.html#boltons.fileutils.atomic_save
+[omd]: https://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.OrderedMultiDict
+[pq]: https://boltons.readthedocs.org/en/latest/queueutils.html#boltons.queueutils.PriorityQueue
+[chunked]: https://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.chunked
+[windowed]: https://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.windowed
+[tbinfo]: https://boltons.readthedocs.org/en/latest/tbutils.html#boltons.tbutils.TracebackInfo
+
+[fileutils]: https://boltons.readthedocs.org/en/latest/fileutils.html#module-boltons.fileutils
+[ioutils]: https://boltons.readthedocs.org/en/latest/ioutils.html#module-boltons.ioutils
+[dictutils]: https://boltons.readthedocs.org/en/latest/dictutils.html#module-boltons.dictutils
+[queueutils]: https://boltons.readthedocs.org/en/latest/queueutils.html#module-boltons.queueutils
+[iterutils]: https://boltons.readthedocs.org/en/latest/iterutils.html#module-boltons.iterutils
+[iterutils.remap]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.remap
+[iterutils.backoff]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.backoff
+[tbutils]: https://boltons.readthedocs.org/en/latest/tbutils.html#module-boltons.tbutils
+
+[remap]: http://sedimental.org/remap.html

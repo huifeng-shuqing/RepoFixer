@@ -1,0 +1,101 @@
+     1 | """Humanizing functions for numbers."""
+     2 | 
+     3 | from __future__ import annotations
+     4 | 
+     5 | __lazy_modules__ = {"bisect"}
+     6 | 
+     7 | import bisect
+     8 | 
+     9 | from .i18n import _gettext as _
+    10 | from .i18n import _ngettext, decimal_separator, thousands_separator
+    11 | from .i18n import _ngettext_noop as NS_
+    12 | from .i18n import _pgettext as P_
+    13 | 
+    14 | TYPE_CHECKING = False
+    15 | if TYPE_CHECKING:
+    16 |     from typing import TypeAlias
+    17 | 
+    18 |     # This type can be better defined by typing.SupportsFloat
+    19 |     # but that's a Python 3.8 only typing option.
+    20 |     NumberOrString: TypeAlias = float | str
+    21 | 
+    22 | 
+    23 | _SUPERSCRIPT_MAP = {
+    24 |     "0": "⁰",
+    25 |     "1": "¹",
+    26 |     "2": "²",
+    27 |     "3": "³",
+    28 |     "4": "⁴",
+    29 |     "5": "⁵",
+    30 |     "6": "⁶",
+    31 |     "7": "⁷",
+    32 |     "8": "⁸",
+    33 |     "9": "⁹",
+    34 |     "-": "⁻",
+    35 | }
+    36 | _SUPERSCRIPT_TRANS = str.maketrans(_SUPERSCRIPT_MAP)
+    37 | 
+    38 | _ORDINAL_SUFFIXES = ("th", "st", "nd", "rd", "th", "th", "th", "th", "th", "th")
+    39 | _APNUMBER_WORDS = (
+    40 |     "zero",
+    41 |     "one",
+    42 |     "two",
+    43 |     "three",
+    44 |     "four",
+    45 |     "five",
+    46 |     "six",
+    47 |     "seven",
+    48 |     "eight",
+    49 |     "nine",
+    50 | )
+    51 | 
+    52 | 
+    53 | def _format_not_finite(value: float) -> str:
+    54 |     """Utility function to handle infinite and nan cases."""
+    55 |     import math
+    56 | 
+    57 |     if math.isnan(value):
+    58 |         return "NaN"
+    59 |     if math.isinf(value) and value < 0:
+    60 |         return "-Inf"
+    61 |     if math.isinf(value) and value > 0:
+    62 |         return "+Inf"
+    63 |     return ""
+    64 | 
+    65 | 
+    66 | def ordinal(value: NumberOrString, gender: str = "male") -> str:
+    67 |     """Converts an integer to its ordinal as a string.
+    68 | 
+    69 |     For example, 1 is "1st", 2 is "2nd", 3 is "3rd", etc. Works for any integer or
+    70 |     anything `int()` will turn into an integer. Anything else will return the output
+    71 |     of str(value).
+    72 | 
+    73 |     Examples:
+    74 |         ```pycon
+    75 |         >>> ordinal(1)
+    76 |         '1st'
+    77 |         >>> ordinal(1002)
+    78 |         '1002nd'
+    79 |         >>> ordinal(103)
+    80 |         '103rd'
+    81 |         >>> ordinal(4)
+    82 |         '4th'
+    83 |         >>> ordinal(12)
+    84 |         '12th'
+    85 |         >>> ordinal(101)
+    86 |         '101st'
+    87 |         >>> ordinal(111)
+    88 |         '111th'
+    89 |         >>> ordinal("something else")
+    90 |         'something else'
+    91 |         >>> ordinal([1, 2, 3]) == "[1, 2, 3]"
+    92 |         True
+    93 | 
+    94 |         ```
+    95 | 
+    96 |     Args:
+    97 |         value (int, str, float): Integer to convert.
+    98 |         gender (str): Gender for translations. Accepts either "male" or "female".
+    99 | 
+   100 |     Returns:
+... [471 more lines; pass offset=101 for next page]

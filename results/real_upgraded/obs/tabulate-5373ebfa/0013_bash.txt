@@ -1,0 +1,50 @@
+823:def simple_separated_format(separator):
+826:    >>> tsv = simple_separated_format("\\t") ; \
+1310:def _format(val, valtype, floatfmt, intfmt, missingval="", has_invisible=True):
+2350:        float_formats = len(cols) * [floatfmt]  # just duplicate the string to use in each column
+2352:        float_formats = list(floatfmt)
+2353:        if len(float_formats) < len(cols):
+2354:            float_formats.extend((len(cols) - len(float_formats)) * [_DEFAULT_FLOATFMT])
+2368:        [_format(v, ct, fl_fmt, int_fmt, miss_v, has_invisible) for v in c]
+2370:            cols, coltypes, float_formats, int_formats, missing_vals
+        is_multiline = True
+    else:
+        is_multiline = False
+    width_fn = _choose_width_fn(has_invisible, enable_widechars, is_multiline)
+
+    # format rows and columns, convert numeric values to strings
+    cols = list(izip_longest(*list_of_lists))
+    numparses = _expand_numparse(disable_numparse, len(cols))
+    coltypes = [_column_type(col, numparse=np) for col, np in zip(cols, numparses)]
+    if isinstance(floatfmt, str):  # old version
+        float_formats = len(cols) * [floatfmt]  # just duplicate the string to use in each column
+    else:  # if floatfmt is list, tuple etc we have one per column
+        float_formats = list(floatfmt)
+        if len(float_formats) < len(cols):
+            float_formats.extend((len(cols) - len(float_formats)) * [_DEFAULT_FLOATFMT])
+    if isinstance(intfmt, str):  # old version
+        int_formats = len(cols) * [intfmt]  # just duplicate the string to use in each column
+    else:  # if intfmt is list, tuple etc we have one per column
+        int_formats = list(intfmt)
+        if len(int_formats) < len(cols):
+            int_formats.extend((len(cols) - len(int_formats)) * [_DEFAULT_INTFMT])
+    if isinstance(missingval, str):
+        missing_vals = len(cols) * [missingval]
+    else:
+        missing_vals = list(missingval)
+        if len(missing_vals) < len(cols):
+            missing_vals.extend((len(cols) - len(missing_vals)) * [_DEFAULT_MISSINGVAL])
+    cols = [
+        [_format(v, ct, fl_fmt, int_fmt, miss_v, has_invisible) for v in c]
+        for c, ct, fl_fmt, int_fmt, miss_v in zip(
+            cols, coltypes, float_formats, int_formats, missing_vals
+        )
+    ]
+
+    # align columns
+    # first set global alignment
+    if colglobalalign is not None:  # if global alignment provided
+        aligns = [colglobalalign] * len(cols)
+    else:  # default
+        aligns = [numalign if ct in [int, float] else stralign for ct in coltypes]
+    # then specific alignments

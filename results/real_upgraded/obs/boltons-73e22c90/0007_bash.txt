@@ -1,0 +1,71 @@
+
+        >>> kurtosis(range(9))
+        1.99125
+
+        With a kurtosis of 1.99125, [0, 1, 2, 3, 4, 5, 6, 7, 8] is more
+        centrally distributed than the normal curve.
+        """
+        data, s_dev = self.data, self.std_dev
+        if len(data) > 1 and s_dev > 0:
+            return (sum(self._get_pow_diffs(4)) /
+                    float((len(data) - 1) * (s_dev ** 4)))
+        else:
+            return 0.0
+    kurtosis = _StatsProperty('kurtosis', _calc_kurtosis)
+
+    def _calc_pearson_type(self):
+        precision = self._pearson_precision
+        skewness = self.skewness
+        kurtosis = self.kurtosis
+        beta1 = skewness ** 2.0
+        beta2 = kurtosis * 1.0
+
+        # TODO: range checks?
+
+        c0 = (4 * beta2) - (3 * beta1)
+        c1 = skewness * (beta2 + 3)
+        c2 = (2 * beta2) - (3 * beta1) - 6
+
+        if round(c1, precision) == 0:
+            if round(beta2, precision) == 3:
+                return 0  # Normal
+            else:
+                if beta2 < 3:
+                    return 2  # Symmetric Beta
+                elif beta2 > 3:
+                    return 7
+        elif round(c2, precision) == 0:
+            return 3  # Gamma
+        else:
+            k = c1 ** 2 / (4 * c0 * c2)
+            if k < 0:
+                return 1  # Beta
+            elif round(k, precision) == 1:
+                return 5  # Type V
+            elif k < 1:
+                return 4  # Type IV
+            else:
+                return 6  # Type VI
+        raise RuntimeError('missed a spot')
+    pearson_type = _StatsProperty('pearson_type', _calc_pearson_type)
+
+    @staticmethod
+    def _get_quantile(sorted_data, q):
+        data, n = sorted_data, len(sorted_data)
+        idx = q / 1.0 * (n - 1)
+        idx_f, idx_c = int(floor(idx)), int(ceil(idx))
+        if idx_f == idx_c:
+            return data[idx_f]
+        return (data[idx_f] * (idx_c - idx)) + (data[idx_c] * (idx - idx_f))
+
+    def get_quantile(self, q):
+        """Get a quantile from the dataset. Quantiles are floating point
+        values between ``0.0`` and ``1.0``, with ``0.0`` representing
+        the minimum value in the dataset and ``1.0`` representing the
+        maximum. ``0.5`` represents the median:
+
+        >>> Stats(range(100)).get_quantile(0.5)
+        49.5
+        """
+        q = float(q)
+        if not 0.0 <= q <= 1.0:

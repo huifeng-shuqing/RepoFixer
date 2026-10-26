@@ -1,0 +1,40 @@
+    )
+    def test_returns_true_on_valid_currency(value: str, skip_symbols: bool, ignore_case: bool):
+        """Test returns true on valid currency."""
+>       assert currency(value, skip_symbols=skip_symbols, ignore_case=ignore_case)
+E       AssertionError: assert ValidationError(func=currency, args={'value': '\u09f3', 'skip_symbols': False, 'ignore_case': False})
+E        +  where ValidationError(func=currency, args={'value': '\u09f3', 'skip_symbols': False, 'ignore_case': False}) = currency('\u09f3', skip_symbols=False, ignore_case=False)
+
+tests\test_country.py:64: AssertionError
+__ test_returns_failed_validation_invalid_currency[\u20c0\u09f3-False-False] __
+
+value = '\u20c0\u09f3', skip_symbols = False, ignore_case = False
+
+    @pytest.mark.parametrize(
+        ("value", "skip_symbols", "ignore_case"),
+        [
+            ("$", True, False),
+            ("\u20c0", True, False),
+            ("\u09f3", True, False),
+            ("\u20c0\u09f3", False, False),
+            ("uSd", True, False),
+            ("Bucks", True, True),
+        ],
+    )
+    def test_returns_failed_validation_invalid_currency(
+        value: str, skip_symbols: bool, ignore_case: bool
+    ):
+        """Test returns failed validation invalid currency."""
+>       assert isinstance(
+            currency(value, skip_symbols=skip_symbols, ignore_case=ignore_case), ValidationError
+        )
+E       AssertionError: assert False
+E        +  where False = isinstance(True, ValidationError)
+E        +    where True = currency('\u20c0\u09f3', skip_symbols=False, ignore_case=False)
+
+tests\test_country.py:82: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_country.py::test_returns_true_on_valid_currency[\u20c0-False-False]
+FAILED tests/test_country.py::test_returns_true_on_valid_currency[\u09f3-False-False]
+FAILED tests/test_country.py::test_returns_failed_validation_invalid_currency[\u20c0\u09f3-False-False]
+3 failed, 42 passed, 1029 deselected in 0.29s

@@ -1,0 +1,101 @@
+     1 | """Concise UUID generation."""
+     2 | 
+     3 | import math
+     4 | import secrets
+     5 | import uuid as _uu
+     6 | from typing import Dict
+     7 | from typing import List
+     8 | from typing import Optional
+     9 | 
+    10 | 
+    11 | def int_to_string(
+    12 |     number: int, alphabet: List[str], padding: Optional[int] = None
+    13 | ) -> str:
+    14 |     """
+    15 |     Convert a number to a string, using the given alphabet.
+    16 | 
+    17 |     The output has the most significant digit first.
+    18 |     """
+    19 |     output = ""
+    20 |     alpha_len = len(alphabet)
+    21 |     while number:
+    22 |         number, digit = divmod(number, alpha_len)
+    23 |         output += alphabet[digit]
+    24 |     if padding:
+    25 |         remainder = max(padding - len(output), 0)
+    26 |         output = output + alphabet[0] * remainder
+    27 |     return output[::-1]
+    28 | 
+    29 | 
+    30 | def string_to_int(
+    31 |     string: str,
+    32 |     alphabet: List[str],
+    33 |     alphabet_index: Optional[Dict[str, int]] = None,
+    34 | ) -> int:
+    35 |     """
+    36 |     Convert a string to a number, using the given alphabet.
+    37 | 
+    38 |     The input is assumed to have the most significant digit first.
+    39 | 
+    40 |     The alphabet_index, if provided, should map each character to its index:
+    41 |     ``{char: idx for idx, char in enumerate(alphabet)}``. This avoids rebuilding
+    42 |     the index on each call when decoding multiple strings with the same alphabet.
+    43 |     If this is passed, `alphabet` is ignored.
+    44 |     """
+    45 |     if alphabet_index is None:
+    46 |         alphabet_index = {char: idx for idx, char in enumerate(alphabet)}
+    47 |     number = 0
+    48 |     alpha_len = len(alphabet)
+    49 |     for char in string:
+    50 |         try:
+    51 |             number = number * alpha_len + alphabet_index[char]
+    52 |         except KeyError:
+    53 |             raise ValueError("'{}' is not in alphabet".format(char))
+    54 |     return number
+    55 | 
+    56 | 
+    57 | class ShortUUID(object):
+    58 |     def __init__(
+    59 |         self, alphabet: Optional[str] = None, dont_sort_alphabet: bool = False
+    60 |     ) -> None:
+    61 |         if alphabet is None:
+    62 |             alphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ" "abcdefghijkmnopqrstuvwxyz"
+    63 | 
+    64 |         self.set_alphabet(alphabet, dont_sort_alphabet=dont_sort_alphabet)
+    65 | 
+    66 |     @property
+    67 |     def _length(self) -> int:
+    68 |         """Return the necessary length to fit the entire UUID given the current alphabet."""
+    69 |         return int(math.ceil(math.log(2**128, self._alpha_len)))
+    70 | 
+    71 |     def encode(self, uuid: _uu.UUID, pad_length: Optional[int] = None) -> str:
+    72 |         """
+    73 |         Encode a UUID into a string (LSB first) according to the alphabet.
+    74 | 
+    75 |         If leftmost (MSB) bits are 0, the string might be shorter.
+    76 |         """
+    77 |         if not isinstance(uuid, _uu.UUID):
+    78 |             raise ValueError("Input `uuid` must be a UUID object.")
+    79 |         if pad_length is None:
+    80 |             pad_length = self._length
+    81 |         return int_to_string(uuid.int, self._alphabet, padding=pad_length)
+    82 | 
+    83 |     def decode(self, string: str, legacy: bool = False) -> _uu.UUID:
+    84 |         """
+    85 |         Decode a string according to the current alphabet into a UUID.
+    86 | 
+    87 |         Raises ValueError when encountering illegal characters or a too-long string.
+    88 | 
+    89 |         If string too short, fills leftmost (MSB) bits with 0.
+    90 | 
+    91 |         Pass `legacy=True` if your UUID was encoded with a ShortUUID version prior to
+    92 |         1.0.0.
+    93 |         """
+    94 |         if not isinstance(string, str):
+    95 |             raise ValueError("Input `string` must be a str.")
+    96 |         if legacy:
+    97 |             string = string[::-1]
+    98 |         return _uu.UUID(int=string_to_int(string, self._alphabet, self._alphabet_index))
+    99 | 
+   100 |     def uuid(self, name: Optional[str] = None, pad_length: Optional[int] = None) -> str:
+... [63 more lines; pass offset=101 for next page]

@@ -1,0 +1,141 @@
+   215 |     "XAF", "XCD", "XDR", "XOF", "XPF",
+   216 |     "YER",
+   217 |     "ZAR", "ZMW", "ZWL"
+   218 | }
+   219 | _currency_symbols = {
+   220 |     # https://en.wikipedia.org/wiki/Currency_sign_(generic)
+   221 |     "؋", "฿", "₵", "₡", "¢", "$", "₫", "֏", "€", "ƒ", "₣", "₲", "₴", "₭", "₾", "£", "₺", "₼", "₦",
+   222 |     "₱", "元", "圆", "圓", "﷼", "៛", "₽", "₹", "रू", "රු", "૱", "௹", "꠸", "Rs", "₪", "⃀" "৳", "₸",
+   223 |     "₮", "₩", "¥", "円", "₿", "¤"
+   224 | }
+   225 | # fmt: on
+   226 | 
+   227 | 
+   228 | def _get_code_type(format_type: str):
+   229 |     """Returns the type of country code."""
+   230 |     if format_type.isdecimal():
+   231 |         return "numeric"
+   232 |     if format_type.isalpha():
+   233 |         if len(format_type) == 2:
+   234 |             return "alpha2"
+   235 |         if len(format_type) == 3:
+   236 |             return "alpha3"
+   237 |     return "invalid"
+   238 | 
+   239 | 
+   240 | @validator
+   241 | def calling_code(value: str, /):
+   242 |     """Validates given calling code.
+   243 | 
+   244 |     This performs country's calling code validation.
+   245 | 
+   246 |     Examples:
+   247 |         >>> calling_code('+91')
+   248 |         True
+   249 |         >>> calling_code('-31')
+   250 |         ValidationError(func=calling_code, args={'value': '-31'})
+   251 | 
+   252 |     Args:
+   253 |         value:
+   254 |             Country's calling code string to validate.
+   255 | 
+   256 |     Returns:
+   257 |         (Literal[True]): If `value` is a valid calling code.
+   258 |         (ValidationError): If `value` is an invalid calling code.
+   259 |     """
+   260 |     if not value:
+   261 |         return False
+   262 | 
+   263 |     return value in set(_calling_codes.values())
+   264 | 
+   265 | 
+   266 | @validator
+   267 | def country_code(value: str, /, *, iso_format: str = "auto", ignore_case: bool = False):
+   268 |     """Validates given country code.
+   269 | 
+   270 |     This performs a case-sensitive [ISO 3166][1] country code validation.
+   271 | 
+   272 |     [1]: https://www.iso.org/iso-3166-country-codes.html
+   273 | 
+   274 |     Examples:
+   275 |         >>> country_code('GB', iso_format='alpha3')
+   276 |         ValidationError(func=country_code, args={'value': 'GB', 'iso_format': 'alpha3'})
+   277 |         >>> country_code('USA')
+   278 |         True
+   279 |         >>> country_code('840', iso_format='numeric')
+   280 |         True
+   281 |         >>> country_code('iN', iso_format='alpha2')
+   282 |         ValidationError(func=country_code, args={'value': 'iN', 'iso_format': 'alpha2'})
+   283 |         >>> country_code('ZWE', iso_format='alpha3')
+   284 |         True
+   285 | 
+   286 |     Args:
+   287 |         value:
+   288 |             Country code string to validate.
+   289 |         iso_format:
+   290 |             ISO format to be used. Available options are:
+   291 |             `auto`, `alpha2`, `alpha3` and `numeric`.
+   292 |         ignore_case:
+   293 |             Enable/Disable case-sensitive matching.
+   294 | 
+   295 |     Returns:
+   296 |         (Literal[True]): If `value` is a valid country code.
+   297 |         (ValidationError): If `value` is an invalid country code.
+   298 |     """
+   299 |     if not value:
+   300 |         return False
+   301 | 
+   302 |     if not (1 < len(value) < 4):
+   303 |         return False
+   304 | 
+   305 |     if iso_format == "auto" and (iso_format := _get_code_type(value)) == "invalid":
+   306 |         return False
+   307 | 
+   308 |     if iso_format == "alpha2":
+   309 |         return (
+   310 |             value.upper() in set(_alpha3_to_alpha2.values())
+   311 |             if ignore_case
+   312 |             else value in set(_alpha3_to_alpha2.values())
+   313 |         )
+   314 |     if iso_format == "alpha3":
+   315 |         return value.upper() in _alpha3_to_alpha2 if ignore_case else value in _alpha3_to_alpha2
+   316 | 
+   317 |     return value in _numeric if iso_format == "numeric" else False
+   318 | 
+   319 | 
+   320 | @validator
+   321 | def currency(value: str, /, *, skip_symbols: bool = True, ignore_case: bool = False):
+   322 |     """Validates given currency code.
+   323 | 
+   324 |     This performs [ISO 4217][1] currency code/symbol validation.
+   325 | 
+   326 |     [1]: https://www.iso.org/iso-4217-currency-codes.html
+   327 | 
+   328 |     Examples:
+   329 |         >>> currency('USD')
+   330 |         True
+   331 |         >>> currency('ZWX')
+   332 |         ValidationError(func=currency, args={'value': 'ZWX'})
+   333 | 
+   334 |     Args:
+   335 |         value:
+   336 |             Currency code/symbol string to validate.
+   337 |         skip_symbols:
+   338 |             Skip currency symbol validation.
+   339 |         ignore_case:
+   340 |             Enable/Disable case-sensitive matching.
+   341 | 
+   342 |     Returns:
+   343 |         (Literal[True]): If `value` is a valid currency code.
+   344 |         (ValidationError): If `value` is an invalid currency code.
+   345 |     """
+   346 |     if not value:
+   347 |         return False
+   348 | 
+   349 |     if not skip_symbols and value in _currency_symbols:
+   350 |         return True
+   351 | 
+   352 |     if len(value) != 3:
+   353 |         return False
+   354 | 
+   355 |     return value.upper() in _currency_iso4217 if ignore_case else value in _currency_iso4217

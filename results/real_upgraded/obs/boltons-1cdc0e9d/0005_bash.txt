@@ -1,0 +1,64 @@
+135:    def __init__(self, name, func):
+144:    def __get__(self, obj, objtype=None):
+174:    def __init__(self, data, default=0.0, use_copy=True, is_sorted=False):
+189:    def __len__(self):
+192:    def __iter__(self):
+195:    def _get_sorted_data(self):
+210:    def clear_cache(self):
+227:    def _calc_count(self):
+238:    def _calc_mean(self):
+251:    def _calc_max(self):
+263:    def _calc_min(self):
+275:    def _calc_median(self):
+288:        return self._get_quantile(self._get_sorted_data(), 0.5)
+291:    def _calc_mode(self):
+312:    def _calc_iqr(self):
+323:        return self.get_quantile(0.75) - self.get_quantile(0.25)
+326:    def _calc_trimean(self):
+340:        gq = lambda q: self._get_quantile(sorted_data, q)
+344:    def _calc_variance(self):
+356:    def _calc_std_dev(self):
+366:    def _calc_median_abs_dev(self):
+381:    def _calc_rel_std_dev(self):
+397:    def _calc_skewness(self):
+421:    def _calc_kurtosis(self):
+445:    def _calc_pearson_type(self):
+476:    def _get_quantile(sorted_data, q):
+484:    def get_quantile(self, q):
+485:        """Get a quantile from the dataset. Quantiles are floating point
+490:        >>> Stats(range(100)).get_quantile(0.5)
+498:        return self._get_quantile(self._get_sorted_data(), q)
+500:    def get_zscore(self, value):
+515:    def trim_relative(self, amount=0.15):
+541:    def _get_pow_diffs(self, power):
+548:    def _get_bin_bounds(self, count=None, with_max=False):
+562:            q25, q75 = self.get_quantile(0.25), self.get_quantile(0.75)
+576:    def get_histogram_counts(self, bins=None, **kw):
+577:        """Produces a list of ``(bin, count)`` pairs comprising a histogram of
+579:        :meth:`Stats.format_histogram` for more details.
+589:        then passed to :func:`statsutils.format_histogram_counts` to
+591:        :meth:`~Stats.format_histogram` method. This can be useful for
+626:    def format_histogram(self, bins=None, **kw):
+627:        """Produces a textual histogram of the data, using fixed-width bins,
+631:        >>> print(Stats(data).format_histogram(width=30))
+638:        In this histogram, five values are between 0.0 and 4.4, eight
+649:                histogram. Also accepts a list of floating-point
+658:               in the histogram. Defaults to console width on Python
+665:        the :meth:`~Stats.get_histogram_counts` method, the output of
+666:        is used by format_histogram. The :meth:`~Stats.describe`
+674:        bin_counts = self.get_histogram_counts(bins=bins, **kw)
+675:        return format_histogram_counts(bin_counts,
+679:    def describe(self, quantiles=None, format=None):
+684:            quantiles (list): A list of numeric values to use as
+685:                quantiles in the resulting summary. All values must be
+723:        quantiles = quantiles or [0.25, 0.5, 0.75]
+725:        for q in quantiles:
+726:            q_val = self.get_quantile(q)
+747:def describe(data, quantiles=None, format=None):
+763:    See :meth:`Stats.format_histogram` for another very useful
+766:    return Stats(data).describe(quantiles=quantiles, format=format)
+769:def _get_conv_func(attr_name):
+770:    def stats_helper(data, default=0.0):
+792:def format_histogram_counts(bin_counts, width=None, format_bin=None):
+793:    """The formatting logic behind :meth:`Stats.format_histogram`, which
+794:    takes the output of :meth:`Stats.get_histogram_counts`, and passes

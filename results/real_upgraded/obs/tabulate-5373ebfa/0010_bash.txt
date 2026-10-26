@@ -1,0 +1,102 @@
+    elif numparse and (
+        _isint(string)
+        or (
+            isinstance(string, str)
+            and _isnumber_with_thousands_separator(string)
+            and "." not in string
+        )
+    ):
+        return int
+    elif numparse and (
+        _isnumber(string)
+        or (isinstance(string, str) and _isnumber_with_thousands_separator(string))
+    ):
+        return float
+    elif isinstance(string, bytes):
+        return bytes
+    else:
+        return str
+
+
+def _afterpoint(string):
+    """Symbols after a decimal point, -1 if the string lacks the decimal point.
+
+    >>> _afterpoint("123.45")
+    2
+    >>> _afterpoint("1001")
+    -1
+    >>> _afterpoint("eggs")
+    -1
+    >>> _afterpoint("123e45")
+    2
+    >>> _afterpoint("123,456.78")
+843:def _isnumber_with_thousands_separator(string):
+844-    """
+845-    >>> _isnumber_with_thousands_separator(".")
+846-    False
+847-    >>> _isnumber_with_thousands_separator("1")
+848-    True
+849-    >>> _isnumber_with_thousands_separator("1.")
+850-    True
+851-    >>> _isnumber_with_thousands_separator(".1")
+852-    True
+853-    >>> _isnumber_with_thousands_separator("1000")
+854-    False
+855-    >>> _isnumber_with_thousands_separator("1,000")
+856-    True
+857-    >>> _isnumber_with_thousands_separator("1,0000")
+858-    False
+859-    >>> _isnumber_with_thousands_separator("1,000.1234")
+860-    True
+861-    >>> _isnumber_with_thousands_separator(b"1,000.1234")
+862-    True
+863-    >>> _isnumber_with_thousands_separator("+1,000.1234")
+864-    True
+865-    >>> _isnumber_with_thousands_separator("-1,000.1234")
+866-    True
+867-    """
+868-    try:
+--
+876:def _isconvertible(conv, string):
+877-    try:
+878-        conv(string)
+879-        return True
+880-    except (ValueError, TypeError):
+881-        return False
+882-
+883-
+884:def _isnumber(string):
+885-    """Detects if something *could* be considered a numeric value, vs. just a string.
+886-
+887-    This promotes types convertible to both int and float to be considered
+888-    a float.  Note that, iff *all* values appear to be some form of numeric
+889-    value such as eg. "1e2", they would be considered numbers!
+890-
+891-    The exception is things that appear to be numbers but overflow to
+892-    +/-inf, eg. "1e23456"; we'll have to exclude them explicitly.
+893-
+894-    >>> _isnumber(123)
+895-    True
+896-    >>> _isnumber(123.45)
+897-    True
+898-    >>> _isnumber("123.45")
+899-    True
+900-    >>> _isnumber("123")
+901-    True
+902-    >>> _isnumber("spam")
+903-    False
+904-    >>> _isnumber("123e45")
+905-    True
+906-    >>> _isnumber("123e45678")  # evaluates equal to 'inf', but ... isn't
+907-    False
+908-    >>> _isnumber("inf")
+909-    True
+--
+936:def _isint(string, inttype=int):
+937-    """
+938-    >>> _isint("123")
+939-    True
+940-    >>> _isint("123.45")
+941-    False
+942-    """
+943-    return (

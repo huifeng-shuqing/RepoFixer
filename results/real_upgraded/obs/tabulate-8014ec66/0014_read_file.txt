@@ -1,0 +1,61 @@
+   120 | 
+   121 | def _is_separating_line_value(value):
+   122 |     return type(value) is str and value.strip() == SEPARATING_LINE
+   123 | 
+   124 | 
+   125 | def _is_separating_line(row):
+   126 |     row_type = type(row)
+   127 |     return (row_type is list or row_type is str) and (
+   128 |         (len(row) >= 1 and _is_separating_line_value(row[0]))
+   129 |         or (len(row) >= 2 and _is_separating_line_value(row[1]))
+   130 |     )
+   131 | 
+   132 | 
+   133 | def _pipe_segment_with_colons(align, colwidth):
+   134 |     """Return a segment of a horizontal line with optional colons which
+   135 |     indicate column's alignment (as in `pipe` output format)."""
+   136 |     w = colwidth
+   137 |     if align in ["right", "decimal"]:
+   138 |         return ("-" * (w - 1)) + ":"
+   139 |     elif align == "center":
+   140 |         return ":" + ("-" * (w - 2)) + ":"
+   141 |     elif align == "left":
+   142 |         return ":" + ("-" * (w - 1))
+   143 |     else:
+   144 |         return "-" * w
+   145 | 
+   146 | 
+   147 | def _pipe_line_with_colons(colwidths, colaligns):
+   148 |     """Return a horizontal line with optional colons to indicate column's
+   149 |     alignment (as in `pipe` output format)."""
+   150 |     if not colaligns:  # e.g. printing an empty data frame (github issue #15)
+   151 |         colaligns = [""] * len(colwidths)
+   152 |     segments = "|".join(_pipe_segment_with_colons(a, w) for a, w in zip(colaligns, colwidths))
+   153 |     return f"|{segments}|"
+   154 | 
+   155 | 
+   156 | def _grid_segment_with_colons(colwidth, align):
+   157 |     """Return a segment of a horizontal line with optional colons which indicate
+   158 |     column's alignment in a grid table."""
+   159 |     width = colwidth
+   160 |     if align == "right":
+   161 |         return ("=" * (width - 1)) + ":"
+   162 |     elif align == "center":
+   163 |         return ":" + ("=" * (width - 2)) + ":"
+   164 |     elif align == "left":
+   165 |         return ":" + ("=" * (width - 1))
+   166 |     else:
+   167 |         return "=" * width
+   168 | 
+   169 | 
+   170 | def _grid_line_with_colons(colwidths, colaligns):
+   171 |     """Return a horizontal line with optional colons to indicate column's alignment
+   172 |     in a grid table."""
+   173 |     if not colaligns:
+   174 |         colaligns = [""] * len(colwidths)
+   175 |     segments = "+".join(_grid_segment_with_colons(w, a) for a, w in zip(colaligns, colwidths))
+   176 |     return f"+{segments}+"
+   177 | 
+   178 | 
+   179 | def _mediawiki_row_with_attrs(separator, cell_values, colwidths, colaligns):
+... [2829 more lines; pass offset=180 for next page]

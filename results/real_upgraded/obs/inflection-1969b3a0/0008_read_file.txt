@@ -1,0 +1,61 @@
+    89 | def _irregular(singular, plural):
+    90 |     """
+    91 |     A convenience function to add appropriate rules to plurals and singular
+    92 |     for irregular words.
+    93 | 
+    94 |     :param singular: irregular word in singular form
+    95 |     :param plural: irregular word in plural form
+    96 |     """
+    97 |     def caseinsensitive(string):
+    98 |         return ''.join('[' + char + char.upper() + ']' for char in string)
+    99 | 
+   100 |     if singular[0].upper() == plural[0].upper():
+   101 |         PLURALS.insert(0, (
+   102 |             r"(?i)({}){}$".format(singular[0], singular[1:]),
+   103 |             r'\1' + plural[1:]
+   104 |         ))
+   105 |         PLURALS.insert(0, (
+   106 |             r"(?i)({}){}$".format(plural[0], plural[1:]),
+   107 |             r'\1' + plural[1:]
+   108 |         ))
+   109 |         SINGULARS.insert(0, (
+   110 |             r"(?i)({}){}$".format(plural[0], plural[1:]),
+   111 |             r'\1' + singular[1:]
+   112 |         ))
+   113 |     else:
+   114 |         PLURALS.insert(0, (
+   115 |             r"{}{}$".format(singular[0].upper(),
+   116 |                             caseinsensitive(singular[1:])),
+   117 |             plural[0].upper() + plural[1:]
+   118 |         ))
+   119 |         PLURALS.insert(0, (
+   120 |             r"{}{}$".format(singular[0].lower(),
+   121 |                             caseinsensitive(singular[1:])),
+   122 |             plural[0].lower() + plural[1:]
+   123 |         ))
+   124 |         PLURALS.insert(0, (
+   125 |             r"{}{}$".format(plural[0].upper(), caseinsensitive(plural[1:])),
+   126 |             plural[0].upper() + plural[1:]
+   127 |         ))
+   128 |         PLURALS.insert(0, (
+   129 |             r"{}{}$".format(plural[0].lower(), caseinsensitive(plural[1:])),
+   130 |             plural[0].lower() + plural[1:]
+   131 |         ))
+   132 |         SINGULARS.insert(0, (
+   133 |             r"{}{}$".format(plural[0].upper(), caseinsensitive(plural[1:])),
+   134 |             singular[0].upper() + singular[1:]
+   135 |         ))
+   136 |         SINGULARS.insert(0, (
+   137 |             r"{}{}$".format(plural[0].lower(), caseinsensitive(plural[1:])),
+   138 |             singular[0].lower() + singular[1:]
+   139 |         ))
+   140 | 
+   141 | 
+   142 | def camelize(string, uppercase_first_letter=True):
+   143 |     """
+   144 |     Convert strings to CamelCase.
+   145 | 
+   146 |     Examples::
+   147 | 
+   148 |         >>> camelize("device_type")
+... [276 more lines; pass offset=149 for next page]

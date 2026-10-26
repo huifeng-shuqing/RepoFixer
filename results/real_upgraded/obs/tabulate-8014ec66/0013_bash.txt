@@ -1,0 +1,49 @@
+147:def _pipe_line_with_colons(colwidths, colaligns):
+150:    if not colaligns:  # e.g. printing an empty data frame (github issue #15)
+151:        colaligns = [""] * len(colwidths)
+152:    segments = "|".join(_pipe_segment_with_colons(a, w) for a, w in zip(colaligns, colwidths))
+170:def _grid_line_with_colons(colwidths, colaligns):
+173:    if not colaligns:
+174:        colaligns = [""] * len(colwidths)
+175:    segments = "+".join(_grid_segment_with_colons(w, a) for a, w in zip(colaligns, colwidths))
+179:def _mediawiki_row_with_attrs(separator, cell_values, colwidths, colaligns):
+189:        " " + alignment.get(a, "") + c + " " for c, a in zip(cell_values, colaligns)
+195:def _textile_row_with_attrs(cell_values, colwidths, colaligns):
+198:    values = "|".join(alignment.get(a, "") + v for a, v in zip(colaligns, cell_values))
+202:def _html_begin_table_without_header(colwidths_ignore, colaligns_ignore):
+207:def _html_row_with_attrs(celltag, unsafe, cell_values, colwidths, colaligns):
+217:            for c, a in zip(cell_values, colaligns)
+222:            for c, a in zip(cell_values, colaligns)
+230:def _moin_row_with_attrs(celltag, cell_values, colwidths, colaligns, header=""):
+239:        for c, a in zip(cell_values, colaligns)
+244:def _latex_line_begin_tabular(colwidths, colaligns, booktabs=False, longtable=False):
+246:    tabular_columns_fmt = "".join([alignment.get(a, "l") for a in colaligns])
+260:    def make_header_line(is_header, colwidths, colaligns):
+265:        asciidoc_alignments = zip(colwidths, [alignment[colalign] for colalign in colaligns])
+294:        cell_values, colwidths, colaligns = args
+298:            line = make_header_line(True, colwidths, colaligns) + "\n" + data_line
+305:            "_asciidoc_row() requires two (colwidths, colaligns) "
+306:            "or three (cell_values, colwidths, colaligns) arguments) "
+326:def _latex_row(cell_values, colwidths, colaligns, escrules=LATEX_ESCAPE_RULES):
+536:        lineabove=_pipe_line_with_colons,
+537:        linebelowheader=_pipe_line_with_colons,
+1158:def _align_column_choose_padfn(strings, alignment, has_invisible, preserve_whitespace):
+2521:def _build_row(padded_cells, colwidths, colaligns, rowfmt):
+2526:        return rowfmt(padded_cells, colwidths, colaligns)
+2531:def _append_basic_row(lines, padded_cells, colwidths, colaligns, rowfmt, rowalign=None):
+2533:    lines.append(_build_row(padded_cells, colwidths, colaligns, rowfmt))
+2551:    lines, padded_multiline_cells, padded_widths, colaligns, rowfmt, pad, rowalign=None
+2567:        _append_basic_row(lines, padded_ln, colwidths, colaligns, rowfmt)
+2571:def _build_line(colwidths, colaligns, linefmt):
+2576:        return linefmt(colwidths, colaligns)
+2583:def _append_line(lines, colwidths, colaligns, linefmt):
+2584:    lines.append(_build_line(colwidths, colaligns, linefmt))
+2602:    fmt, headers, headersaligns, rows, colwidths, colaligns, is_multiline, rowaligns
+2621:        _append_line(lines, padded_widths, colaligns, fmt.lineabove)
+2626:            _append_line(lines, padded_widths, colaligns, fmt.linebelowheader)
+2636:                    colaligns,
+2640:            _append_line(lines, padded_widths, colaligns, fmt.linebetweenrows)
+2646:            colaligns,
+2662:                _append_line(lines, padded_widths, colaligns, separating_line)
+2664:                append_row(lines, pad_row(row, pad), padded_widths, colaligns, fmt.datarow)
+2667:        _append_line(lines, padded_widths, colaligns, fmt.linebelow)

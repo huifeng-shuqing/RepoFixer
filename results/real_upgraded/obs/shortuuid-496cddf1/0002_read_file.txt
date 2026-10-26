@@ -1,0 +1,61 @@
+   195 | 
+   196 |         self.assertEqual(len(uid_lengths), 1)
+   197 |         uid_length = next(iter(uid_lengths.keys()))  # Get the 1 value
+   198 | 
+   199 |         self.assertEqual(uid_lengths[uid_length], num_iterations)
+   200 | 
+   201 | 
+   202 | class EncodingEdgeCasesTest(unittest.TestCase):
+   203 |     def test_decode_dict(self):
+   204 |         su = ShortUUID()
+   205 |         self.assertRaises(ValueError, su.encode, [])
+   206 |         self.assertRaises(ValueError, su.encode, {})
+   207 |         self.assertRaises(ValueError, su.decode, (2,))
+   208 |         self.assertRaises(ValueError, su.encode, 42)
+   209 |         self.assertRaises(ValueError, su.encode, 42.0)
+   210 | 
+   211 | 
+   212 | class DecodingEdgeCasesTest(unittest.TestCase):
+   213 |     def test_decode_dict(self):
+   214 |         su = ShortUUID()
+   215 |         self.assertRaises(ValueError, su.decode, [])
+   216 |         self.assertRaises(ValueError, su.decode, {})
+   217 |         self.assertRaises(ValueError, su.decode, (2,))
+   218 |         self.assertRaises(ValueError, su.decode, 42)
+   219 |         self.assertRaises(ValueError, su.decode, 42.0)
+   220 | 
+   221 |     def test_decode_invalid_characters(self):
+   222 |         su = ShortUUID("abc")
+   223 |         self.assertRaises(ValueError, su.decode, "xyz")
+   224 | 
+   225 |     def test_string_to_int_ignores_alphabet_when_index_given(self):
+   226 |         # The docstring promises `alphabet` is ignored when `alphabet_index`
+   227 |         # is passed. Build an index for hex (base 16) while passing a decimal
+   228 |         # alphabet (len 10): the result must use base 16, not 10.
+   229 |         hex_index = {char: idx for idx, char in enumerate("0123456789abcdef")}
+   230 |         self.assertEqual(
+   231 |             string_to_int("10", alphabet="0123456789", alphabet_index=hex_index),
+   232 |             16,
+   233 |         )
+   234 |         # Correct usage (alphabet matches index) is unchanged.
+   235 |         self.assertEqual(string_to_int("10", alphabet="0123456789abcdef"), 16)
+   236 |         self.assertEqual(string_to_int("1f", alphabet="0123456789abcdef"), 31)
+   237 | 
+   238 | 
+   239 | class CliTest(unittest.TestCase):
+   240 |     @patch("shortuuid.cli.print")
+   241 |     def test_shortuuid_command_produces_uuid(self, mock_print):
+   242 |         # When we call the main cli function
+   243 |         cli([])
+   244 |         # Then a shortuuid is printed out
+   245 |         mock_print.assert_called()
+   246 |         terminal_output = mock_print.call_args[0][0]
+   247 |         self.assertEqual(len(terminal_output), 22)
+   248 | 
+   249 |     @patch("shortuuid.cli.print")
+   250 |     def test_encode_command(self, mock_print):
+   251 |         cli(["encode", "3b1f8b40-222c-4a6e-b77e-779d5a94e21c"])
+   252 | 
+   253 |         terminal_output = mock_print.call_args[0][0]
+   254 |         self.assertEqual(terminal_output, "CXc85b4rqinB7s5J52TRYb")
+... [11 more lines; pass offset=255 for next page]

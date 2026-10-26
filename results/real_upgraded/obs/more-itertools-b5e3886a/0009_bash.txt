@@ -1,0 +1,105 @@
+    def __init__(self, iterable, maxlen=None):
+        self._source = iter(iterable)
+        if maxlen is None:
+            self._cache = []
+        else:
+            self._cache = deque([], maxlen)
+        self._index = None
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self._index is not None:
+            try:
+                item = self._cache[self._index]
+            except IndexError:
+                self._index = None
+            else:
+                self._index += 1
+                return item
+
+        item = next(self._source)
+        self._cache.append(item)
+        return item
+
+    def __bool__(self):
+        try:
+            self.peek()
+        except StopIteration:
+            return False
+        return True
+
+    def peek(self, default=_marker):
+        try:
+            peeked = next(self)
+        except StopIteration:
+            if default is _marker:
+                raise
+            return default
+        if self._index is None:
+            self._index = len(self._cache)
+        self._index -= 1
+        return peeked
+
+    def elements(self):
+        return SequenceView(self._cache)
+
+    def seek(self, index):
+        self._index = index
+        remainder = index - len(self._cache)
+        if remainder > 0:
+            consume(self, remainder)
+
+    def relative_seek(self, count):
+        if self._index is None:
+            self._index = len(self._cache)
+
+        self.seek(max(self._index + count, 0))
+
+    def __getitem__(self, index):
+        return self._cache[index]
+
+
+class run_length:
+    """
+    :func:`run_length.encode` compresses an iterable with run-length encoding.
+    It yields groups of repeated items with the count of how many times they
+    were repeated:
+
+        >>> uncompressed = 'abbcccdddd'
+        >>> list(run_length.encode(uncompressed))
+        [('a', 1), ('b', 2), ('c', 3), ('d', 4)]
+
+    :func:`run_length.decode` decompresses an iterable that was previously
+    compressed with run-length encoding. It yields the items of the
+    decompressed iterable:
+
+        >>> compressed = [('a', 1), ('b', 2), ('c', 3), ('d', 4)]
+        >>> list(run_length.decode(compressed))
+        ['a', 'b', 'b', 'c', 'c', 'c', 'd', 'd', 'd', 'd']
+
+    """
+
+    @staticmethod
+    def encode(iterable):
+        return ((k, ilen(g)) for k, g in groupby(iterable))
+
+    @staticmethod
+    def decode(iterable):
+        return chain.from_iterable(starmap(repeat, iterable))
+
+
+def exactly_n(iterable, n, predicate=bool):
+    """Return ``True`` if exactly ``n`` items in the iterable are ``True``
+    according to the *predicate* function.
+
+        >>> exactly_n([True, True, False], 2)
+        True
+        >>> exactly_n([True, True, False], 1)
+        False
+        >>> exactly_n([0, 1, 2, 3, 4, 5], 3, lambda x: x < 3)
+        True
+
+    The iterable will be advanced until ``n + 1`` truthy items are encountered,
+    so avoid calling it on infinite iterables.

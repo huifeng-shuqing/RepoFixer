@@ -1,0 +1,70 @@
+total 313
+drwxr-xr-x 1 吴琼 197121      0 10月 23 18:34 .
+drwxr-xr-x 1 吴琼 197121      0 10月 23 16:01 ..
+drwxr-xr-x 1 吴琼 197121      0 10月 26 18:17 .git
+drwxr-xr-x 1 吴琼 197121      0 10月 23 15:58 .github
+-rw-r--r-- 1 吴琼 197121   3430 10月 23 15:58 .gitignore
+drwxr-xr-x 1 吴琼 197121      0 10月 23 17:20 .pytest_cache
+-rw-r--r-- 1 吴琼 197121  34924 10月 23 15:58 CHANGES.md
+-rw-r--r-- 1 吴琼 197121   5290 10月 23 15:58 CONTRIBUTING.md
+drwxr-xr-x 1 吴琼 197121      0 10月 23 15:58 docs
+-rw-r--r-- 1 吴琼 197121   1111 10月 23 15:58 LICENSE.txt
+-rw-r--r-- 1 吴琼 197121    445 10月 23 15:58 MANIFEST.in
+-rw-r--r-- 1 吴琼 197121   2198 10月 23 15:58 mkdocs.yml
+drwxr-xr-x 1 吴琼 197121      0 10月 23 15:58 package
+-rw-r--r-- 1 吴琼 197121   4787 10月 23 15:58 pyproject.toml
+-rw-r--r-- 1 吴琼 197121   2685 10月 23 15:58 README.md
+-rw-r--r-- 1 吴琼 197121    756 10月 23 15:58 SECURITY.md
+drwxr-xr-x 1 吴琼 197121      0 10月 23 15:58 src
+drwxr-xr-x 1 吴琼 197121      0 10月 23 17:19 tests
+-rw-r--r-- 1 吴琼 197121 210287 10月 23 15:58 uv.lock
+# validators - Python Data Validation for Humans™
+
+[![PyCQA][pycqa-badge]][pycqa-link] [![SAST][sast-badge]][sast-link] [![Docs][docs-badge]][docs-link] [![Version][vs-badge]][vs-link] [![Downloads][dw-badge]][dw-link]
+
+<!-- [![Package][package-badge]][package-link] -->
+
+Python has all kinds of data validation tools, but every one of them seems to
+require defining a schema or form. I wanted to create a simple validation
+library where validating a simple value does not require defining a form or a
+schema.
+
+```shell
+pip install validators
+```
+
+Then,
+
+```python
+>>> import validators
+>>>
+>>> validators.email('someone@example.com')
+True
+```
+
+## Resources
+
+<!-- Backup documentation URL :  https://nandgator.github.io/pyvalidators/ -->
+<!-- Original documentation URL :  https://python-validators.github.io/validators/ -->
+
+- [Documentation](https://nandgator.github.io/pyvalidators)
+- [Bugtracker](https://github.com/python-validators/validators/issues)
+- [Security](https://github.com/python-validators/validators/blob/master/SECURITY.md)
+- [Code](https://github.com/python-validators/validators/)
+
+> The documentation is published through GitHub Pages on the maintainer's [fork](https://github.com/nandgator/pyvalidators), because the maintainer has only contributor access to this repository and cannot enable Pages for it.
+
+<!-- Original docs URL will be restored, once properly versioned docs are ready. -->
+
+---
+
+> **_Python 3.11 [reaches EOL in](https://endoflife.date/python) October 2027._**
+
+<!-- Links -->
+[sast-badge]: https://github.com/python-validators/validators/actions/workflows/sast.yaml/badge.svg
+[sast-link]: https://github.com/python-validators/validators/actions/workflows/sast.yaml
+[pycqa-badge]: https://github.com/python-validators/validators/actions/workflows/pycqa.yaml/badge.svg
+[pycqa-link]: https://github.com/python-validators/validators/actions/workflows/pycqa.yaml
+[docs-badge]: https://github.com/nandgator/pyvalidators/actions/workflows/pages/pages-build-deployment/badge.svg
+[docs-link]: https://github.com/nandgator/pyvalidators/actions/workflows/pages/pages-build-deployment
+[vs-badge]: https://img.shields.io/pypi/v/validators?logo=pypi&logoColor=white&label=version&color=blue

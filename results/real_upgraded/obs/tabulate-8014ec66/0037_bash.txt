@@ -1,0 +1,26 @@
+tabulate/__init__.py:445:    "colon_grid": TableFormat(
+tabulate/__init__.py:738:    "colon_grid": "colon_grid",
+tabulate/__init__.py:1960:    "colon_grid" is similar to "grid" but uses colons only to define
+tabulate/__init__.py:1965:    ...                ["strings", "numbers"], "colon_grid"))
+tabulate/__init__.py:1975:    ...                ["strings", "numbers"], "colon_grid",
+tabulate/__init__.py:2311:    # 'colon_grid' uses colons in the line beneath the header to represent a column's
+tabulate/__init__.py:2314:    if tablefmt == "colon_grid":
+tabulate/__init__.py:2398:    # Reset alignments in copy of alignments list to "left" for 'colon_grid' format,
+tabulate/__init__.py:2400:    if tablefmt == "colon_grid":
+test/test_output.py:1533:def test_colon_grid():
+test/test_output.py:1534:    "Output: colon_grid with two columns aligned left and center"
+test/test_output.py:1547:        tablefmt="colon_grid",
+test/test_output.py:1553:def test_colon_grid_wide_characters():
+test/test_output.py:1554:    "Output: colon_grid with wide chars in header"
+test/test_output.py:1558:        skip("test_colon_grid_wide_characters is skipped")
+test/test_output.py:1572:    result = tabulate(_test_table, headers, tablefmt="colon_grid", colalign=["left", "right"])
+test/test_output.py:1576:def test_colon_grid_headerless():
+test/test_output.py:1577:    "Output: colon_grid without headers"
+test/test_output.py:1587:    result = tabulate(_test_table, tablefmt="colon_grid")
+test/test_output.py:1591:def test_colon_grid_multiline():
+test/test_output.py:1592:    "Output: colon_grid with multiline cells"
+test/test_output.py:1606:    result = tabulate(table, headers, tablefmt="colon_grid")
+test/test_output.py:1610:def test_colon_grid_with_empty_cells():
+test/test_output.py:1625:    result = tabulate(table, headers, tablefmt="colon_grid", colalign=alignments)
+README.md:348:`colon_grid` is similar to `grid` but uses colons only to define
+README.md:353:    ...                ["strings", "numbers"], "colon_grid",

@@ -1,0 +1,35 @@
+more_itertools/more.py:1159:    If you specify a *validator* function, selected buckets will instead be
+more_itertools/more.py:1165:        >>> validator = lambda x: x in {1, 3, 5, 7, 9}  # Odd digits only
+more_itertools/more.py:1166:        >>> s = bucket(it, key=key, validator=validator)
+more_itertools/more.py:1181:    def __init__(self, iterable, key, validator=None):
+more_itertools/more.py:1185:        self._validator = validator or (lambda x: True)
+more_itertools/more.py:1188:        if not self._validator(value):
+more_itertools/more.py:1225:                    elif self._validator(item_value):
+more_itertools/more.py:1231:            if self._validator(item_value):
+more_itertools/more.py:1237:        if not self._validator(value):
+more_itertools/more.py:3797:def filter_except(validator, iterable, *exceptions):
+more_itertools/more.py:3798:    """Yield the items from *iterable* for which the *validator* function does
+more_itertools/more.py:3801:    *validator* is called for each item in *iterable*.
+more_itertools/more.py:3810:    *validator*, it is raised like normal.
+more_itertools/more.py:3814:            validator(item)
+more_itertools/more.pyi:263:        validator: Callable[[_U], object] | None = ...,
+more_itertools/more.pyi:735:    validator: Callable[[Any], object],
+Binary file more_itertools/__pycache__/more.cpython-314.pyc matches
+tests/test_more.py:1084:    def test_validator(self):
+tests/test_more.py:1087:        validator = lambda x: 0 < x < 10  # No leading zeros
+tests/test_more.py:1088:        D = mi.bucket(iterable, key, validator=validator)
+tests/test_more.py:1102:    def test_list_validator(self):
+tests/test_more.py:1105:        validator = lambda x: x != 20
+tests/test_more.py:1106:        D = mi.bucket(iterable, key, validator=validator)
+tests/test_more.py:1112:    def test_falsey_validator_is_honoured(self):
+tests/test_more.py:1113:        # A falsey callable is still a valid validator and must not be
+tests/test_more.py:1120:        self.assertFalse(allowed)  # Sanity: the validator itself is falsey
+tests/test_more.py:1121:        D = mi.bucket(iter([10, 20, 11, 21]), key=lambda x: x, validator=allowed)
+tests/test_more.py:1141:    def test_in_does_not_add_key_with_validator(self):
+tests/test_more.py:1142:        # A key the validator accepts but the iterable never produces
+tests/test_more.py:1145:        validator = lambda x: x in {10, 20, 30}
+tests/test_more.py:1146:        D = mi.bucket(iterable, key, validator=validator)
+tests/test_more.py:4677:        # Even if the validator returns false, we pass through
+tests/test_more.py:4678:        validator = lambda x: False
+tests/test_more.py:4680:        actual = list(mi.filter_except(validator, iterable, Exception))
+Binary file tests/__pycache__/test_more.cpython-314-pytest-8.4.2.pyc matches

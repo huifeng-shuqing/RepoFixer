@@ -1,0 +1,107 @@
+4525-
+4526-
+4527-class IchunkedTests(TestCase):
+4528-    def test_even(self):
+4529-        iterable = (str(x) for x in range(10))
+4530:        actual = [''.join(c) for c in mi.ichunked(iterable, 5)]
+4531-        expected = ['01234', '56789']
+4532-        self.assertEqual(actual, expected)
+4533-
+4534-    def test_odd(self):
+4535-        iterable = (str(x) for x in range(10))
+4536:        actual = [''.join(c) for c in mi.ichunked(iterable, 4)]
+4537-        expected = ['0123', '4567', '89']
+4538-        self.assertEqual(actual, expected)
+4539-
+4540-    def test_zero(self):
+4541-        iterable = []
+4542:        actual = [list(c) for c in mi.ichunked(iterable, 0)]
+4543-        expected = []
+4544-        self.assertEqual(actual, expected)
+4545-
+4546-    def test_zero_nonempty(self):
+4547:        # chunked(..., 0) yields nothing; ichunked should match, including
+4548-        # when the source still has items (the empty-iterable case hid this).
+4549-        iterable = [1, 2, 3]
+4550:        actual = [list(c) for c in mi.ichunked(iterable, 0)]
+4551-        self.assertEqual(actual, [])
+4552-
+4553-        source = iter([1, 2, 3])
+4554:        self.assertEqual([list(c) for c in mi.ichunked(source, 0)], [])
+4555-        self.assertEqual(list(source), [1, 2, 3])
+4556-
+4557-    def test_negative(self):
+4558-        iterable = count()
+4559-        with self.assertRaises(ValueError) as cm:
+4560:            [list(c) for c in mi.ichunked(iterable, -1)]
+4561-        self.assertIn('n must be at least 0', str(cm.exception))
+4562-
+4563-    def test_out_of_order(self):
+4564-        iterable = map(str, count())
+4565:        it = mi.ichunked(iterable, 4)
+4566-        chunk_1 = next(it)
+4567-        chunk_2 = next(it)
+4568-        self.assertEqual(''.join(chunk_2), '4567')
+4569-        self.assertEqual(''.join(chunk_1), '0123')
+4570-
+4571-    def test_laziness(self):
+4572-        def gen():
+4573-            yield 0
+4574-            raise RuntimeError
+4575-            yield from count(1)
+4576-
+4577:        it = mi.ichunked(gen(), 4)
+4578-        chunk = next(it)
+4579-        self.assertEqual(next(chunk), 0)
+4580-        self.assertRaises(RuntimeError, next, it)
+4581-
+4582-    def test_memory_in_order(self):
+4583-        gen_numbers = []
+4584-
+4585-        def gen():
+4586-            for gen_number in count():
+4587-                gen_numbers.append(gen_number)
+4588-                yield gen_number
+4589-
+4590:        # No items should be kept in memory when a ichunked is first called
+4591:        all_chunks = mi.ichunked(gen(), 4)
+4592-        self.assertEqual(gen_numbers, [])
+4593-
+4594-        # The first item of each chunk should be generated on chunk generation
+4595-        first_chunk = next(all_chunks)
+4596-        self.assertEqual(gen_numbers, [0])
+4597-
+4598-        # If we don't read a chunk before getting its successor, its contents
+4599-        # will be cached
+4600-        second_chunk = next(all_chunks)
+4601-        self.assertEqual(gen_numbers, [0, 1, 2, 3, 4])
+4602-
+4603-        # Check if we can read in cached values
+4604-        self.assertEqual(list(first_chunk), [0, 1, 2, 3])
+4605-        self.assertEqual(list(second_chunk), [4, 5, 6, 7])
+4606-
+4607-        # Again only the most recent chunk should have an item cached
+4608-        third_chunk = next(all_chunks)
+4609-        self.assertEqual(len(gen_numbers), 9)
+4610-
+4611-        # No new item should be cached when reading past the first number
+4612-        next(third_chunk)
+4613-        self.assertEqual(len(gen_numbers), 9)
+4614-
+4615-        # we should not be able to read spent chunks
+4616-        self.assertEqual(list(first_chunk), [])
+4617-        self.assertEqual(list(second_chunk), [])
+4618-
+4619-
+4620-class DistinctCombinationsTests(TestCase):
+4621-    def test_basic(self):
+4622-        for iterable in [
+4623-            (1, 2, 2, 3, 3, 3),  # In order
+4624-            range(6),  # All distinct
+4625-            'abbccc',  # Not numbers
+4626-            'cccbba',  # Backward
+4627-            'mississippi',  # No particular order
+4628-        ]:
+4629-            for r in range(len(iterable)):
+4630-                with self.subTest(iterable=iterable, r=r):
+4631-                    actual = list(mi.distinct_combinations(iterable, r))

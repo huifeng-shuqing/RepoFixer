@@ -1,0 +1,124 @@
+    result = tabulate([["False"], ["1."]])
+    expected = "\n".join(["-----", "False", "    1", "-----"])
+    assert_equal(expected, result)
+
+
+def test_asciidoc_without_trailing_whitespace():
+    "Regression: asciidoc format output must not generate trailing whitespace (issue #408)"
+    result = tabulate([["foo"]], headers=("longheader",), tablefmt="asciidoc")
+    expected = '[cols="<14",options="header"]\n|====\n| longheader\n| foo\n|===='
+    assert_equal(expected, result)
+
+    result = tabulate([["longtext"]], headers=("bar",), tablefmt="asciidoc")
+    expected = '[cols="<10",options="header"]\n|====\n| bar\n| longtext\n|===='
+    assert_equal(expected, result)
+
+
+def test_github_escape_pipe_character():
+    "Regression: github format must escape pipe character with a backslash (issue #241)"
+    result = tabulate([["foo|bar"]], headers=("spam|eggs",), tablefmt="github")
+    expected = "| spam\\|eggs   |\n|:------------|\n| foo\\|bar     |"
+    assert_equal(expected, result)
+# depending on the formatter
+_DEFAULT_ALIGN = "default"
+
+
+# if True, enable wide-character (CJK) support
+WIDE_CHARS_MODE = wcwidth is not None
+
+# Constant that can be used as part of passed rows to generate a separating line
+# It is purposely an unprintable character, very unlikely to be used in a table
+SEPARATING_LINE = "\001"
+
+Line = namedtuple("Line", ["begin", "hline", "sep", "end"])
+
+
+@dataclass
+class DataRow:
+    begin: str
+    sep: str
+    end: str
+    escape_map: dict = None
+
+
+# A table structure is supposed to be:
+#
+#     --- lineabove ---------
+#         headerrow
+#     --- linebelowheader ---
+#         datarow
+#     --- linebetweenrows ---
+#     ... (more datarows) ...
+#     --- linebetweenrows ---
+#         last datarow
+#     --- linebelow ---------
+#
+# TableFormat's line* elements can be
+#
+#   - either None, if the element is not used,
+#   - or a Line tuple,
+#   - or a function: [col_widths], [col_alignments] -> string.
+#
+# TableFormat's *row elements can be
+        linebelow=Line("┕", "━", "┷", "┙"),
+        headerrow=DataRow("│", "│", "│"),
+        datarow=DataRow("│", "│", "│"),
+        padding=1,
+        with_header_hide=None,
+    ),
+    "double_outline": TableFormat(
+        lineabove=Line("╔", "═", "╦", "╗"),
+        linebelowheader=Line("╠", "═", "╬", "╣"),
+        linebetweenrows=None,
+        linebelow=Line("╚", "═", "╩", "╝"),
+        headerrow=DataRow("║", "║", "║"),
+        datarow=DataRow("║", "║", "║"),
+        padding=1,
+        with_header_hide=None,
+    ),
+    "fancy_outline": TableFormat(
+        lineabove=Line("╒", "═", "╤", "╕"),
+        linebelowheader=Line("╞", "═", "╪", "╡"),
+        linebetweenrows=None,
+        linebelow=Line("╘", "═", "╧", "╛"),
+        headerrow=DataRow("│", "│", "│"),
+        datarow=DataRow("│", "│", "│"),
+        padding=1,
+        with_header_hide=None,
+    ),
+    "pipe": TableFormat(
+        lineabove=_pipe_line_with_colons,
+        linebelowheader=_pipe_line_with_colons,
+        linebetweenrows=None,
+        linebelow=None,
+        headerrow=DataRow("|", "|", "|"),
+        datarow=DataRow("|", "|", "|"),
+        padding=1,
+        with_header_hide=["lineabove"],
+    ),
+    "orgtbl": TableFormat(
+        lineabove=None,
+        linebelowheader=Line("|", "-", "+", "|"),
+        linebetweenrows=None,
+        linebelow=None,
+    ),
+    "asciidoc": TableFormat(
+        lineabove=partial(_asciidoc_row, False),
+        linebelowheader=None,
+        linebetweenrows=None,
+        linebelow=Line("|====", "", "", ""),
+        headerrow=partial(_asciidoc_row, True),
+        datarow=partial(_asciidoc_row, False),
+        padding=1,
+        with_header_hide=["lineabove"],
+    ),
+}
+
+# "github" is an alias for "pipe": both produce GitHub-flavored Markdown with
+# alignment colons in the separator row.
+_table_formats["github"] = _table_formats["pipe"]
+
+
+tabulate_formats = sorted(_table_formats.keys())
+
+# The table formats for which multiline cells will be folded into subsequent

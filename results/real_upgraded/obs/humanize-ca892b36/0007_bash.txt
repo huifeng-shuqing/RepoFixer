@@ -1,0 +1,68 @@
+    ordinal = bisect.bisect_right(powers, value)
+    largest_ordinal = ordinal == len(powers)
+
+    # Consider the biggest power of 10 that is smaller than value
+    ordinal -= 1
+    power = powers[ordinal]
+    chopped = value / power
+    rounded_value = float(format % chopped)
+
+    if not largest_ordinal and rounded_value * power == powers[ordinal + 1]:
+        # After rounding, we end up just at the next power
+        ordinal += 1
+        rounded_value = 1.0
+
+    singular, plural = human_powers[ordinal]
+    unit = _ngettext(singular, plural, math.ceil(rounded_value))
+    decimal_sep = decimal_separator()
+    number = (format % rounded_value).replace(".", decimal_sep)
+    return f"{negative_prefix}{number} {unit}"
+
+
+def apnumber(value: NumberOrString) -> str:
+    """Converts an integer to Associated Press style.
+
+    Examples:
+      ```pycon
+      >>> apnumber(0)
+      'zero'
+      >>> apnumber(5)
+      'five'
+      >>> apnumber(10)
+      '10'
+      >>> apnumber("7")
+      'seven'
+      >>> apnumber("foo")
+      'foo'
+      >>> apnumber(None)
+      'None'
+
+      ```
+
+    Args:
+        value (int, float, str): Integer to convert.
+
+    Returns:
+===
+206:powers = [10**x for x in (3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 100)]
+207:human_powers = (
+208-    NS_("thousand", "thousand"),
+209-    NS_("million", "million"),
+210-    NS_("billion", "billion"),
+211-    NS_("trillion", "trillion"),
+212-    NS_("quadrillion", "quadrillion"),
+213-    NS_("quintillion", "quintillion"),
+214-    NS_("sextillion", "sextillion"),
+215-    NS_("septillion", "septillion"),
+216-    NS_("octillion", "octillion"),
+217-    NS_("nonillion", "nonillion"),
+218-    NS_("decillion", "decillion"),
+219-    NS_("googol", "googol"),
+220-)
+221-
+222-
+223-def intword(value: NumberOrString, format: str = "%.1f") -> str:
+224-    """Converts a large integer to a friendly text representation.
+225-
+226-    Works best for numbers over 1 million. For example, 1_000_000 becomes "1.0 million",
+227-    1_200_000 becomes "1.2 million" and "1_200_000_000" becomes "1.2 billion". Supports

@@ -1,0 +1,180 @@
+from boltons.statsutils import Stats, mode
+
+
+def test_stats_basic():
+    da = Stats(range(20))
+    assert da.mean == 9.5
+    assert round(da.std_dev, 2) == 5.77
+    assert da.variance == 33.25
+    assert da.skewness == 0
+    assert round(da.kurtosis, 1) == 1.9
+    assert da.median == 9.5
+
+
+def test_pearson_type_covers_kappa_ge_zero():
+    assert Stats([8, 4, 4, 4, 5, 1, 6, 5]).pearson_type == 4
+    assert Stats([5, 5, 2, 4, 5, 9, 5, 5]).pearson_type == 5
+    assert Stats([0, 0, 0, 0, 0, 0, -11, 17]).pearson_type == 6
+
+
+def test_mode():
+    assert Stats([2, 1, 3, 1]).mode == 1
+    # ties resolve to the value seen first in the data
+    assert mode([1, 1, 2, 2, 3]) == 1
+    # non-numeric, categorical data is supported
+    assert mode(['a', 'b', 'b', 'c', 'c', 'c']) == 'c'
+    # empty data falls back to the configured default
+    assert Stats([], default=None).mode is None
+
+
+def test_pearson_type_zero_denominator():
+    # Supply exact moments to exercise c0 == 0, c2 == 0, and the
+    # normal-distribution boundary without sampling noise.
+    for skewness, kurtosis, expected in ((2.0, 3.0, 1),
+                                         (2.0, 9.0, 3),
+                                         (0.0, 3.0, 0)):
+        stats = Stats([0])
+        stats.skewness = skewness
+        stats.kurtosis = kurtosis
+        assert stats.pearson_type == expected
+
+
+def test_histogram_zero_interquartile_range():
+    for data in ([5] * 10, [0] * 10 + [100]):
+        counts = Stats(data).get_histogram_counts()
+        assert counts == [(float(min(data)), len(data))]
+        assert Stats(data).format_histogram()
+=====
+            return getattr(obj, self.internal_name)
+        except AttributeError:
+            setattr(obj, self.internal_name, self.func(obj))
+            return getattr(obj, self.internal_name)
+
+
+class Stats:
+    """The ``Stats`` type is used to represent a group of unordered
+    statistical datapoints for calculations such as mean, median, and
+    variance.
+
+    Args:
+
+        data (list): List or other iterable containing numeric values.
+        default (float): A value to be returned when a given
+            statistical measure is not defined. 0.0 by default, but
+            ``float('nan')`` is appropriate for stricter applications.
+        use_copy (bool): By default Stats objects copy the initial
+            data into a new list to avoid issues with
+            modifications. Pass ``False`` to disable this behavior.
+        is_sorted (bool): Presorted data can skip an extra sorting
+            step for a little speed boost. Defaults to False.
+
+    """
+    def __init__(self, data, default=0.0, use_copy=True, is_sorted=False):
+        self._use_copy = use_copy
+        self._is_sorted = is_sorted
+        if use_copy:
+            self.data = list(data)
+        else:
+            self.data = data
+
+        self.default = default
+        cls = self.__class__
+        self._prop_attr_names = [a for a in dir(self)
+                                 if isinstance(getattr(cls, a, None),
+                                               _StatsProperty)]
+        self._pearson_precision = 0
+
+    def __len__(self):
+        return len(self.data)
+
+    def __iter__(self):
+        return iter(self.data)
+
+    def _get_sorted_data(self):
+        """When using a copy of the data, it's better to have that copy be
+        sorted, but we do it lazily using this method, in case no
+        sorted measures are used. I.e., if median is never called,
+        sorting would be a waste.
+
+=====
+
+    def _calc_kurtosis(self):
+        """\
+        Indicates how much data is in the tails of the distribution. The
+        result is always positive, with the normal "bell-curve"
+        distribution having a kurtosis of 3.
+
+        http://en.wikipedia.org/wiki/Kurtosis
+
+        See the module docstring for more about statistical moments.
+
+        >>> kurtosis(range(9))
+        1.99125
+
+        With a kurtosis of 1.99125, [0, 1, 2, 3, 4, 5, 6, 7, 8] is more
+        centrally distributed than the normal curve.
+        """
+        data, s_dev = self.data, self.std_dev
+        if len(data) > 1 and s_dev > 0:
+            return (sum(self._get_pow_diffs(4)) /
+                    float((len(data) - 1) * (s_dev ** 4)))
+        else:
+            return 0.0
+    kurtosis = _StatsProperty('kurtosis', _calc_kurtosis)
+
+    def _calc_pearson_type(self):
+        precision = self._pearson_precision
+        skewness = self.skewness
+        kurtosis = self.kurtosis
+        beta1 = skewness ** 2.0
+        beta2 = kurtosis * 1.0
+
+        # TODO: range checks?
+
+        c0 = (4 * beta2) - (3 * beta1)
+        c1 = skewness * (beta2 + 3)
+        c2 = (2 * beta2) - (3 * beta1) - 6
+
+        if round(c1, precision) == 0:
+            if round(beta2, precision) == 3:
+                return 0  # Normal
+            else:
+                if beta2 < 3:
+                    return 2  # Symmetric Beta
+                elif beta2 > 3:
+                    return 7
+        elif round(c2, precision) == 0:
+            return 3  # Gamma
+        else:
+            k = c1 ** 2 / (4 * c0 * c2)
+            if k < 0:
+                return 1  # Beta
+            elif round(k, precision) == 1:
+                return 5  # Type V
+            elif k < 1:
+                return 4  # Type IV
+            else:
+                return 6  # Type VI
+        raise RuntimeError('missed a spot')
+    pearson_type = _StatsProperty('pearson_type', _calc_pearson_type)
+
+    @staticmethod
+    def _get_quantile(sorted_data, q):
+        data, n = sorted_data, len(sorted_data)
+        idx = q / 1.0 * (n - 1)
+        idx_f, idx_c = int(floor(idx)), int(ceil(idx))
+        if idx_f == idx_c:
+            return data[idx_f]
+        return (data[idx_f] * (idx_c - idx)) + (data[idx_c] * (idx - idx_f))
+
+    def get_quantile(self, q):
+        """Get a quantile from the dataset. Quantiles are floating point
+        values between ``0.0`` and ``1.0``, with ``0.0`` representing
+        the minimum value in the dataset and ``1.0`` representing the
+        maximum. ``0.5`` represents the median:
+
+        >>> Stats(range(100)).get_quantile(0.5)
+        49.5
+        """
+        q = float(q)
+        if not 0.0 <= q <= 1.0:

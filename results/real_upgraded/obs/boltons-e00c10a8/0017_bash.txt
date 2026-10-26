@@ -1,0 +1,65 @@
+            if inc is None:  # + -
+                return _ComplementSet(included=self._included & exc)
+            else:  # + +
+                return _ComplementSet(included=self._included.difference(inc))
+
+    def __rsub__(self, other):
+        inc, exc = _norm_args_notimplemented(other)
+        if inc is NotImplemented:
+            return NotImplemented
+        # rsub, so the expression being evaluated is "other - self"
+        if self._included is None:
+            if exc is None:  # - +
+                return _ComplementSet(included=inc & self._excluded)
+            else:  # - -
+                return _ComplementSet(included=self._excluded - exc)
+        else:
+            if inc is None:  # + -
+                return _ComplementSet(excluded=exc | self._included)
+            else:  # + +
+                return _ComplementSet(included=inc.difference(self._included))
+
+    def difference_update(self, other):
+        try:
+            self -= other
+        except NotImplementedError:
+            raise TypeError('argument must be another set or complement(set)')
+
+    def __isub__(self, other):
+        inc, exc = _norm_args_notimplemented(other)
+        if inc is NotImplemented:
+            return NotImplemented
+        if self._included is None:
+            if exc is None:  # - +
+                self._excluded |= inc
+            else:  # - -
+                self._included, self._excluded = exc - self._excluded, None
+        else:
+            if inc is None:  # + -
+                self._included &= exc
+            else:  # + +
+                self._included.difference_update(inc)
+        return self
+
+    def __eq__(self, other):
+        return (
+            type(self) is type(other)
+            and self._included == other._included
+            and self._excluded == other._excluded) or (
+            type(other) in (set, frozenset) and self._included == other)
+
+    def __hash__(self):
+        return hash(self._included) ^ hash(self._excluded)
+
+    def __len__(self):
+        if self._included is not None:
+            return len(self._included)
+        raise NotImplementedError('complemented sets have undefined length')
+
+    def __iter__(self):
+        if self._included is not None:
+            return iter(self._included)
+68:class IndexedSet(MutableSet):
+521:        >>> class NamesFilter(object):
+582:class _ComplementSet:
+584:    helper class for complement() that implements the set methods

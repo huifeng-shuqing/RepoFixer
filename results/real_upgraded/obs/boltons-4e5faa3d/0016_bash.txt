@@ -1,0 +1,173 @@
+        try:
+            return self._buffer
+        except AttributeError:
+            self._buffer = EncodedFile(BytesIO(), data_encoding='utf-8')
+        return self._buffer
+
+    @property
+    def _rolled(self):
+        return not isinstance(self.buffer.stream, BytesIO)
+
+    def rollover(self):
+        """Roll the buffer over to a TempFile"""
+        if not self._rolled:
+            tmp = EncodedFile(TemporaryFile(dir=self._dir),
+                              data_encoding='utf-8')
+            pos = self.buffer.tell()
+            tmp.write(self.buffer.getvalue())
+            tmp.seek(pos)
+            self.buffer.close()
+            self._buffer = tmp
+
+    def tell(self):
+        """Return the codepoint position"""
+        self._checkClosed()
+        return self._tell
+
+    @property
+    def len(self):
+        """Determine the number of codepoints in the file"""
+        pos = self.buffer.tell()
+        self.buffer.seek(0)
+        total = 0
+        while True:
+            ret = self.read(READ_CHUNK_SIZE)
+            if not ret:
+                break
+            total += len(ret)
+        self.buffer.seek(pos)
+        return total
+
+
+def is_text_fileobj(fileobj):
+    if getattr(fileobj, 'encoding', False):
+        # codecs.open and io.TextIOBase
+        return True
+    if getattr(fileobj, 'getvalue', False):
+        # StringIO.StringIO / io.StringIO
+        try:
+            if isinstance(fileobj.getvalue(), str):
+                return True
+        except Exception:
+            pass
+    return False
+
+
+class MultiFileReader:
+    """Takes a list of open files or file-like objects and provides an
+    interface to read from them all contiguously. Like
+    :func:`itertools.chain()`, but for reading files.
+
+       >>> mfr = MultiFileReader(BytesIO(b'ab'), BytesIO(b'cd'), BytesIO(b'e'))
+       >>> mfr.read(3).decode('ascii')
+       u'abc'
+       >>> mfr.read(3).decode('ascii')
+       u'de'
+
+    The constructor takes as many fileobjs as you hand it, and will
+    raise a TypeError on non-file-like objects. A ValueError is raised
+    when file-like objects are a mix of bytes- and text-handling
+    objects (for instance, BytesIO and StringIO).
+    """
+
+    def __init__(self, *fileobjs):
+        if not all([callable(getattr(f, 'read', None)) and
+                    callable(getattr(f, 'seek', None)) for f in fileobjs]):
+            raise TypeError('MultiFileReader expected file-like objects'
+                            ' with .read() and .seek()')
+        if all([is_text_fileobj(f) for f in fileobjs]):
+            # codecs.open and io.TextIOBase
+            self._joiner = ''
+        elif any([is_text_fileobj(f) for f in fileobjs]):
+            raise ValueError('All arguments to MultiFileReader must handle'
+                             ' bytes OR text, not a mix')
+        else:
+            # open/file and io.BytesIO
+            self._joiner = b''
+        self._fileobjs = fileobjs
+        self._index = 0
+
+    def read(self, amt=None):
+        """Read up to the specified *amt*, seamlessly bridging across
+====
+    def test_invalid_type(self):
+        """Ensure TypeError raised when writing bytes to SpooledStringIO"""
+        self.assertRaises(TypeError, self.spooled_flo.write, b"hi")
+
+    def test_write_returns_character_count(self):
+        for rolled in (False, True):
+            with self.subTest(rolled=rolled):
+                with ioutils.SpooledStringIO() as stream:
+                    if rolled:
+                        stream.rollover()
+                    self.assertEqual(stream.write('a\u2603b'), 3)
+                    self.assertEqual(stream.write(''), 0)
+                    self.assertEqual(stream.getvalue(), 'a\u2603b')
+
+    def test_relative_backwards_seek_uses_character_position(self):
+        for rolled in (False, True):
+            with self.subTest(rolled=rolled):
+                with ioutils.SpooledStringIO() as stream:
+                    stream.write('a\u2603bc')
+                    if rolled:
+                        stream.rollover()
+                    stream.seek(3)
+                    self.assertEqual(stream.seek(-2, os.SEEK_CUR), 1)
+                    self.assertEqual(stream.read(2), '\u2603b')
+                    self.assertEqual(stream.tell(), 3)
+
+    def test_negative_destination_rejected_without_moving(self):
+        for rolled in (False, True):
+            for offset, whence in ((-1, os.SEEK_SET), (-3, os.SEEK_CUR)):
+                with self.subTest(rolled=rolled, offset=offset, whence=whence):
+                    with ioutils.SpooledStringIO() as stream:
+                        stream.write('a\u2603bc')
+                        if rolled:
+                            stream.rollover()
+                        stream.seek(2)
+                        with self.assertRaises(ValueError):
+                            stream.seek(offset, whence)
+                        self.assertEqual(stream.tell(), 2)
+                        self.assertEqual(stream.read(), 'bc')
+
+    def test_tell_codepoints(self):
+        """Verify tell() returns codepoint position, not bytes position"""
+        self.spooled_flo.write(self.test_str)
+        self.spooled_flo.seek(0)
+        self.spooled_flo.read(40)
+        self.assertEqual(self.spooled_flo.tell(), 40)
+        self.spooled_flo.seek(10)
+        self.assertEqual(self.spooled_flo.tell(), 10)
+
+    def test_codepoints_all_enc(self):
+        """"Test getting read, seek, tell, on various codepoints"""
+        test_str = "\u2014\u2014\u2014"
+        self.spooled_flo.write(test_str)
+        self.spooled_flo.seek(1)
+        self.assertEqual(self.spooled_flo.read(), "\u2014\u2014")
+        self.assertEqual(len(self.spooled_flo), len(test_str))
+
+    def test_seek_codepoints_SEEK_END(self):
+        """Make sure  seek() moves to codepoints relative to file end"""
+        self.spooled_flo.write(self.test_str)
+        ret = self.spooled_flo.seek(0, os.SEEK_END)
+        self.assertEqual(ret, len(self.test_str))
+
+    def test_seek_codepoints_large_SEEK_END(self):
+        """Make sure seek() moves to codepoints relative to file end"""
+        test_str = "".join(random.choice(string.ascii_letters) for
+                            x in range(34000))
+        self.spooled_flo.write(test_str)
+        ret = self.spooled_flo.seek(0, os.SEEK_END)
+        self.assertEqual(ret, len(test_str))
+
+    def test_seek_codepoints_SEEK_SET(self):
+        """Make sure seek() moves to codepoints relative to file start"""
+        self.spooled_flo.write(self.test_str)
+        ret = self.spooled_flo.seek(3, os.SEEK_SET)
+        self.assertEqual(ret, 3)
+
+    def test_seek_codepoints_large_SEEK_SET(self):
+        """Make sure seek() moves to codepoints relative to file start"""
+        test_str = "".join(random.choice(string.ascii_letters) for
+                            x in range(34000))

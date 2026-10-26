@@ -1,0 +1,101 @@
+     1 | """Utils."""
+     2 | 
+     3 | # standard
+     4 | from functools import wraps
+     5 | from inspect import getfullargspec
+     6 | from itertools import chain
+     7 | from os import environ
+     8 | from typing import Any, Callable, Dict
+     9 | 
+    10 | 
+    11 | class ValidationError(Exception):
+    12 |     """Exception class when validation failure occurs."""
+    13 | 
+    14 |     def __init__(self, function: Callable[..., Any], arg_dict: Dict[str, Any], message: str = ""):
+    15 |         """Initialize Validation Failure."""
+    16 |         if message:
+    17 |             self.reason = message
+    18 |         self.func = function
+    19 |         self.__dict__.update(arg_dict)
+    20 | 
+    21 |     def __repr__(self):
+    22 |         """Repr Validation Failure."""
+    23 |         return (
+    24 |             f"ValidationError(func={self.func.__name__}, "
+    25 |             + f"args={ ({k: v for (k, v) in self.__dict__.items() if k != 'func'}) })"
+    26 |         )
+    27 | 
+    28 |     def __str__(self):
+    29 |         """Str Validation Failure."""
+    30 |         return repr(self)
+    31 | 
+    32 |     def __bool__(self):
+    33 |         """Bool Validation Failure."""
+    34 |         return False
+    35 | 
+    36 | 
+    37 | def _func_args_as_dict(func: Callable[..., Any], *args: Any, **kwargs: Any):
+    38 |     """Return function's positional and key value arguments as an ordered dictionary."""
+    39 |     return dict(
+    40 |         list(zip(dict.fromkeys(chain(getfullargspec(func)[0], kwargs.keys())), args))
+    41 |         + list(kwargs.items())
+    42 |     )
+    43 | 
+    44 | 
+    45 | def validator(func: Callable[..., Any]):
+    46 |     """A decorator that makes given function validator.
+    47 | 
+    48 |     Whenever the given `func` returns `False` this
+    49 |     decorator returns `ValidationError` object.
+    50 | 
+    51 |     Examples:
+    52 |         >>> @validator
+    53 |         ... def even(value):
+    54 |         ...     return not (value % 2)
+    55 |         >>> even(4)
+    56 |         True
+    57 |         >>> even(5)
+    58 |         ValidationError(func=even, args={'value': 5})
+    59 | 
+    60 |     Args:
+    61 |         func:
+    62 |             Function which is to be decorated.
+    63 | 
+    64 |     Returns:
+    65 |         (Callable[..., ValidationError | Literal[True]]):
+    66 |             A decorator which returns either `ValidationError`
+    67 |             or `Literal[True]`.
+    68 | 
+    69 |     Raises:
+    70 |         (ValidationError): If `r_ve` or `RAISE_VALIDATION_ERROR` is `True`
+    71 |     """
+    72 | 
+    73 |     @wraps(func)
+    74 |     def wrapper(*args: Any, **kwargs: Any):
+    75 |         raise_validation_error = False
+    76 |         if "r_ve" in kwargs:
+    77 |             raise_validation_error = True
+    78 |             del kwargs["r_ve"]
+    79 |         if environ.get("RAISE_VALIDATION_ERROR", "False") == "True":
+    80 |             raise_validation_error = True
+    81 | 
+    82 |         try:
+    83 |             if raise_validation_error:
+    84 |                 if func(*args, **kwargs):
+    85 |                     return True
+    86 |                 else:
+    87 |                     raise ValidationError(func, _func_args_as_dict(func, *args, **kwargs))
+    88 |             else:
+    89 |                 return (
+    90 |                     True
+    91 |                     if func(*args, **kwargs)
+    92 |                     else ValidationError(func, _func_args_as_dict(func, *args, **kwargs))
+    93 |                 )
+    94 |         except (ValueError, TypeError, UnicodeError) as exp:
+    95 |             if raise_validation_error:
+    96 |                 raise ValidationError(
+    97 |                     func, _func_args_as_dict(func, *args, **kwargs), str(exp)
+    98 |                 ) from exp
+    99 |             else:
+   100 |                 return ValidationError(func, _func_args_as_dict(func, *args, **kwargs), str(exp))
+... [2 more lines; pass offset=101 for next page]

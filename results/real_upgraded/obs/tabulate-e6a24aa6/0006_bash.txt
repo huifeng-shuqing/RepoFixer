@@ -1,0 +1,27 @@
+test/test_output.py:1993:def test_pipe():
+test/test_output.py:1994:    "Output: pipe with headers"
+test/test_output.py:2003:    result = tabulate(_test_table, _test_table_headers, tablefmt="pipe")
+test/test_output.py:2007:def test_pipe_headerless():
+test/test_output.py:2008:    "Output: pipe without headers"
+test/test_output.py:2010:    result = tabulate(_test_table, tablefmt="pipe")
+test/test_internal.py:5:from common import assert_equal, cols_to_pipe_str, rows_to_pipe_table_str, skip
+test/test_internal.py:337:    expected = rows_to_pipe_table_str([[0, "a"], [1, "b"], [2, "c"], [3, "c"]])
+test/test_internal.py:339:    assert_equal(expected, rows_to_pipe_table_str(result))
+test/test_internal.py:340:    assert_equal("2|4|6", cols_to_pipe_str(sep_lines))
+test/test_internal.py:355:    expected = rows_to_pipe_table_str(with_rows)
+test/test_internal.py:357:    assert_equal(expected, rows_to_pipe_table_str(sans_rows))
+test/test_regression.py:12:    formatted = tabulate(colortable, colorlessheaders, "pipe")
+test/test_regression.py:194:    formatted = tabulate(colortable, colorlessheaders, "pipe")
+test/test_regression.py:214:def test_latex_escape_special_chars():
+test/test_regression.py:215:    "Regression: escape special characters in LaTeX output (issue #32)"
+test/test_regression.py:396:def test_escape_empty_cell_in_first_column_in_rst():
+test/test_regression.py:397:    "Regression: escape empty cells of the first column in RST format (issue #82)"
+test/test_regression.py:423:def test_empty_pipe_table_with_columns():
+test/test_regression.py:424:    "Regression: allow empty pipe tables with columns, like empty dataframes (github issue #15)"
+test/test_regression.py:428:    result = tabulate(table, headers, tablefmt="pipe")
+test/test_regression.py:541:        result = tabulate(table, headers, tablefmt="pipe", floatfmt=".2f")
+test/test_regression.py:596:def test_github_escape_pipe_character():
+test/test_regression.py:597:    "Regression: github format must escape pipe character with a backslash (issue #241)"
+test/common.py:21:def cols_to_pipe_str(cols):
+test/common.py:25:def rows_to_pipe_table_str(rows):
+test/common.py:28:        line = cols_to_pipe_str(row)

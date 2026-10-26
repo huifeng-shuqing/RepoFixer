@@ -1,0 +1,144 @@
+70:    'bucket',
+71-    'callback_iter',
+72-    'chunked',
+73-    'chunked_even',
+74-    'circular_shifts',
+75-    'classify_unique',
+76-    'collapse',
+77-    'combination_index',
+78-    'combination_with_replacement_index',
+79-    'concurrent_tee',
+80-    'consecutive_groups',
+81-    'constrained_batches',
+82-    'consumer',
+83-    'count_cycle',
+84-    'countable',
+85-    'derangements',
+86-    'dft',
+87-    'difference',
+88-    'distinct_combinations',
+89-    'distinct_permutations',
+90-    'distribute',
+91-    'divide',
+92-    'doublestarmap',
+93-    'duplicates_everseen',
+94-    'duplicates_justseen',
+95-    'exactly_n',
+96-    'extract',
+97-    'filter_except',
+98-    'filter_map',
+99-    'first',
+100-    'gray_product',
+101-    'groupby_transform',
+102-    'ichunked',
+103-    'idft',
+104-    'iequals',
+105-    'ilen',
+106-    'interleave',
+107-    'interleave_evenly',
+108-    'interleave_longest',
+109-    'interleave_randomly',
+110-    'intersperse',
+--
+1138:class bucket:
+1139:    """Wrap *iterable* and return an object that buckets the iterable into
+1140-    child iterables based on a *key* function.
+1141-
+1142-        >>> iterable = ['a1', 'b1', 'c1', 'a2', 'b2', 'c2', 'b3']
+1143:        >>> s = bucket(iterable, key=lambda x: x[0])  # Bucket by 1st character
+1144-        >>> sorted(list(s))  # Get the keys
+1145-        ['a', 'b', 'c']
+1146-        >>> a_iterable = s['a']
+1147-        >>> next(a_iterable)
+1148-        'a1'
+1149-        >>> next(a_iterable)
+1150-        'a2'
+1151-        >>> list(s['b'])
+1152-        ['b1', 'b2', 'b3']
+1153-
+1154-    The original iterable will be advanced and its items will be cached until
+1155-    they are used by the child iterables. This may require significant storage.
+1156-
+1157:    By default, attempting to select a bucket to which no items belong  will
+1158-    exhaust the iterable and cache all values.
+1159:    If you specify a *validator* function, selected buckets will instead be
+1160-    checked against it.
+1161-
+1162-        >>> from itertools import count
+1163-        >>> it = count(1, 2)  # Infinite sequence of odd numbers
+1164-        >>> key = lambda x: x % 10  # Bucket by last digit
+1165-        >>> validator = lambda x: x in {1, 3, 5, 7, 9}  # Odd digits only
+1166:        >>> s = bucket(it, key=key, validator=validator)
+1167-        >>> 2 in s
+1168-        False
+1169-        >>> list(s[2])
+1170-        []
+1171-
+1172-    .. seealso:: :func:`map_reduce`, :func:`groupby_transform`
+1173-
+1174-    If storage is not a concern, :func:`map_reduce` returns a Python
+1175-    dictionary, which is generally easier to work with. If the elements
+====
+43:    'bucket',
+44-    'callback_iter',
+45-    'chunked',
+46-    'chunked_even',
+47-    'circular_shifts',
+48-    'classify_unique',
+49-    'collapse',
+50-    'combination_index',
+51-    'combination_with_replacement_index',
+52-    'concurrent_tee',
+53-    'consecutive_groups',
+54-    'constrained_batches',
+55-    'consumer',
+56-    'count_cycle',
+57-    'countable',
+58-    'derangements',
+59-    'dft',
+60-    'difference',
+61-    'distinct_combinations',
+62-    'distinct_permutations',
+63-    'distribute',
+64-    'divide',
+65-    'doublestarmap',
+66-    'duplicates_everseen',
+67-    'duplicates_justseen',
+68-    'exactly_n',
+69-    'extract',
+70-    'filter_except',
+71-    'filter_map',
+72-    'first',
+73-    'gray_product',
+--
+258:class bucket(Generic[_T, _U], Container[_U]):
+259-    def __init__(
+260-        self,
+261-        iterable: Iterable[_T],
+262-        key: Callable[[_T], _U],
+263-        validator: Callable[[_U], object] | None = ...,
+264-    ) -> None: ...
+265-    def __contains__(self, value: object) -> bool: ...
+266-    def __iter__(self) -> Iterator[_U]: ...
+267-    def __getitem__(self, value: object) -> Iterator[_T]: ...
+268-
+269-def spy(
+270-    iterable: Iterable[_T], n: int = ...
+271-) -> tuple[list[_T], Iterator[_T]]: ...
+272-def interleave(*iterables: Iterable[_T]) -> Iterator[_T]: ...
+273-def interleave_longest(*iterables: Iterable[_T]) -> Iterator[_T]: ...
+274-def interleave_evenly(
+275-    iterables: list[Iterable[_T]], lengths: list[int] | None = ...
+276-) -> Iterator[_T]: ...
+277-def interleave_randomly(*iterables: Iterable[_T]) -> Iterable[_T]: ...
+278-def collapse(
+279-    iterable: Iterable[Any],
+280-    base_type: _ClassInfo | None = ...,
+281-    levels: int | None = ...,
+282-) -> Iterator[Any]: ...
+283-@overload
+284-def side_effect(
+285-    func: Callable[[_T], object],
+286-    iterable: Iterable[_T],
+287-    chunk_size: None = ...,
+288-    before: Callable[[], object] | None = ...,

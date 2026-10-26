@@ -1,0 +1,121 @@
+  2571 | def _build_line(colwidths, colaligns, linefmt):
+  2572 |     "Return a string which represents a horizontal line."
+  2573 |     if not linefmt:
+  2574 |         return None
+  2575 |     if callable(linefmt):
+  2576 |         return linefmt(colwidths, colaligns)
+  2577 |     else:
+  2578 |         begin, fill, sep, end = linefmt
+  2579 |         cells = [fill * w for w in colwidths]
+  2580 |         return _build_simple_row(cells, (begin, sep, end))
+  2581 | 
+  2582 | 
+  2583 | def _append_line(lines, colwidths, colaligns, linefmt):
+  2584 |     lines.append(_build_line(colwidths, colaligns, linefmt))
+  2585 |     return lines
+  2586 | 
+  2587 | 
+  2588 | class JupyterHTMLStr(str):
+  2589 |     """Wrap the string with a _repr_html_ method so that Jupyter
+  2590 |     displays the HTML table"""
+  2591 | 
+  2592 |     def _repr_html_(self):
+  2593 |         return self
+  2594 | 
+  2595 |     @property
+  2596 |     def str(self):
+  2597 |         """add a .str property so that the raw string is still accessible"""
+  2598 |         return self
+  2599 | 
+  2600 | 
+  2601 | def _format_table(
+  2602 |     fmt, headers, headersaligns, rows, colwidths, colaligns, is_multiline, rowaligns
+  2603 | ):
+  2604 |     """Produce a plain-text representation of the table."""
+  2605 |     lines = []
+  2606 |     hidden = fmt.with_header_hide if (headers and fmt.with_header_hide) else []
+  2607 |     pad = fmt.padding
+  2608 |     headerrow = fmt.headerrow
+  2609 | 
+  2610 |     padded_widths = [(w + 2 * pad) for w in colwidths]
+  2611 |     if is_multiline:
+  2612 |         pad_row = lambda row, _: row  # noqa: E731 # do it later, in _append_multiline_row
+  2613 |         append_row = partial(_append_multiline_row, pad=pad)
+  2614 |     else:
+  2615 |         pad_row = _pad_row
+  2616 |         append_row = _append_basic_row
+  2617 | 
+  2618 |     padded_headers = pad_row(headers, pad)
+  2619 | 
+  2620 |     if fmt.lineabove and "lineabove" not in hidden:
+  2621 |         _append_line(lines, padded_widths, colaligns, fmt.lineabove)
+  2622 | 
+  2623 |     if padded_headers:
+  2624 |         append_row(lines, padded_headers, padded_widths, headersaligns, headerrow)
+  2625 |         if fmt.linebelowheader and "linebelowheader" not in hidden:
+  2626 |             _append_line(lines, padded_widths, colaligns, fmt.linebelowheader)
+  2627 | 
+  2628 |     if rows and fmt.linebetweenrows and "linebetweenrows" not in hidden:
+  2629 |         # initial rows with a line below
+  2630 |         for row, ralign in zip(rows[:-1], rowaligns):
+  2631 |             if row != SEPARATING_LINE:
+  2632 |                 append_row(
+  2633 |                     lines,
+  2634 |                     pad_row(row, pad),
+  2635 |                     padded_widths,
+  2636 |                     colaligns,
+  2637 |                     fmt.datarow,
+  2638 |                     rowalign=ralign,
+  2639 |                 )
+  2640 |             _append_line(lines, padded_widths, colaligns, fmt.linebetweenrows)
+  2641 |         # the last row without a line below
+  2642 |         append_row(
+  2643 |             lines,
+  2644 |             pad_row(rows[-1], pad),
+  2645 |             padded_widths,
+  2646 |             colaligns,
+  2647 |             fmt.datarow,
+  2648 |             rowalign=rowaligns[-1],
+  2649 |         )
+  2650 |     else:
+  2651 |         separating_line = (
+  2652 |             fmt.linebetweenrows
+  2653 |             or fmt.linebelowheader
+  2654 |             or fmt.linebelow
+  2655 |             or fmt.lineabove
+  2656 |             or Line("", "", "", "")
+  2657 |         )
+  2658 |         for row in rows:
+  2659 |             # test to see if either the 1st column or the 2nd column (account for showindex) has
+  2660 |             # the SEPARATING_LINE flag
+  2661 |             if _is_separating_line(row):
+  2662 |                 _append_line(lines, padded_widths, colaligns, separating_line)
+  2663 |             else:
+  2664 |                 append_row(lines, pad_row(row, pad), padded_widths, colaligns, fmt.datarow)
+  2665 | 
+  2666 |     if fmt.linebelow and "linebelow" not in hidden:
+  2667 |         _append_line(lines, padded_widths, colaligns, fmt.linebelow)
+  2668 | 
+  2669 |     if headers or rows:
+  2670 |         output = "\n".join(lines)
+  2671 |         if fmt.lineabove == _html_begin_table_without_header:
+  2672 |             return JupyterHTMLStr(output)
+  2673 |         else:
+  2674 |             return output
+  2675 |     else:  # a completely empty table
+  2676 |         return ""
+  2677 | 
+  2678 | 
+  2679 | class _CustomTextWrap(textwrap.TextWrapper):
+  2680 |     """A custom implementation of CPython's textwrap.TextWrapper. This supports
+  2681 |     both wide characters (Korea, Japanese, Chinese)  - including mixed string.
+  2682 |     For the most part, the `_handle_long_word` and `_wrap_chunks` functions were
+  2683 |     copy pasted out of the CPython baseline, and updated with our custom length
+  2684 |     and line appending logic.
+  2685 |     """
+  2686 | 
+  2687 |     def __init__(self, *args, **kwargs):
+  2688 |         self._active_codes = []
+  2689 |         self.max_lines = None  # For python2 compatibility
+  2690 |         textwrap.TextWrapper.__init__(self, *args, **kwargs)
+... [318 more lines; pass offset=2691 for next page]

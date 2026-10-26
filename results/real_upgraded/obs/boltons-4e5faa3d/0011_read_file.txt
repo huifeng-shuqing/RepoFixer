@@ -1,0 +1,121 @@
+   100 | 
+   101 |     def writelines(self, lines):
+   102 |         """
+   103 |         Write lines to the file from an interable.
+   104 | 
+   105 |         NOTE: writelines() does NOT add line separators.
+   106 |         """
+   107 |         self._checkClosed()
+   108 |         for line in lines:
+   109 |             self.write(line)
+   110 | 
+   111 |     @abstractmethod
+   112 |     def rollover(self):
+   113 |         """Roll file-like-object over into a real temporary file"""
+   114 | 
+   115 |     @abstractmethod
+   116 |     def tell(self):
+   117 |         """Return the current position"""
+   118 | 
+   119 |     @abstractproperty
+   120 |     def buffer(self):
+   121 |         """Should return a flo instance"""
+   122 | 
+   123 |     @abstractproperty
+   124 |     def _rolled(self):
+   125 |         """Returns whether the file has been rolled to a real file or not"""
+   126 | 
+   127 |     @abstractproperty
+   128 |     def len(self):
+   129 |         """Returns the length of the data"""
+   130 | 
+   131 |     def _get_softspace(self):
+   132 |         return self.buffer.softspace
+   133 | 
+   134 |     def _set_softspace(self, val):
+   135 |         self.buffer.softspace = val
+   136 | 
+   137 |     softspace = property(_get_softspace, _set_softspace)
+   138 | 
+   139 |     @property
+   140 |     def _file(self):
+   141 |         return self.buffer
+   142 | 
+   143 |     def close(self):
+   144 |         return self.buffer.close()
+   145 | 
+   146 |     def flush(self):
+   147 |         self._checkClosed()
+   148 |         return self.buffer.flush()
+   149 | 
+   150 |     def isatty(self):
+   151 |         self._checkClosed()
+   152 |         return self.buffer.isatty()
+   153 | 
+   154 |     @property
+   155 |     def closed(self):
+   156 |         return self.buffer.closed
+   157 | 
+   158 |     @property
+   159 |     def pos(self):
+   160 |         return self.tell()
+   161 | 
+   162 |     @property
+   163 |     def buf(self):
+   164 |         return self.getvalue()
+   165 | 
+   166 |     def fileno(self):
+   167 |         self.rollover()
+   168 |         return self.buffer.fileno()
+   169 | 
+   170 |     def truncate(self, size=None):
+   171 |         """
+   172 |         Truncate the contents of the buffer.
+   173 | 
+   174 |         Custom version of truncate that takes either no arguments (like the
+   175 |         real SpooledTemporaryFile) or a single argument that truncates the
+   176 |         value to a certain index location.
+   177 |         """
+   178 |         self._checkClosed()
+   179 |         if size is None:
+   180 |             return self.buffer.truncate()
+   181 | 
+   182 |         if size < 0:
+   183 |             raise OSError(EINVAL, "Negative size not allowed")
+   184 | 
+   185 |         # Emulate truncation to a particular location
+   186 |         pos = self.tell()
+   187 |         self.seek(size)
+   188 |         self.buffer.truncate()
+   189 |         if pos < size:
+   190 |             self.seek(pos)
+   191 | 
+   192 |     def getvalue(self):
+   193 |         """Return the entire files contents."""
+   194 |         self._checkClosed()
+   195 |         pos = self.tell()
+   196 |         self.seek(0)
+   197 |         val = self.read()
+   198 |         self.seek(pos)
+   199 |         return val
+   200 | 
+   201 |     def seekable(self):
+   202 |         return True
+   203 | 
+   204 |     def readable(self):
+   205 |         return True
+   206 | 
+   207 |     def writable(self):
+   208 |         return True
+   209 | 
+   210 |     def __next__(self):
+   211 |         self._checkClosed()
+   212 |         line = self.readline()
+   213 |         if not line:
+   214 |             pos = self.buffer.tell()
+   215 |             self.buffer.seek(0, os.SEEK_END)
+   216 |             if pos == self.buffer.tell():
+   217 |                 raise StopIteration
+   218 |             else:
+   219 |                 self.buffer.seek(pos)
+... [368 more lines; pass offset=220 for next page]

@@ -1,0 +1,101 @@
+     1 | """Test Slug."""
+     2 | 
+     3 | # external
+     4 | 
+     5 | from typing import Any
+     6 | 
+     7 | import pytest
+     8 | 
+     9 | # local
+    10 | from validators import ValidationError, slug
+    11 | 
+    12 | 
+    13 | @pytest.mark.parametrize(
+    14 |     "value",
+    15 |     [
+    16 |         # with numbers
+    17 |         "hello123",
+    18 |         "123hello",
+    19 |         "123",
+    20 |         # with hyphens
+    21 |         "hello-world",
+    22 |         "hello-world-test",
+    23 |         "test-123-abc",
+    24 |         # with mixed alphanumeric
+    25 |         "hello123-world456",
+    26 |         "123-456-789",
+    27 |         "a1-b2-c3",
+    28 |         # with single character
+    29 |         "a",
+    30 |         "1",
+    31 |         "z",
+    32 |         # with complex slug
+    33 |         "test-123-abc-456-def",
+    34 |         "this-is-a-very-long-slug-with-many-words",
+    35 |         # with multiple hyphens
+    36 |         "a-b-c",
+    37 |         "1-2-3",
+    38 |         # very long
+    39 |         "a" * 100,
+    40 |         # very long with hyphens
+    41 |         "a-" * 50 + "end",
+    42 |         # very long with hyphens and different alphabets|letters
+    43 |         "a1-b2-c3-d4-e5-f6-g7-h8-i9-j0",
+    44 |         # old
+    45 |         "123-asd-7sda",
+    46 |         "123-k-123",
+    47 |         "dac-12sa-459",
+    48 |         "dac-12sa7-ad31as",
+    49 |     ],
+    50 | )
+    51 | def test_returns_true_on_valid_slug(value: str):
+    52 |     """Test returns true on valid slug."""
+    53 |     assert slug(value)
+    54 | 
+    55 | 
+    56 | @pytest.mark.parametrize(
+    57 |     "value",
+    58 |     [
+    59 |         # trailing newline must not be accepted ($ matches before a final \n)
+    60 |         "hello-world\n",
+    61 |         "\n",
+    62 |         # with empty_string
+    63 |         "",
+    64 |         # with upper case
+    65 |         "Hello",
+    66 |         "HELLO",
+    67 |         "hello-World",
+    68 |         "Test-Slug",
+    69 |         # with special characters
+    70 |         "hello world",
+    71 |         "hello_world",
+    72 |         "hello.world",
+    73 |         "hello@world",
+    74 |         "hello#world",
+    75 |         "hello$world",
+    76 |         # starting with hyphen
+    77 |         "-hello",
+    78 |         "-123",
+    79 |         "-hello-world",
+    80 |         # with consecutive hyphens
+    81 |         "hello--world",
+    82 |         "test---slug",
+    83 |         "a--b",
+    84 |         # with unicode characters
+    85 |         "café",
+    86 |         "привет",
+    87 |         "東京",
+    88 |         "hello-мир",
+    89 |         # with spaces
+    90 |         "hello world",
+    91 |         " hello ",
+    92 |         "hello  world",
+    93 |         # with only hyphens
+    94 |         "-",
+    95 |         "--",
+    96 |         "---",
+    97 |         # with mixed case
+    98 |         "HelloWorld",
+    99 |         "helloWorld",
+   100 |         "HELLOworld",
+... [43 more lines; pass offset=101 for next page]

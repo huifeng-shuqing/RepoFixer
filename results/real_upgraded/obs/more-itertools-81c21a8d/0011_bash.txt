@@ -1,0 +1,73 @@
+    dictionary, which is generally easier to work with. If the elements
+    with the same key are already adjacent, :func:`groupby_transform`
+    or :func:`itertools.groupby` can be used without any caching overhead.
+
+    """
+
+    def __init__(self, iterable, key, validator=None):
+        self._it = iter(iterable)
+        self._key = key
+        self._cache = defaultdict(deque)
+        self._validator = validator or (lambda x: True)
+
+    def __contains__(self, value):
+        if not self._validator(value):
+            return False
+
+        try:
+            item = next(self[value])
+        except StopIteration:
+            return False
+        else:
+            self._cache[value].appendleft(item)
+
+        return True
+
+    def _get_values(self, value):
+===
+        D = mi.bucket(iterable, key=lambda x: 10 * (x // 10))
+        for missing in (30, 40, 50):
+            self.assertFalse(missing in D)
+        self.assertEqual(set(D), {10, 20})
+
+
+class SpyTests(TestCase):
+    """Tests for ``spy()``"""
+
+    def test_basic(self):
+        original_iterable = iter('abcdefg')
+        head, new_iterable = mi.spy(original_iterable)
+        self.assertEqual(head, ['a'])
+        self.assertEqual(
+            list(new_iterable), ['a', 'b', 'c', 'd', 'e', 'f', 'g']
+        )
+
+    def test_unpacking(self):
+        original_iterable = iter('abcdefg')
+        (first, second, third), new_iterable = mi.spy(original_iterable, 3)
+        self.assertEqual(first, 'a')
+        self.assertEqual(second, 'b')
+        self.assertEqual(third, 'c')
+        self.assertEqual(
+            list(new_iterable), ['a', 'b', 'c', 'd', 'e', 'f', 'g']
+        )
+
+    def test_too_many(self):
+        original_iterable = iter('abc')
+        head, new_iterable = mi.spy(original_iterable, 4)
+        self.assertEqual(head, ['a', 'b', 'c'])
+        self.assertEqual(list(new_iterable), ['a', 'b', 'c'])
+
+    def test_zero(self):
+        original_iterable = iter('abc')
+        head, new_iterable = mi.spy(original_iterable, 0)
+        self.assertEqual(head, [])
+        self.assertEqual(list(new_iterable), ['a', 'b', 'c'])
+
+    def test_immutable(self):
+        original_iterable = iter('abcdefg')
+        head, new_iterable = mi.spy(original_iterable, 3)
+        head[0] = 'A'
+        self.assertEqual(head, ['A', 'b', 'c'])
+        self.assertEqual(
+            list(new_iterable), ['a', 'b', 'c', 'd', 'e', 'f', 'g']

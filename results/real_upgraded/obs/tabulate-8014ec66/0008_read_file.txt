@@ -1,0 +1,191 @@
+   370 |     expected = "\n".join(
+   371 |         [
+   372 |             "|:-----|---------:|",
+   373 |             "| spam |  41.9999 |",
+   374 |             "|:-----|---------:|",
+   375 |             "| eggs | 451      |",
+   376 |         ]
+   377 |     )
+   378 |     result = tabulate(_test_table_with_sep_line, tablefmt="github")
+   379 |     assert_equal(expected, result)
+   380 | 
+   381 | 
+   382 | def test_simple_headerless_with_sep_line_with_linebetweenrows_in_tablefmt():
+   383 |     "Output: simple without headers with sep line with linebetweenrows in tablefmt"
+   384 |     expected = "\n".join(
+   385 |         [
+   386 |             "+------+----------+",
+   387 |             "| spam |  41.9999 |",
+   388 |             "+------+----------+",
+   389 |             "+------+----------+",
+   390 |             "| eggs | 451      |",
+   391 |             "+------+----------+",
+   392 |         ]
+   393 |     )
+   394 |     result = tabulate(_test_table_with_sep_line, tablefmt="grid")
+   395 |     assert_equal(expected, result)
+   396 | 
+   397 | 
+   398 | def test_simple_multiline_headerless():
+   399 |     "Output: simple with multiline cells without headers"
+   400 |     table = [["foo bar\nbaz\nbau", "hello"], ["", "multiline\nworld"]]
+   401 |     expected = "\n".join(
+   402 |         [
+   403 |             "-------  ---------",
+   404 |             "foo bar    hello",
+   405 |             "  baz",
+   406 |             "  bau",
+   407 |             "         multiline",
+   408 |             "           world",
+   409 |             "-------  ---------",
+   410 |         ]
+   411 |     )
+   412 |     result = tabulate(table, stralign="center", tablefmt="simple")
+   413 |     assert_equal(expected, result)
+   414 | 
+   415 | 
+   416 | def test_simple_multiline():
+   417 |     "Output: simple with multiline cells with headers"
+   418 |     table = [[2, "foo\nbar"]]
+   419 |     headers = ("more\nspam \x1b[31meggs\x1b[0m", "more spam\n& eggs")
+   420 |     expected = "\n".join(
+   421 |         [
+   422 |             "       more  more spam",
+   423 |             "  spam \x1b[31meggs\x1b[0m  & eggs",
+   424 |             "-----------  -----------",
+   425 |             "          2  foo",
+   426 |             "             bar",
+   427 |         ]
+   428 |     )
+   429 |     result = tabulate(table, headers, tablefmt="simple")
+   430 |     assert_equal(expected, result)
+   431 | 
+   432 | 
+   433 | def test_simple_multiline_with_links():
+   434 |     "Output: simple with multiline cells with links and headers"
+   435 |     table = [[2, "foo\nbar"]]
+   436 |     headers = ("more\nspam \x1b]8;;target\x1b\\eggs\x1b]8;;\x1b\\", "more spam\n& eggs")
+   437 |     expected = "\n".join(
+   438 |         [
+   439 |             "       more  more spam",
+   440 |             "  spam \x1b]8;;target\x1b\\eggs\x1b]8;;\x1b\\  & eggs",
+   441 |             "-----------  -----------",
+   442 |             "          2  foo",
+   443 |             "             bar",
+   444 |         ]
+   445 |     )
+   446 |     result = tabulate(table, headers, tablefmt="simple")
+   447 |     assert_equal(expected, result)
+   448 | 
+   449 | 
+   450 | def test_simple_multiline_with_empty_cells():
+   451 |     "Output: simple with multiline cells and empty cells with headers"
+   452 |     table = [
+   453 |         ["hdr", "data", "fold"],
+   454 |         ["1", "", ""],
+   455 |         ["2", "very long data", "fold\nthis"],
+   456 |     ]
+   457 |     expected = "\n".join(
+   458 |         [
+   459 |             "  hdr  data            fold",
+   460 |             "-----  --------------  ------",
+   461 |             "    1",
+   462 |             "    2  very long data  fold",
+   463 |             "                       this",
+   464 |         ]
+   465 |     )
+   466 |     result = tabulate(table, headers="firstrow", tablefmt="simple")
+   467 |     assert_equal(expected, result)
+   468 | 
+   469 | 
+   470 | def test_simple_multiline_with_empty_cells_headerless():
+   471 |     "Output: simple with multiline cells and empty cells without headers"
+   472 |     table = [["0", "", ""], ["1", "", ""], ["2", "very long data", "fold\nthis"]]
+   473 |     expected = "\n".join(
+   474 |         [
+   475 |             "-  --------------  ----",
+   476 |             "0",
+   477 |             "1",
+   478 |             "2  very long data  fold",
+   479 |             "                   this",
+   480 |             "-  --------------  ----",
+   481 |         ]
+   482 |     )
+   483 |     result = tabulate(table, tablefmt="simple")
+   484 |     assert_equal(expected, result)
+   485 | 
+   486 | 
+   487 | def test_github():
+   488 |     "Output: github with headers"
+   489 |     expected = "\n".join(
+   490 |         [
+   491 |             "| strings   |   numbers |",
+   492 |             "|:----------|----------:|",
+   493 |             "| spam      |   41.9999 |",
+   494 |             "| eggs      |  451      |",
+   495 |         ]
+   496 |     )
+   497 |     result = tabulate(_test_table, _test_table_headers, tablefmt="github")
+   498 |     assert_equal(expected, result)
+   499 | 
+   500 | 
+   501 | def test_github_multiline():
+   502 |     "Output: github with multiline cells with headers"
+   503 |     table = [[2, "foo\nbar"]]
+   504 |     headers = ("more\nspam eggs", "more spam\n& eggs")
+   505 |     expected = "\n".join(
+   506 |         [
+   507 |             "|        more | more spam   |",
+   508 |             "|   spam eggs | & eggs      |",
+   509 |             "|------------:|:------------|",
+   510 |             "|           2 | foo         |",
+   511 |             "|             | bar         |",
+   512 |         ]
+   513 |     )
+   514 |     result = tabulate(table, headers, tablefmt="github")
+   515 |     assert_equal(expected, result)
+   516 | 
+   517 | 
+   518 | def test_github_with_colalign():
+   519 |     "Output: github with explicit column alignment"
+   520 |     expected = "\n".join(
+   521 |         [
+   522 |             "| Name   |   Age |",
+   523 |             "|:-------|------:|",
+   524 |             "| Alice  |    24 |",
+   525 |             "| Bob    |    19 |",
+   526 |         ]
+   527 |     )
+   528 |     result = tabulate(
+   529 |         [["Alice", 24], ["Bob", 19]],
+   530 |         ["Name", "Age"],
+   531 |         tablefmt="github",
+   532 |         colalign=("left", "right"),
+   533 |     )
+   534 |     assert_equal(expected, result)
+   535 | 
+   536 | 
+   537 | def test_github_no_alignment():
+   538 |     "Output: github without alignment hints when numalign/stralign are disabled"
+   539 |     expected = "\n".join(
+   540 |         [
+   541 |             "| strings | numbers |",
+   542 |             "|-----------|-----------|",
+   543 |             "| spam | 41.9999 |",
+   544 |             "| eggs | 451 |",
+   545 |         ]
+   546 |     )
+   547 |     result = tabulate(
+   548 |         _test_table,
+   549 |         _test_table_headers,
+   550 |         tablefmt="github",
+   551 |         numalign=None,
+   552 |         stralign=None,
+   553 |     )
+   554 |     assert_equal(expected, result)
+   555 | 
+   556 | 
+   557 | def test_grid():
+   558 |     "Output: grid with headers"
+   559 |     expected = "\n".join(
+... [2792 more lines; pass offset=560 for next page]

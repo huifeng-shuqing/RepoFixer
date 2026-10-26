@@ -1,0 +1,116 @@
+commit 1364a1bf366237285455d0a4f5d792612ee56a63
+Author: dataset <dataset@local>
+Date:   Fri Oct 23 16:00:35 2026 +0800
+
+    build: apply test patch + stub _version (source fix removed)
+
+diff --git a/tests/test_setutils.py b/tests/test_setutils.py
+index f16c9df..b78fd6c 100644
+--- a/tests/test_setutils.py
++++ b/tests/test_setutils.py
+@@ -287,3 +287,28 @@ def test_iset_scalar_index_multiple_dead_intervals():
+         iset[95]
+     with raises(IndexError):
+         iset[-96]
++
++
++def test_bulk_difference_update():
++    # removals large enough to take the O(n) bulk path (> _MAX_DEAD_INTERVALS)
++    thing = IndexedSet(range(1000))
++    thing.difference_update(set(range(0, 1000, 2)))
++    assert list(thing) == list(range(1, 1000, 2))
++    assert thing[0] == 1 and thing[-1] == 999
++    assert thing.index(501) == 250
++    thing.add(0)
++    assert thing[-1] == 0
++
++
++def test_bulk_intersection_update():
++    thing = IndexedSet(range(1000))
++    thing.intersection_update(set(range(500, 2000)))
++    assert list(thing) == list(range(500, 1000))
++    assert thing[0] == 500 and thing.index(750) == 250
++
++
++def test_small_difference_update_unchanged():
++    # small removals keep the incremental path
++    thing = IndexedSet(range(100))
++    thing.difference_update({1, 3, 5})
++    assert list(thing)[:5] == [0, 2, 4, 6, 7]
+            if min_time > (min_times[old_size_factor] + 0.002):
+                step = -step // 2
+            old_size_factor = size_factor
+            size_factor += step
+        print(tottime)
+
+    try:
+        tune()  # main()
+    except Exception as e:
+        import pdb;pdb.post_mortem()
+        raise
+
+
+def _multi_sublist_bl(n=30000):
+    # BarrelList only splits into sublists after a mutating op triggers
+    # _balance_list; a single indexed pop on a freshly-built list does it
+    bl = BarrelList(range(n))
+    bl.pop(0)
+    bl.insert(0, 0)
+    assert len(bl.lists) > 1
+    assert list(bl) == list(range(n))
+    return bl
+
+
+def test_barrel_list_getitem_past_end():
+    # bl[len(bl)] used to return an element from the middle
+    bl = _multi_sublist_bl()
+    try:
+        bl[len(bl)]
+    except IndexError:
+        pass
+    else:
+        assert False, 'expected IndexError'
+
+
+def test_barrel_list_insert_at_end():
+    # insert(len(bl), x) used to insert mid-list; list.insert clamps to append
+    bl = _multi_sublist_bl()
+    bl.insert(len(bl), 'end')
+    assert bl[-1] == 'end'
+    bl.insert(len(bl) + 100, 'past_end')
+    assert bl[-1] == 'past_end'
+    bl.insert(-len(bl) - 100, 'front')
+    assert bl[0] == 'front'
+
+
+def test_barrel_list_pop_after_tail_drained():
+    # pop() used to raise IndexError on a non-empty BarrelList whose tail
+    # sublist had been emptied by indexed pops
+    bl = _multi_sublist_bl()
+    for _ in range(len(bl.lists[-1])):
+        bl.pop(len(bl) - 1)
+    expected = bl[-1]
+    assert bl.pop() == expected
+
+
+def test_barrel_list_matches_list():
+    import random
+    rng = random.Random(7)
+    ref, bl = list(range(2000)), BarrelList(range(2000))
+    for _ in range(4000):
+        op = rng.random()
+        if op < 0.3 and ref:
+            i = rng.randrange(-len(ref), len(ref))
+            assert ref.pop(i) == bl.pop(i)
+        elif op < 0.5 and ref:
+            assert ref.pop() == bl.pop()
+        elif op < 0.8:
+            i = rng.randrange(-len(ref) - 2, len(ref) + 2)
+            v = rng.random()
+            ref.insert(i, v)
+            bl.insert(i, v)
+        elif ref:
+            i = rng.randrange(-len(ref), len(ref))
+            assert ref[i] == bl[i]
+        assert len(ref) == len(bl)
+    assert list(bl) == ref

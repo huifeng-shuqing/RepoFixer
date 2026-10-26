@@ -1,0 +1,81 @@
+
+    >>> print(tabulate([["spam", 41.9999], ["eggs", "451.0"]], tablefmt="rst"))
+    ====  ========
+    spam   41.9999
+    eggs  451
+    ====  ========
+
+    "mediawiki" produces a table markup used in Wikipedia and on other
+    MediaWiki-based sites:
+
+    >>> print(tabulate([["strings", "numbers"], ["spam", 41.9999], ["eggs", "451.0"]],
+    ...                headers="firstrow", tablefmt="mediawiki"))
+    {| class="wikitable" style="text-align: left;"
+    |+ <!-- caption -->
+    |-
+    ! strings   !! style="text-align: right;"|   numbers
+    |-
+    | spam      || style="text-align: right;"|   41.9999
+    |-
+    | eggs      || style="text-align: right;"|  451
+    |}
+
+    "html" produces HTML markup as an html.escape'd str
+    with a ._repr_html_ method so that Jupyter Lab and Notebook display the HTML
+    and a .str property so that the raw HTML remains accessible
+    the unsafehtml table format can be used if an unescaped HTML format is required:
+
+    >>> print(tabulate([["strings", "numbers"], ["spam", 41.9999], ["eggs", "451.0"]],
+    ...                headers="firstrow", tablefmt="html"))
+    <table>
+    <thead>
+    <tr><th style="text-align: left;">strings  </th><th style="text-align: right;">  numbers</th></tr>
+    </thead>
+    <tbody>
+    <tr><td style="text-align: left;">spam     </td><td style="text-align: right;">  41.9999</td></tr>
+    <tr><td style="text-align: left;">eggs     </td><td style="text-align: right;"> 451     </td></tr>
+    </tbody>
+    </table>
+
+    "latex" produces a tabular environment of LaTeX document markup:
+
+    >>> print(tabulate([["spam", 41.9999], ["eggs", "451.0"]], tablefmt="latex"))
+    \\begin{tabular}{lr}
+    \\hline
+     spam &  41.9999 \\\\
+     eggs & 451      \\\\
+    \\hline
+    \\end{tabular}
+
+    "latex_raw" is similar to "latex", but doesn't escape special characters,
+    such as backslash and underscore, so LaTeX commands may embedded into
+    cells' values:
+
+    >>> print(tabulate([["spam$_9$", 41.9999], ["\\\\emph{eggs}", "451.0"]], tablefmt="latex_raw"))
+    \\begin{tabular}{lr}
+    \\hline
+     spam$_9$    &  41.9999 \\\\
+     \\emph{eggs} & 451      \\\\
+    \\hline
+    \\end{tabular}
+
+    "latex_booktabs" produces a tabular environment of LaTeX document markup
+    using the booktabs.sty package:
+
+    >>> print(tabulate([["spam", 41.9999], ["eggs", "451.0"]], tablefmt="latex_booktabs"))
+    \\begin{tabular}{lr}
+    \\toprule
+     spam &  41.9999 \\\\
+     eggs & 451      \\\\
+    \\bottomrule
+    \\end{tabular}
+
+    "latex_longtable" produces a tabular environment that can stretch along
+    multiple pages, using the longtable package for LaTeX.
+
+    >>> print(tabulate([["spam", 41.9999], ["eggs", "451.0"]], tablefmt="latex_longtable"))
+    \\begin{longtable}{lr}
+    \\hline
+     spam &  41.9999 \\\\
+     eggs & 451      \\\\
+    \\hline

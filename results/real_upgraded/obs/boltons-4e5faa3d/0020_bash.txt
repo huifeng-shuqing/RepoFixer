@@ -1,0 +1,71 @@
+                            x in range(34000))
+        self.spooled_flo.write(test_str)
+        ret = self.spooled_flo.seek(33000, os.SEEK_SET)
+        self.assertEqual(ret, 33000)
+
+    def test_seek_codepoints_SEEK_CUR(self):
+        """Make sure seek() moves to codepoints relative to current_position"""
+        test_str = "\u2014\u2014\u2014"
+        self.spooled_flo.write(test_str)
+        self.spooled_flo.seek(1)
+        self.assertEqual(self.spooled_flo.tell(), 1)
+        ret = self.spooled_flo.seek(2, os.SEEK_CUR)
+        self.assertEqual(ret, 3)
+
+    def test_seek_codepoints_large_SEEK_CUR(self):
+        """Make sure seek() moves to codepoints relative to current_position"""
+        test_str = "".join(random.choice(string.ascii_letters) for
+                            x in range(34000))
+        self.spooled_flo.write(test_str)
+        self.spooled_flo.seek(1)
+        ret = self.spooled_flo.seek(33000, os.SEEK_CUR)
+        self.assertEqual(ret, 33001)
+
+    def test_x80_codepoint(self):
+        """Make sure x80 codepoint doesn't confuse read value"""
+        test_str = '\x8000'
+        self.spooled_flo.write(test_str)
+        self.spooled_flo.seek(0)
+        self.assertEqual(len(self.spooled_flo.read(2)), 2)
+        self.assertEqual(self.spooled_flo.read(), '0')
+
+    def test_seek_encoded(self):
+        """Make sure reading works when bytes exceeds read val"""
+        test_str = "\u2014\u2014\u2014"
+        self.spooled_flo.write(test_str)
+        self.spooled_flo.seek(0)
+        self.assertEqual(self.spooled_flo.read(3), test_str)
+
+    def test_iter(self):
+        """Make sure iter works as expected"""
+        self.spooled_flo.write("a\nb")
+        self.spooled_flo.seek(0)
+        self.assertEqual([x for x in self.spooled_flo], ["a\n", "b"])
+
+    def test_writelines(self):
+        """An iterable of lines can be written"""
+        lines = ["1", "2", "3"]
+        expected = "123"
+        self.spooled_flo.writelines(lines)
+        self.assertEqual(self.spooled_flo.getvalue(), expected)
+
+
+class TestMultiFileReader(TestCase):
+    def test_read_seek_bytes(self):
+        r = ioutils.MultiFileReader(io.BytesIO(b'narf'), io.BytesIO(b'troz'))
+        self.assertEqual([b'nar', b'ftr', b'oz'],
+                         list(iter(lambda: r.read(3), b'')))
+        r.seek(0)
+        self.assertEqual(b'narftroz', r.read())
+
+    def test_read_seek_text(self):
+        r = ioutils.MultiFileReader(io.StringIO('narf'),
+                                    io.StringIO('troz'))
+        self.assertEqual(['nar', 'ftr', 'oz'],
+                         list(iter(lambda: r.read(3), '')))
+        r.seek(0)
+        self.assertEqual('narftroz', r.read())
+
+    def test_no_mixed_bytes_and_text(self):
+        self.assertRaises(ValueError, ioutils.MultiFileReader,
+                          io.BytesIO(b'narf'), io.StringIO('troz'))

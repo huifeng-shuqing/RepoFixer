@@ -1,0 +1,150 @@
+151:    'seekable',
+152-    'serialize',
+153-    'set_partitions',
+154-    'side_effect',
+155-    'sized_iterator',
+156-    'sliced',
+157-    'sort_together',
+158-    'split_after',
+159-    'split_at',
+160-    'split_before',
+161-    'split_into',
+162-    'split_when',
+163-    'spy',
+164-    'stagger',
+165-    'strictly_n',
+166-    'strip',
+167-    'subfactorial',
+168-    'substrings',
+169-    'substrings_indexes',
+170-    'synchronized',
+171-    'takewhile_inclusive',
+172-    'time_limited',
+173-    'unique_in_window',
+174-    'unique_to_each',
+175-    'unzip',
+176-    'value_chain',
+177-    'windowed',
+178-    'windowed_complete',
+179-    'with_iter',
+180-    'zip_broadcast',
+181-    'zip_offset',
+182-]
+183-
+184-# math.sumprod is available for Python 3.12+
+185-try:
+186-    from math import sumprod as _fsumprod
+187-
+188-except ImportError:  # pragma: no cover
+189-    # Extended precision algorithms from T. J. Dekker,
+190-    # "A Floating-Point Technique for Extending the Available Precision"
+191-    # https://csclub.uwaterloo.ca/~pbarfuss/dekker1971.pdf
+192-    # Formulas: (5.5) (5.6) and (5.8).  Code: mul12()
+193-
+194-    def dl_split(x: float):
+195-        "Split a float into two half-precision components."
+196-        t = x * 134217729.0  # Veltkamp constant = 2.0 ** 27 + 1
+197-        hi = t - (t - x)
+198-        lo = x - hi
+199-        return hi, lo
+200-
+201-    def dl_mul(x, y):
+202-        "Lossless multiplication."
+203-        xx_hi, xx_lo = dl_split(x)
+204-        yy_hi, yy_lo = dl_split(y)
+205-        p = xx_hi * yy_hi
+206-        q = xx_hi * yy_lo + xx_lo * yy_hi
+207-        z = p + q
+208-        zz = p - z + q + xx_lo * yy_lo
+209-        return z, zz
+210-
+211-    def _fsumprod(p, q):
+212-        return fsum(chain.from_iterable(map(dl_mul, p, q)))
+213-
+214-
+215-def chunked(iterable, n, strict=False):
+216-    """Break *iterable* into lists of length *n*:
+217-
+218-        >>> list(chunked([1, 2, 3, 4, 5, 6], 3))
+219-        [[1, 2, 3], [4, 5, 6]]
+220-
+221-    By the default, the last yielded list will have fewer than *n* elements
+222-    if the length of *iterable* is not divisible by *n*:
+223-
+224-        >>> list(chunked([1, 2, 3, 4, 5, 6, 7, 8], 3))
+225-        [[1, 2, 3], [4, 5, 6], [7, 8]]
+226-
+227-    To use a fill-in value instead, see the :func:`grouper` recipe.
+228-
+229-    If the length of *iterable* is not divisible by *n* and *strict* is
+230-    ``True``, then ``ValueError`` will be raised before the last
+231-    list is yielded.
+--
+2573:    Use with :func:`seekable` to find indexes and then retrieve the associated
+2574-    items:
+2575-
+2576-        >>> from itertools import count
+2577:        >>> from more_itertools import seekable
+2578-        >>> source = (3 * n + 1 if (n % 2) else n // 2 for n in count())
+2579:        >>> it = seekable(source)
+2580-        >>> pred = lambda x: x > 100
+2581-        >>> indexes = locate(it, pred=pred)
+2582-        >>> i = next(indexes)
+2583-        >>> it.seek(i)
+2584-        >>> next(it)
+2585-        106
+2586-
+2587-    """
+2588-    if window_size is None:
+2589-        return compress(count(), map(pred, iterable))
+2590-
+2591-    if window_size < 1:
+2592-        raise ValueError('window size must be at least 1')
+2593-
+2594-    it = windowed(iterable, window_size, fillvalue=_marker)
+2595-    return compress(
+2596-        count(),
+2597-        (pred(*(x for x in w if x is not _marker)) for w in it),
+2598-    )
+2599-
+2600-
+2601-def longest_common_prefix(iterables):
+2602-    """Yield elements of the longest common prefix among given *iterables*.
+2603-
+2604-    >>> ''.join(longest_common_prefix(['abcd', 'abc', 'abf']))
+2605-    'ab'
+2606-
+2607-    """
+2608-    return (c[0] for c in takewhile(all_equal, zip(*iterables)))
+2609-
+2610-
+2611-def lstrip(iterable, pred):
+2612-    """Yield the items from *iterable*, but strip any from the beginning
+2613-    for which *pred* returns ``True``.
+2614-
+2615-    For example, to remove a set of items from the start of an iterable:
+2616-
+2617-        >>> iterable = (None, False, None, 1, 2, None, 3, False, None)
+2618-        >>> pred = lambda x: x in {None, False, ''}
+2619-        >>> list(lstrip(iterable, pred))
+2620-        [1, 2, None, 3, False, None]
+2621-
+2622-    This function is analogous to :func:`str.lstrip`, and is essentially
+2623-    a wrapper for :func:`itertools.dropwhile`.
+2624-
+2625-    """
+2626-    return dropwhile(pred, iterable)
+2627-
+2628-
+2629-def rstrip(iterable, pred):
+2630-    """Yield the items from *iterable*, but strip any from the end
+2631-    for which *pred* returns ``True``.
+2632-
+2633-    For example, to remove a set of items from the end of an iterable:
+2634-
+2635-        >>> iterable = (None, False, None, 1, 2, None, 3, False, None)
+2636-        >>> pred = lambda x: x in {None, False, ''}
+2637-        >>> list(rstrip(iterable, pred))
+2638-        [None, False, None, 1, 2, None, 3]
+2639-
+2640-    This function is analogous to :func:`str.rstrip`.

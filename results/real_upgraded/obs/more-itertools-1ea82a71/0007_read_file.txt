@@ -1,0 +1,71 @@
+  3695 |             )
+  3696 |         return first
+  3697 |     return default
+  3698 | 
+  3699 | 
+  3700 | def ichunked(iterable, n):
+  3701 |     """Break *iterable* into sub-iterables with *n* elements each.
+  3702 |     :func:`ichunked` is like :func:`chunked`, but it yields iterables
+  3703 |     instead of lists.
+  3704 | 
+  3705 |     If the sub-iterables are read in order, the elements of *iterable*
+  3706 |     won't be stored in memory.
+  3707 |     If they are read out of order, :func:`itertools.tee` is used to cache
+  3708 |     elements as necessary.
+  3709 | 
+  3710 |     >>> from itertools import count
+  3711 |     >>> all_chunks = ichunked(count(), 4)
+  3712 |     >>> c_1, c_2, c_3 = next(all_chunks), next(all_chunks), next(all_chunks)
+  3713 |     >>> list(c_2)  # c_1's elements have been cached; c_3's haven't been
+  3714 |     [4, 5, 6, 7]
+  3715 |     >>> list(c_1)
+  3716 |     [0, 1, 2, 3]
+  3717 |     >>> list(c_3)
+  3718 |     [8, 9, 10, 11]
+  3719 | 
+  3720 |     """
+  3721 |     iterator = iter(iterable)
+  3722 |     for first in iterator:
+  3723 |         rest = islice(iterator, n - 1)
+  3724 |         cache, cacher = tee(rest)
+  3725 |         yield chain([first], rest, cache)
+  3726 |         consume(cacher)
+  3727 | 
+  3728 | 
+  3729 | def iequals(*iterables):
+  3730 |     """Return ``True`` if all given *iterables* are equal to each other,
+  3731 |     which means that they contain the same elements in the same order.
+  3732 | 
+  3733 |     The function is useful for comparing iterables of different data types
+  3734 |     or iterables that do not support equality checks.
+  3735 | 
+  3736 |     >>> iequals("abc", ['a', 'b', 'c'], ('a', 'b', 'c'), iter("abc"))
+  3737 |     True
+  3738 | 
+  3739 |     >>> iequals("abc", "acb")
+  3740 |     False
+  3741 | 
+  3742 |     Not to be confused with :func:`all_equal`, which checks whether all
+  3743 |     elements of iterable are equal to each other.
+  3744 | 
+  3745 |     """
+  3746 |     try:
+  3747 |         return all(map(all_equal, zip(*iterables, strict=True)))
+  3748 |     except ValueError:
+  3749 |         return False
+  3750 | 
+  3751 | 
+  3752 | def distinct_combinations(iterable, r):
+  3753 |     """Yield the distinct combinations of *r* items taken from *iterable*.
+  3754 | 
+  3755 |         >>> list(distinct_combinations([0, 0, 1], 2))
+  3756 |         [(0, 0), (0, 1)]
+  3757 | 
+  3758 |     Equivalent to ``set(combinations(iterable))``, except duplicates are not
+  3759 |     generated and thrown away. For larger input sequences this is much more
+  3760 |     efficient.
+  3761 | 
+  3762 |     """
+  3763 |     if r < 0:
+  3764 |         raise ValueError('r must be non-negative')
+... [1872 more lines; pass offset=3765 for next page]

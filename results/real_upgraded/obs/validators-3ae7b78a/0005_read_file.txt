@@ -1,0 +1,71 @@
+     1 | """Test validation Failure."""
+     2 | 
+     3 | # standard
+     4 | from typing import Any, Callable
+     5 | 
+     6 | # third-party
+     7 | import pytest
+     8 | 
+     9 | # local
+    10 | from validators import ValidationError, between, slug, uuid
+    11 | 
+    12 | 
+    13 | @pytest.mark.parametrize("function,value", [(slug, "invalid_"), (uuid, "not-a-uuid")])
+    14 | def test_false_raise_validation_error_flag(
+    15 |     function: Callable[..., Any], value: str, monkeypatch: pytest.MonkeyPatch
+    16 | ) -> None:
+    17 |     """A false flag returns validation errors instead of raising them."""
+    18 |     monkeypatch.delenv("RAISE_VALIDATION_ERROR", raising=False)
+    19 |     result = function(value, r_ve=False)
+    20 |     assert isinstance(result, ValidationError)
+    21 |     assert not result
+    22 | 
+    23 | 
+    24 | @pytest.mark.parametrize("function,value", [(slug, "invalid_"), (uuid, "not-a-uuid")])
+    25 | def test_environment_still_enables_raise_validation_error(
+    26 |     function: Callable[..., Any], value: str, monkeypatch: pytest.MonkeyPatch
+    27 | ) -> None:
+    28 |     """The environment option enables raising even when the call flag is false."""
+    29 |     monkeypatch.setenv("RAISE_VALIDATION_ERROR", "True")
+    30 |     with pytest.raises(ValidationError):
+    31 |         function(value, r_ve=False)
+    32 | 
+    33 | 
+    34 | @pytest.mark.parametrize("function,value", [(slug, "invalid_"), (uuid, "not-a-uuid")])
+    35 | def test_true_raise_validation_error_flag(
+    36 |     function: Callable[..., Any], value: str, monkeypatch: pytest.MonkeyPatch
+    37 | ) -> None:
+    38 |     """A true call flag continues to raise validation errors."""
+    39 |     monkeypatch.delenv("RAISE_VALIDATION_ERROR", raising=False)
+    40 |     with pytest.raises(ValidationError):
+    41 |         function(value, r_ve=True)
+    42 | 
+    43 | 
+    44 | failed_obj_repr = "ValidationError(func=between"
+    45 | 
+    46 | 
+    47 | class TestValidationError:
+    48 |     """Test validation Failure."""
+    49 | 
+    50 |     def setup_method(self):
+    51 |         """Setup Method."""
+    52 |         self.is_in_between = between(3, min_val=4, max_val=5)
+    53 | 
+    54 |     def test_boolean_coerce(self):
+    55 |         """Test Boolean."""
+    56 |         assert not bool(self.is_in_between)
+    57 |         assert not self.is_in_between
+    58 | 
+    59 |     def test_repr(self):
+    60 |         """Test Repr."""
+    61 |         assert failed_obj_repr in repr(self.is_in_between)
+    62 | 
+    63 |     def test_string(self):
+    64 |         """Test Repr."""
+    65 |         assert failed_obj_repr in str(self.is_in_between)
+    66 | 
+    67 |     def test_arguments_as_properties(self):
+    68 |         """Test argument properties."""
+    69 |         assert self.is_in_between.__dict__["value"] == 3
+    70 |         assert self.is_in_between.__dict__["min_val"] == 4
+    71 |         assert self.is_in_between.__dict__["max_val"] == 5

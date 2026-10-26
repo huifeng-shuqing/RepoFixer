@@ -1,0 +1,120 @@
+1058-class BucketTests(TestCase):
+1059-    def test_basic(self):
+1060-        iterable = [10, 20, 30, 11, 21, 31, 12, 22, 23, 33]
+1061:        D = mi.bucket(iterable, key=lambda x: 10 * (x // 10))
+1062-
+1063-        # In-order access
+1064-        self.assertEqual(list(D[10]), [10, 11, 12])
+1065-
+1066-        # Out of order access
+1067-        self.assertEqual(list(D[30]), [30, 31, 33])
+1068-        self.assertEqual(list(D[20]), [20, 21, 22, 23])
+1069-
+1070-        self.assertEqual(list(D[40]), [])  # Nothing in here!
+1071-
+1072-    def test_in(self):
+1073-        iterable = [10, 20, 30, 11, 21, 31, 12, 22, 23, 33]
+1074:        D = mi.bucket(iterable, key=lambda x: 10 * (x // 10))
+1075-
+1076-        self.assertIn(10, D)
+1077-        self.assertNotIn(40, D)
+1078-        self.assertIn(20, D)
+1079-        self.assertNotIn(21, D)
+1080-
+1081-        # Checking in-ness shouldn't advance the iterator
+1082-        self.assertEqual(next(D[10]), 10)
+1083-
+1084-    def test_validator(self):
+1085-        iterable = count(0)
+1086-        key = lambda x: int(str(x)[0])  # First digit of each number
+1087-        validator = lambda x: 0 < x < 10  # No leading zeros
+1088:        D = mi.bucket(iterable, key, validator=validator)
+1089-        self.assertEqual(mi.take(3, D[1]), [1, 10, 11])
+1090-        self.assertNotIn(0, D)  # Non-valid entries don't return True
+1091-        self.assertNotIn(0, D._cache)  # Don't store non-valid entries
+1092-        self.assertEqual(list(D[0]), [])
+1093-
+1094-    def test_list(self):
+1095-        iterable = [10, 20, 30, 11, 21, 31, 12, 22, 23, 33]
+1096:        D = mi.bucket(iterable, key=lambda x: 10 * (x // 10))
+1097-        self.assertEqual(list(D[10]), [10, 11, 12])
+1098-        self.assertEqual(list(D[20]), [20, 21, 22, 23])
+1099-        self.assertEqual(list(D[30]), [30, 31, 33])
+1100-        self.assertEqual(set(D), {10, 20, 30})
+1101-
+1102-    def test_list_validator(self):
+1103-        iterable = [10, 20, 30, 11, 21, 31, 12, 22, 23, 33]
+1104-        key = lambda x: 10 * (x // 10)
+1105-        validator = lambda x: x != 20
+1106:        D = mi.bucket(iterable, key, validator=validator)
+1107-        self.assertEqual(set(D), {10, 30})
+1108-        self.assertEqual(list(D[10]), [10, 11, 12])
+1109-        self.assertEqual(list(D[20]), [])
+1110-        self.assertEqual(list(D[30]), [30, 31, 33])
+1111-
+1112-    def test_falsey_validator_is_honoured(self):
+1113-        # A falsey callable is still a valid validator and must not be
+1114-        # replaced by the default (see #1308).
+1115-        class AllowedKeys(set):
+1116-            def __call__(self, key):
+1117-                return key in self
+1118-
+1119-        allowed = AllowedKeys()
+1120-        self.assertFalse(allowed)  # Sanity: the validator itself is falsey
+1121:        D = mi.bucket(
+1122-            iter([10, 20, 11, 21]), key=lambda x: x, validator=allowed
+1123-        )
+1124-        self.assertEqual(list(D[10]), [])
+1125-        self.assertNotIn(10, D)
+1126-        self.assertEqual(set(D), set())
+1127-
+1128-    def test_in_does_not_add_key(self):
+1129-        # A failed membership test must not invent a key (see #1284)
+1130-        iterable = [10, 20, 11, 21]
+1131:        D = mi.bucket(iterable, key=lambda x: 10 * (x // 10))
+1132-        self.assertFalse(30 in D)
+1133-        self.assertEqual(set(D), {10, 20})
+1134-        self.assertEqual(list(D[30]), [])
+1135-
+1136-    def test_getitem_miss_does_not_add_key(self):
+1137:        # Selecting an absent bucket must not invent a key either
+1138-        iterable = [10, 20, 11, 21]
+1139:        D = mi.bucket(iterable, key=lambda x: 10 * (x // 10))
+1140-        self.assertEqual(list(D[30]), [])
+1141-        self.assertEqual(set(D), {10, 20})
+1142-
+1143-    def test_in_does_not_add_key_with_validator(self):
+1144-        # A key the validator accepts but the iterable never produces
+1145-        iterable = [10, 20, 11, 21]
+1146-        key = lambda x: 10 * (x // 10)
+1147-        validator = lambda x: x in {10, 20, 30}
+1148:        D = mi.bucket(iterable, key, validator=validator)
+1149-        self.assertFalse(30 in D)
+1150-        self.assertEqual(set(D), {10, 20})
+1151-
+1152-    def test_keys_are_only_those_seen(self):
+1153-        # Every reported key must have had at least one matching item
+1154-        iterable = [10, 20, 11]
+1155:        D = mi.bucket(iterable, key=lambda x: 10 * (x // 10))
+1156-        for missing in (30, 40, 50):
+1157-            self.assertFalse(missing in D)
+1158-        self.assertEqual(set(D), {10, 20})
+1159-
+1160-
+1161-class SpyTests(TestCase):
+1162-    """Tests for ``spy()``"""
+1163-
+1164-    def test_basic(self):
+1165-        original_iterable = iter('abcdefg')
+1166-        head, new_iterable = mi.spy(original_iterable)
+1167-        self.assertEqual(head, ['a'])
+1168-        self.assertEqual(
+1169-            list(new_iterable), ['a', 'b', 'c', 'd', 'e', 'f', 'g']
+1170-        )
+1171-
+1172-    def test_unpacking(self):
+1173-        original_iterable = iter('abcdefg')
+1174-        (first, second, third), new_iterable = mi.spy(original_iterable, 3)
+1175-        self.assertEqual(first, 'a')
+1176-        self.assertEqual(second, 'b')
+1177-        self.assertEqual(third, 'c')
