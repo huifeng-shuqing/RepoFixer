@@ -121,40 +121,62 @@ def run_task(
             pypath = "/workspace/src" if env_kind == "docker" else str(repo / "src")
             verify_env = {"PYTHONPATH": pypath}
         notes_text = load_notes(repo)
-        run = run_agent(
-            task.problem_statement,
-            llm,
-            registry,
-            trace_path,
-            max_steps=max_steps,
-            repo_map=repo_map,
-            context_budget=context_budget,
-            obs_dir=obs_dir,
-            policy=SafetyPolicy("auto", workspace=repo),
-            solved_check=lambda: env.run(task.verify_command, timeout=min(task.timeout, 120), env=verify_env).ok,
-            notes=notes_text or None,
-            snapshot=True,
-            review=True,
-        )
-        verify = env.run(task.verify_command, timeout=min(task.timeout, 180), env=verify_env)
-        try:
-            append_note(
-                repo,
-                f"{time.strftime('%Y-%m-%d')} {task.id} resolved={verify.ok} "
-                f"steps={len(run.steps)} reason={run.stopped_reason}: {run.done_summary or ''}".rstrip(),
+
+        def _attempt() -> EvalResult:
+            run = run_agent(
+                task.problem_statement,
+                llm,
+                registry,
+                trace_path,
+                max_steps=max_steps,
+                repo_map=repo_map,
+                context_budget=context_budget,
+                obs_dir=obs_dir,
+                policy=SafetyPolicy("auto", workspace=repo),
+                solved_check=lambda: env.run(task.verify_command, timeout=min(task.timeout, 120), env=verify_env).ok,
+                notes=notes_text or None,
+                snapshot=True,
+                review=True,
             )
-        except OSError:
-            pass
-        return EvalResult(
-            task_id=task.id,
-            resolved=verify.ok,
-            stopped_reason=run.stopped_reason,
-            steps=len(run.steps),
-            prompt_tokens=run.prompt_tokens,
-            completion_tokens=run.completion_tokens,
-            wall_ms=int((time.time() - t0) * 1000),
-            trace_path=str(trace_path),
-        )
+            verify = env.run(task.verify_command, timeout=min(task.timeout, 180), env=verify_env)
+            try:
+                append_note(
+                    repo,
+                    f"{time.strftime('%Y-%m-%d')} {task.id} resolved={verify.ok} "
+                    f"steps={len(run.steps)} reason={run.stopped_reason}: {run.done_summary or ''}".rstrip(),
+                )
+            except OSError:
+                pass
+            return EvalResult(
+                task_id=task.id,
+                resolved=verify.ok,
+                stopped_reason=run.stopped_reason,
+                steps=len(run.steps),
+                prompt_tokens=run.prompt_tokens,
+                completion_tokens=run.completion_tokens,
+                wall_ms=int((time.time() - t0) * 1000),
+                trace_path=str(trace_path),
+            )
+
+        try:
+            return _attempt()
+        except Exception as first_err:
+            # transient provider failures must not kill the whole eval run:
+            # retry the task once, then record it as a categorized failure.
+            time.sleep(5)
+            try:
+                return _attempt()
+            except Exception as second_err:
+                return EvalResult(
+                    task_id=task.id,
+                    resolved=False,
+                    stopped_reason="llm_error",
+                    steps=0,
+                    prompt_tokens=0,
+                    completion_tokens=0,
+                    wall_ms=int((time.time() - t0) * 1000),
+                    error=f"{type(second_err).__name__}: {second_err}"[:400],
+                )
     finally:
         env.close()
 

@@ -23,7 +23,7 @@ from repofixer.trace import load_trace
 
 def classify(result: dict, trace_path: Path) -> str:
     if result.get("error"):
-        return "env_failed"
+        return "llm_error" if result.get("stopped_reason") == "llm_error" else "env_failed"
     reason = result.get("stopped_reason", "")
     if reason == "loop_detected":
         return "loop_detected"

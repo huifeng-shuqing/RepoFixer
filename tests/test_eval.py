@@ -92,3 +92,35 @@ def test_registry_filter(ws):
     reg = ToolRegistry(LocalEnv(ws))
     reg.filter({"read_file", "done"})
     assert sorted(reg._tools) == ["done", "read_file"]
+
+
+class FlakyLLM:
+    """Raises once (simulating a transient provider error), then behaves like FixLLM."""
+
+    def __init__(self):
+        self.raised = False
+
+    def complete(self, messages, tools=None, temperature=0.2, model=None):
+        if not self.raised:
+            self.raised = True
+            raise ConnectionError("transient")
+        return FixLLM().complete(messages, tools, temperature)
+
+
+class AlwaysFailLLM:
+    def complete(self, messages, tools=None, temperature=0.2, model=None):
+        raise ConnectionError("persistent")
+
+
+def test_eval_retries_transient_llm_error(ws):
+    tasks = _tasks(ws)
+    results = run_eval(tasks, FlakyLLM(), "local", ws, base_dir=ws)
+    assert results[0].resolved is True  # one retry recovered the task
+
+
+def test_eval_records_persistent_llm_error(ws):
+    tasks = _tasks(ws)
+    results = run_eval(tasks, AlwaysFailLLM(), "local", ws, base_dir=ws)
+    assert results[0].resolved is False
+    assert results[0].stopped_reason == "llm_error"
+    assert results[0].error
