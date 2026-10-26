@@ -1,0 +1,117 @@
+        return ":" + ("-" * (w - 2)) + ":"
+    elif align == "left":
+        return ":" + ("-" * (w - 1))
+    else:
+        return "-" * w
+
+
+def _pipe_line_with_colons(colwidths, colaligns):
+    """Return a horizontal line with optional colons to indicate column's
+    alignment (as in `pipe` output format)."""
+    if not colaligns:  # e.g. printing an empty data frame (github issue #15)
+        colaligns = [""] * len(colwidths)
+    segments = "|".join(_pipe_segment_with_colons(a, w) for a, w in zip(colaligns, colwidths))
+    return f"|{segments}|"
+
+
+def _grid_segment_with_colons(colwidth, align):
+    """Return a segment of a horizontal line with optional colons which indicate
+    column's alignment in a grid table."""
+    width = colwidth
+    if align == "right":
+        return ("=" * (width - 1)) + ":"
+    elif align == "center":
+        return ":" + ("=" * (width - 2)) + ":"
+    elif align == "left":
+        return ":" + ("=" * (width - 1))
+    else:
+        return "=" * width
+
+
+def _grid_line_with_colons(colwidths, colaligns):
+    """Return a horizontal line with optional colons to indicate column's alignment
+    in a grid table."""
+    if not colaligns:
+        colaligns = [""] * len(colwidths)
+    segments = "+".join(_grid_segment_with_colons(w, a) for a, w in zip(colaligns, colwidths))
+            "-  --------------  ----",
+        ]
+    )
+    result = tabulate(table, tablefmt="simple")
+    assert_equal(expected, result)
+
+
+def test_github():
+    "Output: github with headers"
+    expected = "\n".join(
+        [
+            "| strings   |   numbers |",
+            "|:----------|----------:|",
+            "| spam      |   41.9999 |",
+            "| eggs      |  451      |",
+        ]
+    )
+    result = tabulate(_test_table, _test_table_headers, tablefmt="github")
+    assert_equal(expected, result)
+
+
+def test_github_multiline():
+    "Output: github with multiline cells with headers"
+    table = [[2, "foo\nbar"]]
+    headers = ("more\nspam eggs", "more spam\n& eggs")
+    expected = "\n".join(
+        [
+            "|        more | more spam   |",
+            "|   spam eggs | & eggs      |",
+            "|------------:|:------------|",
+            "|           2 | foo         |",
+            "|             | bar         |",
+        ]
+    )
+    result = tabulate(table, headers, tablefmt="github")
+    assert_equal(expected, result)
+
+
+def test_github_with_colalign():
+    "Output: github with explicit column alignment"
+    expected = "\n".join(
+        [
+            "| Name   |   Age |",
+            "|:-------|------:|",
+            "| Alice  |    24 |",
+            "| Bob    |    19 |",
+        ]
+    )
+    result = tabulate(
+        [["Alice", 24], ["Bob", 19]],
+        ["Name", "Age"],
+        tablefmt="github",
+        colalign=("left", "right"),
+    )
+    assert_equal(expected, result)
+
+
+def test_github_no_alignment():
+    "Output: github without alignment hints when numalign/stralign are disabled"
+    expected = "\n".join(
+        [
+            "| strings | numbers |",
+            "|-----------|-----------|",
+            "| spam | 41.9999 |",
+            "| eggs | 451 |",
+        ]
+    )
+    result = tabulate(
+        _test_table,
+        _test_table_headers,
+        tablefmt="github",
+        numalign=None,
+        stralign=None,
+    )
+    assert_equal(expected, result)
+
+
+def test_grid():
+    "Output: grid with headers"
+    expected = "\n".join(
+        [

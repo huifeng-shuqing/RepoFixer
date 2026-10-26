@@ -33,6 +33,7 @@ def main(argv: list[str] | None = None) -> int:
     run_p.add_argument("--approve", action="store_true", help="ask interactively before dangerous commands (default: auto-deny)")
     run_p.add_argument("--snapshot", action="store_true", help="shadow-git snapshot after each step (rollback via git reset)")
     run_p.add_argument("--review", action="store_true", help="independent-context review of the diff before finishing")
+    run_p.add_argument("--no-plan", action="store_true", help="skip the read-only plan phase (plan-act separation is on by default)")
 
     eval_p = sub.add_parser("eval", help="run the agent over a dataset and print metrics")
     eval_p.add_argument("--dataset", required=True, help="JSONL dataset file")
@@ -137,6 +138,7 @@ def main(argv: list[str] | None = None) -> int:
                 notes=notes_text,
                 snapshot=args.snapshot,
                 review=args.review,
+                plan_first=not args.no_plan,
             )
             try:
                 append_note(

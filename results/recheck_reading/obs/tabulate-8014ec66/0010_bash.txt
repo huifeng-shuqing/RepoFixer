@@ -1,0 +1,55 @@
+586:        lineabove=Line("+", "-", "+", "+"),
+587:        linebelowheader=Line("|", "-", "+", "|"),
+588:        linebetweenrows=None,
+596:        lineabove=Line("", "=", "  ", ""),
+597:        linebelowheader=Line("", "=", "  ", ""),
+598:        linebetweenrows=None,
+606:        lineabove=Line(
+612:        linebelowheader=Line("|-", "", "", ""),
+613:        linebetweenrows=Line("|-", "", "", ""),
+621:        lineabove=None,
+622:        linebelowheader=None,
+623:        linebetweenrows=None,
+631:        lineabove=_html_begin_table_without_header,
+632:        linebelowheader="",
+633:        linebetweenrows=None,
+638:        with_header_hide=["lineabove"],
+641:        lineabove=_html_begin_table_without_header,
+642:        linebelowheader="",
+643:        linebetweenrows=None,
+648:        with_header_hide=["lineabove"],
+651:        lineabove=_latex_line_begin_tabular,
+652:        linebelowheader=Line("\\hline", "", "", ""),
+653:        linebetweenrows=None,
+661:        lineabove=_latex_line_begin_tabular,
+662:        linebelowheader=Line("\\hline", "", "", ""),
+663:        linebetweenrows=None,
+671:        lineabove=partial(_latex_line_begin_tabular, booktabs=True),
+672:        linebelowheader=Line("\\midrule", "", "", ""),
+673:        linebetweenrows=None,
+681:        lineabove=partial(_latex_line_begin_tabular, longtable=True),
+682:        linebelowheader=Line("\\hline\n\\endhead", "", "", ""),
+683:        linebetweenrows=None,
+691:        lineabove=None,
+692:        linebelowheader=None,
+693:        linebetweenrows=None,
+701:        lineabove=None,
+702:        linebelowheader=None,
+703:        linebetweenrows=None,
+711:        lineabove=partial(_asciidoc_row, False),
+712:        linebelowheader=None,
+713:        linebetweenrows=None,
+718:        with_header_hide=["lineabove"],
+2571:def _build_line(colwidths, colaligns, linefmt):
+2584:    lines.append(_build_line(colwidths, colaligns, linefmt))
+2601:def _format_table(
+2620:    if fmt.lineabove and "lineabove" not in hidden:
+2621:        _append_line(lines, padded_widths, colaligns, fmt.lineabove)
+2625:        if fmt.linebelowheader and "linebelowheader" not in hidden:
+2626:            _append_line(lines, padded_widths, colaligns, fmt.linebelowheader)
+2628:    if rows and fmt.linebetweenrows and "linebetweenrows" not in hidden:
+2640:            _append_line(lines, padded_widths, colaligns, fmt.linebetweenrows)
+2652:            fmt.linebetweenrows
+2653:            or fmt.linebelowheader
+2655:            or fmt.lineabove
+2671:        if fmt.lineabove == _html_begin_table_without_header:

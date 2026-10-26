@@ -34,6 +34,7 @@ class StepTrace:
     assistant_text: str = ""
     tool_calls: list[ToolCallTrace] = field(default_factory=list)
     wall_ms: int = 0
+    phase: str = "act"
 
 
 class TraceWriter:

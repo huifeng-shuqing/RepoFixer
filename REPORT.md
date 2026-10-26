@@ -112,3 +112,15 @@
   2. 独立复审改为**条件触发**（≥15 步或出现工具错误才复审，`review_triggered` 字段可审计），解除对短平快任务的 +20% 成本；
   3. 循环熔断**两级化**（3 次重复注入警示、6 次强杀，`loop_warn_at/loop_guard` 可配）；
   4. 模型路由口径修正：`DEEPSEEK_SMALL_MODEL` 未配置时回落主模型，路由需第二家便宜模型才生效（.env.example 与简历口径已注明）。
+
+### Block 8 — Plan-Act 分离重构（2026-10-26）
+
+- **参考**：Cline 的 Plan/Act 双模式（Plan 模式移除编辑工具、Act 模式消费计划）；opencode 的 agent frontmatter 工具白名单（`tools: {"*": false, ...}`）；Aider 的 architect 阶段产物交接。
+- **实现**（52 单测全绿）：
+  - `run_agent` 新增 `plan_first`（默认关，eval/CLI 默认开）与 `plan_max_steps=15`；
+  - Plan 阶段：工具集裁剪为 `{read_file, grep, bash, run_test, plan, done}`，`edit_file/write_file` 调用返回「plan 阶段禁用」错误；专用系统提示（PLAN_MODE_PROMPT）要求「记录 plan → done 切阶段」；
+  - 切换：模型在 plan 阶段调用 `done`（或超出 `plan_max_steps` 被强制切换）时，读取 `.repofixer/plan.json` 注入「ACT mode」用户消息，**同一对话上下文延续**（探索成果不丢失，区别于 Cline 的模式重建）；
+  - 守卫语义按阶段划分：read-budget 熔断与 solved_check 仅 act 阶段生效；循环熔断与 no_progress 两阶段均生效；
+  - `StepTrace` 增加 `phase` 字段，轨迹可按阶段回放分析。
+- **动机**：失败归因显示难题上模型「40 步只读不改」（pathspec 系列 0-2 次编辑）；推进熔断（Block 7.3）可治标，Plan-Act 结构性地把探索变成「必须产出计划」的显式阶段。
+- **验证**：新增 tests/test_plan_act.py（4 项：plan 阶段拦截编辑、切换后放行、计划内容注入、步数预算强制切换、默认关闭）；eval 流水线测试适配 plan-first。

@@ -1,0 +1,56 @@
+test/test_output.py:378:    result = tabulate(_test_table_with_sep_line, tablefmt="github")
+test/test_output.py:487:def test_github():
+test/test_output.py:488:    "Output: github with headers"
+test/test_output.py:497:    result = tabulate(_test_table, _test_table_headers, tablefmt="github")
+test/test_output.py:501:def test_github_multiline():
+test/test_output.py:502:    "Output: github with multiline cells with headers"
+test/test_output.py:514:    result = tabulate(table, headers, tablefmt="github")
+test/test_output.py:518:def test_github_with_colalign():
+test/test_output.py:519:    "Output: github with explicit column alignment"
+test/test_output.py:531:        tablefmt="github",
+test/test_output.py:537:def test_github_no_alignment():
+test/test_output.py:538:    "Output: github without alignment hints when numalign/stralign are disabled"
+test/test_output.py:550:        tablefmt="github",
+test/test_regression.py:323:    "Regression: multiline tables with varying number of wide characters (github issue #28)"
+test/test_regression.py:424:    "Regression: allow empty pipe tables with columns, like empty dataframes (github issue #15)"
+test/test_regression.py:433:    "Regression: allow custom TableFormat that specifies with_header_hide (github issue #20)"
+test/test_regression.py:451:    "Regression: accept commas in numbers-as-text when grouping is not defined (github issue #110)"
+test/test_regression.py:459:    "Regression: accept 'infinite' row indices (github issue #175)"
+test/test_regression.py:492:    "Regression: preserve line breaks when using maxcolwidths (github issue #190)"
+test/test_regression.py:508:    "Regression: maxcolwidths can accept a list or a tuple (github issue #214)"
+test/test_regression.py:529:    "Regression: exception on empty data when using maxcolwidths (github issue #180)"
+test/test_regression.py:535:    "Regression: format numpy.int64 as integer (github issue #18)"
+147:def _pipe_line_with_colons(colwidths, colaligns):
+148-    """Return a horizontal line with optional colons to indicate column's
+149-    alignment (as in `pipe` output format)."""
+150-    if not colaligns:  # e.g. printing an empty data frame (github issue #15)
+151-        colaligns = [""] * len(colwidths)
+152-    segments = "|".join(_pipe_segment_with_colons(a, w) for a, w in zip(colaligns, colwidths))
+153-    return f"|{segments}|"
+154-
+155-
+156-def _grid_segment_with_colons(colwidth, align):
+157-    """Return a segment of a horizontal line with optional colons which indicate
+158-    column's alignment in a grid table."""
+159-    width = colwidth
+160-    if align == "right":
+161-        return ("=" * (width - 1)) + ":"
+162-    elif align == "center":
+--
+536:        lineabove=_pipe_line_with_colons,
+537:        linebelowheader=_pipe_line_with_colons,
+538-        linebetweenrows=None,
+539-        linebelow=None,
+540-        headerrow=DataRow("|", "|", "|"),
+541-        datarow=DataRow("|", "|", "|"),
+542-        padding=1,
+543-        with_header_hide=["lineabove"],
+544-    ),
+545-    "orgtbl": TableFormat(
+546-        lineabove=None,
+547-        linebelowheader=Line("|", "-", "+", "|"),
+548-        linebetweenrows=None,
+549-        linebelow=None,
+550-        headerrow=DataRow("|", "|", "|"),
+551-        datarow=DataRow("|", "|", "|"),
+552-        padding=1,

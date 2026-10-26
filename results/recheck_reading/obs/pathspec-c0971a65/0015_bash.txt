@@ -1,0 +1,30 @@
+_ BracketLiteralTest.test_pattern_literals (factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, line='[[]draft].md', as_bytes=False, errors=None) _
+    					with self.subTest(factory=factory, line=line, as_bytes=as_bytes, errors=errors):
+_ BracketLiteralTest.test_pattern_literals (factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, line='[[]draft].md', as_bytes=False, errors='literal') _
+    					with self.subTest(factory=factory, line=line, as_bytes=as_bytes, errors=errors):
+_ BracketLiteralTest.test_pattern_literals (factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, line='[[]draft].md', as_bytes=False, errors='null') _
+    					with self.subTest(factory=factory, line=line, as_bytes=as_bytes, errors=errors):
+_ BracketLiteralTest.test_pattern_literals (factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, line='[[]draft].md', as_bytes=False, errors='raise') _
+    					with self.subTest(factory=factory, line=line, as_bytes=as_bytes, errors=errors):
+_ BracketLiteralTest.test_pattern_literals (factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, line='[[]draft].md', as_bytes=True, errors=None) _
+    					with self.subTest(factory=factory, line=line, as_bytes=as_bytes, errors=errors):
+_ BracketLiteralTest.test_pattern_literals (factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, line='[[]draft].md', as_bytes=True, errors='literal') _
+    					with self.subTest(factory=factory, line=line, as_bytes=as_bytes, errors=errors):
+_ BracketLiteralTest.test_pattern_literals (factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, line='[[]draft].md', as_bytes=True, errors='null') _
+    					with self.subTest(factory=factory, line=line, as_bytes=as_bytes, errors=errors):
+_ BracketLiteralTest.test_pattern_literals (factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, line='[[]draft].md', as_bytes=True, errors='raise') _
+    					with self.subTest(factory=factory, line=line, as_bytes=as_bytes, errors=errors):
+_ BracketLiteralTest.test_pattern_literals (factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, line='[a&&b].pdf', as_bytes=False, errors=None) _
+    					with self.subTest(factory=factory, line=line, as_bytes=as_bytes, errors=errors):
+_ BracketLiteralTest.test_pattern_literals (factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, line='[a&&b].pdf', as_bytes=False, errors='literal') _
+    					with self.subTest(factory=factory, line=line, as_bytes=as_bytes, errors=errors):
+_ BracketLiteralTest.test_pattern_literals (factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, line='[a&&b].pdf', as_bytes=False, errors='null') _
+    					with self.subTest(factory=factory, line=line, as_bytes=as_bytes, errors=errors):
+_ BracketLiteralTest.test_pattern_literals (factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, line='[a&&b].pdf', as_bytes=False, errors='raise') _
+    					with self.subTest(factory=factory, line=line, as_bytes=as_bytes, errors=errors):
+_ BracketLiteralTest.test_pattern_literals (factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, line='[a&&b].pdf', as_bytes=True, errors=None) _
+    					with self.subTest(factory=factory, line=line, as_bytes=as_bytes, errors=errors):
+_ BracketLiteralTest.test_pattern_literals (factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, line='[a&&b].pdf', as_bytes=True, errors='literal') _
+    					with self.subTest(factory=factory, line=line, as_bytes=as_bytes, errors=errors):
+_ BracketLiteralTest.test_pattern_literals (factory=<class 'pathspec.patterns.gitignore.basic.GitIgnoreBasicPattern'>, line='[a&&b].pdf', as_bytes=True, errors='null') _
+    					with self.subTest(factory=factory, line=line, as_bytes=as_bytes, errors=errors):

@@ -23,14 +23,33 @@ def _tasks(ws):
 
 
 class FixLLM:
-    """Scripted LLM that applies the correct fix, then calls done. No network."""
+    """Scripted LLM: plan phase (plan -> done) then act phase (edit -> early stop). No network."""
 
     def complete(self, messages, tools=None, temperature=0.2):
         if not hasattr(self, "used"):
             self.used = True
             return LLMResponse(
                 text="",
-                tool_calls=[{"id": "c1", "name": "edit_file",
+                tool_calls=[{"id": "c1", "name": "plan",
+                             "arguments": {"goal": "fix mul", "verify": "pytest", "steps": ["edit ops.py"]}}],
+                prompt_tokens=100,
+                completion_tokens=50,
+                finish_reason="tool_calls",
+            )
+        if not hasattr(self, "planned"):
+            self.planned = True
+            return LLMResponse(
+                text="",
+                tool_calls=[{"id": "c2", "name": "done", "arguments": {"summary": "plan recorded"}}],
+                prompt_tokens=100,
+                completion_tokens=50,
+                finish_reason="tool_calls",
+            )
+        if not hasattr(self, "edited"):
+            self.edited = True
+            return LLMResponse(
+                text="",
+                tool_calls=[{"id": "c3", "name": "edit_file",
                              "arguments": {"path": "calc/ops.py", "old_text": FIX, "new_text": FIXED}}],
                 prompt_tokens=100,
                 completion_tokens=50,
@@ -38,7 +57,7 @@ class FixLLM:
             )
         return LLMResponse(
             text="",
-            tool_calls=[{"id": "c2", "name": "done", "arguments": {"summary": "fixed mul"}}],
+            tool_calls=[{"id": "c4", "name": "done", "arguments": {"summary": "fixed mul"}}],
             prompt_tokens=200,
             completion_tokens=50,
             finish_reason="tool_calls",
@@ -60,8 +79,8 @@ def test_eval_pipeline_resolves(ws):
     tasks = _tasks(ws)
     results = run_eval(tasks, FixLLM(), "local", ws, base_dir=ws)
     assert results[0].resolved is True
-    # the fix lands on step 1; the verify-based early stop fires before `done`
-    assert results[0].steps == 1
+    # plan (2 steps) -> edit lands on step 3; verify-based early stop fires before `done`
+    assert results[0].steps == 3
     assert results[0].stopped_reason == "solved_early"
     assert (ws / "results.jsonl").exists()
     assert (ws / "traces" / "calc_bug-1.jsonl").exists()
@@ -99,12 +118,13 @@ class FlakyLLM:
 
     def __init__(self):
         self.raised = False
+        self.inner = FixLLM()
 
     def complete(self, messages, tools=None, temperature=0.2, model=None):
         if not self.raised:
             self.raised = True
             raise ConnectionError("transient")
-        return FixLLM().complete(messages, tools, temperature)
+        return self.inner.complete(messages, tools, temperature)
 
 
 class AlwaysFailLLM:

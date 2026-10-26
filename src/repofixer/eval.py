@@ -159,6 +159,7 @@ def run_task(
                 notes=notes_text or None,
                 snapshot=True,
                 review=True,
+                plan_first=True,
             )
             verify_ok = _verify_final(min(task.timeout, 180))
             try:

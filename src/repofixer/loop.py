@@ -32,7 +32,7 @@ from .context import ContextManager, estimate_tokens
 from .llm import LLMClient
 from .review import build_review_messages, parse_verdict, review_feedback
 from .safety import SafetyPolicy
-from .tools import ToolRegistry
+from .tools import ToolRegistry, ToolResult
 from .trace import StepTrace, ToolCallTrace, TraceWriter
 
 SYSTEM_PROMPT = """You are RepoFixer, a software-repair agent working inside a git repository.
@@ -50,6 +50,15 @@ Rules:
 - Be terse: report what you changed and what you verified.
 """
 
+PLAN_MODE_PROMPT = """You are in PLAN mode: you CANNOT modify files yet (edit_file/write_file are disabled).
+Explore the repository (read_file/grep/bash/run_test), form a root-cause hypothesis,
+then record your repair plan with the `plan` tool (goal, how you will verify, concrete steps)
+and call `done` to switch to ACT mode where you will execute it.
+Spend at most a few steps here; the plan does not need to be perfect."""
+
+# Plan-phase tool allowlist: exploration and the plan tool, no mutations.
+PLAN_TOOLS = {"read_file", "grep", "bash", "run_test", "plan", "done"}
+
 
 @dataclass
 class AgentRun:
@@ -63,6 +72,7 @@ class AgentRun:
     review_rounds: int = 0
     review_feedback: str | None = None
     review_triggered: bool = False
+    plan: dict | None = None
     snapshots: list[str] = field(default_factory=list)
 
     @property
@@ -144,10 +154,13 @@ def run_agent(
     review_min_steps: int = 15,
     read_nudge_at: int = 10,
     read_force_at: int = 15,
+    plan_first: bool = False,
+    plan_max_steps: int = 15,
 ) -> AgentRun:
     cm = ContextManager(obs_dir, context_budget)
     step_start = 1
     resumed = False
+    phase = "plan" if plan_first else "act"
     if state_path is not None:
         st = load_state(state_path)
         if st and st.get("messages"):
@@ -157,11 +170,40 @@ def run_agent(
             resumed = True
     if not resumed:
         system = SYSTEM_PROMPT
+        if plan_first:
+            system += f"\n\n{PLAN_MODE_PROMPT}"
         if notes:
             system += f"\n\nRepository notes from previous sessions:\n{notes}"
         system += f"\n\n{repo_map}" if repo_map else ""
         cm.add_system(system)
         cm.add_user(task)
+
+    def _active_schemas() -> list[dict]:
+        if phase == "plan":
+            return [s for s in registry.schemas() if s["function"]["name"] in PLAN_TOOLS]
+        return registry.schemas()
+
+    def _enter_act(force: bool = False) -> None:
+        nonlocal phase
+        plan_path = registry.env.resolve(Path(".repofixer/plan.json"))
+        plan_text = ""
+        try:
+            if plan_path.exists():
+                plan_text = plan_path.read_text(encoding="utf-8", errors="replace")
+                run.plan = json.loads(plan_text)
+        except (OSError, json.JSONDecodeError):
+            run.plan = None
+        phase = "act"
+        if plan_text:
+            cm.add_user(
+                "Plan mode finished. You are now in ACT mode with full edit tools. "
+                f"Execute this plan, update it as needed:\n{plan_text}"
+            )
+        else:
+            cm.add_user(
+                "Plan mode finished" + (" (step budget exceeded)" if force else "") +
+                ". You are now in ACT mode with full edit tools. Proceed with your best judgment."
+            )
 
     tw = TraceWriter(trace_path)
     run = AgentRun()
@@ -180,6 +222,7 @@ def run_agent(
     # investigation (sed/pytest) produces large outputs. Track per-step bash
     # output size; -1 marks a step that used any non-bash tool.
     recent_bash_sizes: deque[int] = deque(maxlen=8)
+    steps_in_phase = 0
     try:
         for step_no in range(step_start, max_steps + 1):
             t0 = time.perf_counter()
@@ -189,7 +232,7 @@ def run_agent(
             if cm.token_budget and estimate_tokens(messages) > cm.token_budget:
                 if cm.compact_with_llm(lambda old: llm.summarize(old)):
                     messages = cm.prepare()
-            resp = llm.complete(messages, registry.schemas())
+            resp = llm.complete(messages, _active_schemas())
             run.prompt_tokens += resp.prompt_tokens
             run.completion_tokens += resp.completion_tokens
             st = StepTrace(
@@ -199,9 +242,17 @@ def run_agent(
                 completion_tokens=resp.completion_tokens,
                 finish_reason=resp.finish_reason,
                 assistant_text=resp.text[:500],
+                phase=phase,
             )
 
             if not resp.tool_calls:
+                if phase == "plan":
+                    # model stopped without recording a plan: force the transition
+                    _enter_act(force=True)
+                    steps_in_phase = 0
+                    tw.write(st)
+                    run.steps.append(st)
+                    continue
                 run.stopped_reason = "model_stopped"
                 tw.write(st)
                 run.steps.append(st)
@@ -222,11 +273,15 @@ def run_agent(
             )
             for call in resp.tool_calls:
                 t1 = time.perf_counter()
-                blocked = policy.check(call["name"], call["arguments"]) if policy else None
-                if blocked is not None:
-                    result = blocked
+                blocked = None
+                if phase == "plan" and call["name"] not in PLAN_TOOLS:
+                    result = ToolResult.err("this tool is disabled in plan mode; explore and call `plan`/`done` first")
                 else:
-                    result = registry.call(call["name"], call["arguments"])
+                    blocked = policy.check(call["name"], call["arguments"]) if policy else None
+                    if blocked is not None:
+                        result = blocked
+                    else:
+                        result = registry.call(call["name"], call["arguments"])
                 if blocked is not None:
                     run.policy_denials.extend(policy.denied)
                     policy.denied.clear()
@@ -246,8 +301,17 @@ def run_agent(
                 consecutive_identical = consecutive_identical + 1 if sig == last_call_sig else 1
                 last_call_sig = sig
                 if call["name"] == "done" and result.ok:
-                    run.done_summary = result.output
-                    run.stopped_reason = "done"
+                    if phase == "plan":
+                        _enter_act()
+                        steps_in_phase = 0
+                    else:
+                        run.done_summary = result.output
+                        run.stopped_reason = "done"
+
+            steps_in_phase += 1
+            if phase == "plan" and steps_in_phase >= plan_max_steps:
+                _enter_act(force=True)
+                steps_in_phase = 0
 
             step_bash_chars = sum(tc.output_chars for tc in st.tool_calls if tc.name == "bash")
             if st.tool_calls and all(tc.name == "bash" for tc in st.tool_calls):
@@ -257,10 +321,11 @@ def run_agent(
 
             if any(tc.name in ("edit_file", "write_file") for tc in st.tool_calls):
                 steps_since_edit = 0
-            else:
+            elif phase == "act":
                 steps_since_edit += 1
             if (
-                steps_since_edit >= read_force_at
+                phase == "act"
+                and steps_since_edit >= read_force_at
                 and not read_forced
                 and run.done_summary is None
             ):
@@ -271,7 +336,8 @@ def run_agent(
                     "minimal fix immediately, then run the tests and adjust from there."
                 )
             elif (
-                steps_since_edit >= read_nudge_at
+                phase == "act"
+                and steps_since_edit >= read_nudge_at
                 and not read_nudged
                 and run.done_summary is None
             ):
@@ -309,7 +375,7 @@ def run_agent(
                 sha = _snapshot(getattr(registry.env, "workspace", None), step_no)
                 if sha:
                     run.snapshots.append(sha)
-            if solved_check is not None and any(
+            if phase == "act" and solved_check is not None and any(
                 tc.name in ("edit_file", "write_file") for tc in st.tool_calls
             ):
                 # verify only after steps that actually changed files: pure
