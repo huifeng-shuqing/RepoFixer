@@ -1,0 +1,101 @@
+186:    trailing ``"_id"``, if any. Like :func:`titleize`, this is meant for
+187-    creating pretty output.
+188-
+189-    Examples::
+190-
+191-        >>> humanize("employee_salary")
+192-        'Employee salary'
+193-        >>> humanize("author_id")
+194-        'Author'
+195-
+196-    """
+197-    word = re.sub(r"_id$", "", word)
+198-    word = word.replace('_', ' ')
+199-    word = re.sub(r"(?i)([a-z\d]*)", lambda m: m.group(1).lower(), word)
+200-    word = re.sub(r"^\w", lambda m: m.group(0).upper(), word)
+201-    return word
+202-
+203-
+204-def ordinal(number):
+205-    """
+206-    Return the suffix that should be added to a number to denote the position
+--
+354:def titleize(word):
+355-    """
+356-    Capitalize all the words and replace some characters in the string to
+357:    create a nicer looking title. :func:`titleize` is meant for creating pretty
+358-    output.
+359-
+360-    Examples::
+361-
+362:      >>> titleize("man from the boondocks")
+363-      'Man From The Boondocks'
+364:      >>> titleize("x-men: the last stand")
+365-      'X Men: The Last Stand'
+366:      >>> titleize("TheManWithoutAPast")
+367-      'The Man Without A Past'
+368:      >>> titleize("raiders_of_the_lost_ark")
+369-      'Raiders Of The Lost Ark'
+370-
+371-    """
+372-    return re.sub(
+373-        r"\b('?[a-z])",
+374-        lambda match: match.group(1).capitalize(),
+375-        humanize(underscore(word))
+376-    )
+377-
+378-
+379-def transliterate(string):
+380-    """
+381-    Replace non-ASCII characters with an ASCII approximation. If no
+382-    approximation exists, the non-ASCII character is ignored. The string must
+383-    be ``unicode``.
+384-
+385-    Examples::
+386-
+387-        >>> transliterate('älämölö')
+388-        'alamolo'
+---
+183:MIXTURE_TO_TITLEIZED = (
+184-    ('active_record',         'Active Record'),
+185-    ('ActiveRecord',          'Active Record'),
+186-    ('action web service',    'Action Web Service'),
+187-    ('Action Web Service',    'Action Web Service'),
+188-    ('Action web service',    'Action Web Service'),
+189-    ('actionwebservice',      'Actionwebservice'),
+190-    ('Actionwebservice',      'Actionwebservice'),
+191-    ("david's code",          "David's Code"),
+192-    ("David's code",          "David's Code"),
+193-    ("david's Code",          "David's Code"),
+194-    ("ana índia",             "Ana Índia"),
+195-    ("Ana Índia",             "Ana Índia"),
+196-)
+197-
+198-
+199-ORDINAL_NUMBERS = (
+200-    ("-1", "-1st"),
+201-    ("-2", "-2nd"),
+202-    ("-3", "-3rd"),
+203-    ("-4", "-4th"),
+--
+337:@pytest.mark.parametrize(("before", "titleized"), MIXTURE_TO_TITLEIZED)
+338-def test_titleize(before, titleized):
+339-    assert titleized == inflection.titleize(before)
+340-
+341-
+342-@pytest.mark.parametrize(("camel", "underscore"), CAMEL_TO_UNDERSCORE)
+343-def test_camelize(camel, underscore):
+344-    assert camel == inflection.camelize(underscore)
+345-
+346-
+347-def test_camelize_with_lower_downcases_the_first_letter():
+348-    assert 'capital' == inflection.camelize('Capital', False)
+349-
+350-
+351-def test_camelize_with_underscores():
+352-    assert "CamelCase" == inflection.camelize('Camel_Case')
+353-
+354-
+355-@pytest.mark.parametrize(
+356-    ("camel", "underscore"),
+357-    CAMEL_TO_UNDERSCORE + CAMEL_TO_UNDERSCORE_WITHOUT_REVERSE

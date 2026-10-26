@@ -1,0 +1,83 @@
+77:	def match_file(self, file: str) -> Optional[Any]:
+78-		"""
+79-		Matches this pattern against the specified file.
+80-
+81-		*file* (:class:`str`) is the normalized file path to match against.
+82-
+83-		Returns the match result if *file* matched; otherwise, :data:`None`.
+84-		"""
+85-		raise NotImplementedError((
+86-			"{cls.__module__}.{cls.__qualname__} must override match_file()."
+87-		).format(cls=self.__class__))
+88-
+89-
+90-class RegexPattern(Pattern):
+91-	"""
+92-	The :class:`RegexPattern` class is an implementation of a pattern using
+93-	regular expressions.
+94-	"""
+95-
+96-	# Keep the class dict-less.
+97-	__slots__ = (
+98-		'pattern',
+99-		'regex',
+100-	)
+101-
+102-	def __init__(
+103-		self,
+104-		pattern: Union[AnyStr, re.Pattern, None],
+105-		include: Optional[bool] = None,
+106-		**kw,
+107-	) -> None:
+108-		"""
+109-		Initializes the :class:`RegexPattern` instance.
+110-
+111-		*pattern* (:class:`str`, :class:`bytes`, :class:`re.Pattern`, or
+112-		:data:`None`) is the pattern to compile into a regular expression.
+113-
+114-		*include* (:class:`bool` or :data:`None`) must be :data:`None` unless
+115-		*pattern* is a precompiled regular expression (:class:`re.Pattern`) in which
+116-		case it is whether matched files should be included (:data:`True`), excluded
+117-		(:data:`False`), or is a null operation (:data:`None`).
+--
+204:	def match_file(self, file: AnyStr) -> Optional[RegexMatchResult]:
+205-		"""
+206-		Matches this pattern against the specified file.
+207-
+208-		*file* (:class:`str` or :class:`bytes`) is the file path relative to the
+209-		root directory (e.g., "relative/path/to/file").
+210-
+211-		Returns the match result (:class:`.RegexMatchResult`) if *file* matched;
+212-		otherwise, :data:`None`.
+213-		"""
+214-		if (
+215-			(regex := self.regex) is not None
+216-			and (match := regex.search(file)) is not None
+217-		):
+218-			return RegexMatchResult(match)
+219-
+220-		return None
+221-
+222-	@classmethod
+223-	def pattern_to_regex(
+224-		cls,
+225-		pattern: AnyStr,
+226-	) -> tuple[Optional[AnyStr], Optional[bool]]:
+227-		"""
+228-		Convert the pattern into an uncompiled regular expression.
+229-
+230-		*pattern* (:class:`str` or :class:`bytes`) is the pattern to convert into a
+231-		regular expression.
+232-
+233-		Returns a :class:`tuple` containing:
+234-
+235-			-	*pattern* (:class:`str`, :class:`bytes` or :data:`None`) is the
+236-				uncompiled regular expression.
+237-
+238-			-	*include* (:class:`bool` or :data:`None`) is whether matched files
+239-				should be included (:data:`True`), excluded (:data:`False`), or is a
+240-				null-operation (:data:`None`).
+241-
+242-			.. note:: The default implementation simply returns *pattern* and
+243-			   :data:`True`.
+244-		"""

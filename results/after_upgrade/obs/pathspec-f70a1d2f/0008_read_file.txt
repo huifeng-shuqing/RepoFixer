@@ -1,0 +1,101 @@
+     1 | """
+     2 | This module provides :class:`.GitIgnoreSpec` which replicates *.gitignore*
+     3 | behavior, and handles edge-cases where Git's behavior differs from what's
+     4 | documented. Git allows including files from excluded directories which directly
+     5 | contradicts the documentation. This uses :class:`.GitIgnoreSpecPattern` to fully
+     6 | replicate Git's handling.
+     7 | """
+     8 | from __future__ import annotations
+     9 | 
+    10 | from collections.abc import (
+    11 | 	Iterable,
+    12 | 	Sequence)
+    13 | from typing import (
+    14 | 	Callable,  # Replaced by `collections.abc.Callable` in 3.9.2.
+    15 | 	Optional,  # Replaced by `X | None` in 3.10.
+    16 | 	TypeVar,
+    17 | 	Union,  # Replaced by `X | Y` in 3.10.
+    18 | 	cast,
+    19 | 	overload)
+    20 | 
+    21 | from pathspec.backend import (
+    22 | 	BackendNamesHint,
+    23 | 	_Backend,
+    24 | 	_TestBackendFactoryHint)
+    25 | from pathspec._backends.agg import (
+    26 | 	make_gitignore_backend)
+    27 | from pathspec.pathspec import (
+    28 | 	PathSpec)
+    29 | from pathspec.pattern import (
+    30 | 	Pattern)
+    31 | from pathspec.patterns.gitignore.basic import (
+    32 | 	GitIgnoreBasicPattern)
+    33 | from pathspec.patterns.gitignore.spec import (
+    34 | 	GitIgnoreSpecPattern)
+    35 | from pathspec._typing import (
+    36 | 	AnyStr,  # Removed in 3.18.
+    37 | 	override)  # Added in 3.12.
+    38 | from pathspec.util import (
+    39 | 	_is_iterable,
+    40 | 	lookup_pattern)
+    41 | 
+    42 | Self = TypeVar("Self", bound='GitIgnoreSpec')
+    43 | """
+    44 | :class:`.GitIgnoreSpec` self type hint to support Python v<3.11 using PEP 673
+    45 | recommendation.
+    46 | """
+    47 | 
+    48 | 
+    49 | class GitIgnoreSpec(PathSpec[GitIgnoreSpecPattern]):
+    50 | 	"""
+    51 | 	The :class:`GitIgnoreSpec` class extends :class:`.PathSpec` to replicate
+    52 | 	*gitignore* behavior. This is uses :class:`.GitIgnoreSpecPattern` to fully
+    53 | 	replicate Git's handling.
+    54 | 	"""
+    55 | 
+    56 | 	def __eq__(self, other: object) -> bool:
+    57 | 		"""
+    58 | 		Tests the equality of this gitignore-spec with *other* (:class:`.GitIgnoreSpec`)
+    59 | 		by comparing their :attr:`self.patterns <.PathSpec.patterns>` attributes. A
+    60 | 		non-:class:`GitIgnoreSpec` will not compare equal.
+    61 | 		"""
+    62 | 		if isinstance(other, GitIgnoreSpec):
+    63 | 			return super().__eq__(other)
+    64 | 		elif isinstance(other, PathSpec):
+    65 | 			return False
+    66 | 		else:
+    67 | 			return NotImplemented
+    68 | 
+    69 | 	# Support reversed order of arguments from PathSpec.
+    70 | 	@overload  # type: ignore[override]
+    71 | 	@classmethod
+    72 | 	def from_lines(
+    73 | 		cls: type[Self],
+    74 | 		pattern_factory: Union[str, type[Pattern], Callable[[AnyStr], Pattern], None],
+    75 | 		lines: Iterable[AnyStr],
+    76 | 		*,
+    77 | 		backend: Union[BackendNamesHint, str, None] = None,
+    78 | 		_test_backend_factory: _TestBackendFactoryHint = None,
+    79 | 	) -> Self:
+    80 | 		...
+    81 | 
+    82 | 	@overload
+    83 | 	@classmethod
+    84 | 	def from_lines(
+    85 | 		cls: type[Self],
+    86 | 		lines: Iterable[AnyStr],
+    87 | 		pattern_factory: Union[str, type[Pattern], Callable[[AnyStr], Pattern], None] = None,
+    88 | 		*,
+    89 | 		backend: Union[BackendNamesHint, str, None] = None,
+    90 | 		_test_backend_factory: _TestBackendFactoryHint = None,
+    91 | 	) -> Self:
+    92 | 		...
+    93 | 
+    94 | 	@override  # type: ignore[misc]
+    95 | 	@classmethod
+    96 | 	def from_lines(  # type: ignore
+    97 | 		cls: type[Self],
+    98 | 		lines: Iterable[AnyStr],
+    99 | 		pattern_factory: Union[str, type[Pattern], Callable[[AnyStr], Pattern], None] = None,
+   100 | 		*,
+... [72 more lines; pass offset=101 for next page]

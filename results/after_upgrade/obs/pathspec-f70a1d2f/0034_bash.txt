@@ -1,0 +1,30 @@
+E       - [(True, None), (True, None)]
+E       ?         ^^^^          ^^^^
+E       
+E       + [(True, 0), (True, 0)]
+E       ?         ^          ^
+E        : (['*', '!*.txt'], [CheckResult(file='a/top.txt', include=True, index=None), CheckResult(file='a/b/file.txt', include=True, index=None)])
+
+tests\test_09_gitignore_ancestor_negation.py:26: AssertionError
+============================== warnings summary ===============================
+dataset/repos/pathspec-f70a1d2f/tests/test_01_util.py: 14 warnings
+  C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\pathspec-f70a1d2f\pathspec\util.py:158: DeprecationWarning: Pattern.match() is deprecated. Use Pattern.match_file() with a loop for similar results.
+    result_files = pattern.match(all_files)  # TODO: Replace with `.match_file()`.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+SUBFAILED[simple (unopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (minopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (unopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (minopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (unopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (minopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (unopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (minopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (unopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (minopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (unopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (minopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (unopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (minopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+14 failed, 264 passed, 799 skipped, 14 warnings, 1072 subtests passed in 0.92s

@@ -1,0 +1,250 @@
+# depending on the formatter
+_DEFAULT_ALIGN = "default"
+
+
+# if True, enable wide-character (CJK) support
+WIDE_CHARS_MODE = wcwidth is not None
+
+# Constant that can be used as part of passed rows to generate a separating line
+# It is purposely an unprintable character, very unlikely to be used in a table
+SEPARATING_LINE = "\001"
+
+Line = namedtuple("Line", ["begin", "hline", "sep", "end"])
+
+
+@dataclass
+class DataRow:
+    begin: str
+    sep: str
+    end: str
+    escape_map: dict = None
+
+
+# A table structure is supposed to be:
+#
+#     --- lineabove ---------
+#         headerrow
+#     --- linebelowheader ---
+#         datarow
+#     --- linebetweenrows ---
+#     ... (more datarows) ...
+#     --- linebetweenrows ---
+#         last datarow
+#     --- linebelow ---------
+#
+# TableFormat's line* elements can be
+#
+#   - either None, if the element is not used,
+#   - or a Line tuple,
+#   - or a function: [col_widths], [col_alignments] -> string.
+#
+# TableFormat's *row elements can be
+#
+#   - either None, if the element is not used,
+#   - or a DataRow tuple,
+#   - or a function: [cell_values], [col_widths], [col_alignments] -> string.
+#
+# padding (an integer) is the amount of white space around data values.
+#
+# with_header_hide:
+#
+#   - either None, to display all table elements unconditionally,
+#   - or a list of elements not to be displayed if the table has column headers.
+#
+TableFormat = namedtuple(
+    "TableFormat",
+    [
+        "lineabove",
+        "linebelowheader",
+        "linebetweenrows",
+        "linebelow",
+        "headerrow",
+        "datarow",
+        "padding",
+        "with_header_hide",
+    ],
+)
+
+
+def _is_separating_line_value(value):
+    return type(value) is str and value.strip() == SEPARATING_LINE
+
+
+def _is_separating_line(row):
+    row_type = type(row)
+    return (row_type is list or row_type is str) and (
+        (len(row) >= 1 and _is_separating_line_value(row[0]))
+        or (len(row) >= 2 and _is_separating_line_value(row[1]))
+    )
+
+
+def _pipe_segment_with_colons(align, colwidth):
+    """Return a segment of a horizontal line with optional colons which
+    indicate column's alignment (as in `pipe` output format)."""
+    w = colwidth
+    if align in ["right", "decimal"]:
+        return ("-" * (w - 1)) + ":"
+    elif align == "center":
+        return ":" + ("-" * (w - 2)) + ":"
+    elif align == "left":
+        return ":" + ("-" * (w - 1))
+    else:
+        return "-" * w
+
+
+def _pipe_line_with_colons(colwidths, colaligns):
+    """Return a horizontal line with optional colons to indicate column's
+    alignment (as in `pipe` output format)."""
+    if not colaligns:  # e.g. printing an empty data frame (github issue #15)
+        colaligns = [""] * len(colwidths)
+    segments = "|".join(_pipe_segment_with_colons(a, w) for a, w in zip(colaligns, colwidths))
+    return f"|{segments}|"
+
+
+def _grid_segment_with_colons(colwidth, align):
+    """Return a segment of a horizontal line with optional colons which indicate
+    column's alignment in a grid table."""
+    width = colwidth
+    if align == "right":
+        return ("=" * (width - 1)) + ":"
+    elif align == "center":
+        return ":" + ("=" * (width - 2)) + ":"
+    elif align == "left":
+        return ":" + ("=" * (width - 1))
+    else:
+        return "=" * width
+
+
+def _grid_line_with_colons(colwidths, colaligns):
+    """Return a horizontal line with optional colons to indicate column's alignment
+    in a grid table."""
+    if not colaligns:
+---
+    r"$": r"\$",
+    r"#": r"\#",
+    r"_": r"\_",
+    r"^": r"\^{}",
+    r"{": r"\{",
+    r"}": r"\}",
+    r"~": r"\textasciitilde{}",
+    "\\": r"\textbackslash{}",
+    r"<": r"\ensuremath{<}",
+    r">": r"\ensuremath{>}",
+}
+
+
+_latex_row = DataRow("", "&", "\\\\", LATEX_ESCAPE_RULES)
+
+
+def _rst_escape_first_column(rows, headers):
+    def escape_empty(val):
+        if isinstance(val, (str, bytes)) and not val.strip():
+            return ".."
+        else:
+            return val
+
+    new_headers = list(headers)
+    new_rows = []
+    if headers:
+        new_headers[0] = escape_empty(headers[0])
+    for row in rows:
+        new_row = list(row)
+        if new_row:
+            new_row[0] = escape_empty(row[0])
+        new_rows.append(new_row)
+    return new_rows, new_headers
+
+
+_table_formats = {
+    "simple": TableFormat(
+        lineabove=Line("", "-", "  ", ""),
+        linebelowheader=Line("", "-", "  ", ""),
+        linebetweenrows=None,
+        linebelow=Line("", "-", "  ", ""),
+        headerrow=DataRow("", "  ", ""),
+        datarow=DataRow("", "  ", ""),
+        padding=0,
+        with_header_hide=["lineabove", "linebelow"],
+    ),
+    "plain": TableFormat(
+        lineabove=None,
+        linebelowheader=None,
+        linebetweenrows=None,
+        linebelow=None,
+        headerrow=DataRow("", "  ", ""),
+        datarow=DataRow("", "  ", ""),
+        padding=0,
+        with_header_hide=None,
+    ),
+    "grid": TableFormat(
+        lineabove=Line("+", "-", "+", "+"),
+        linebelowheader=Line("+", "=", "+", "+"),
+        linebetweenrows=Line("+", "-", "+", "+"),
+        linebelow=Line("+", "-", "+", "+"),
+        headerrow=DataRow("|", "|", "|"),
+        datarow=DataRow("|", "|", "|"),
+        padding=1,
+        with_header_hide=None,
+    ),
+    "simple_grid": TableFormat(
+        lineabove=Line("┌", "─", "┬", "┐"),
+        linebelowheader=Line("├", "─", "┼", "┤"),
+        linebetweenrows=Line("├", "─", "┼", "┤"),
+        linebelow=Line("└", "─", "┴", "┘"),
+        headerrow=DataRow("│", "│", "│"),
+        datarow=DataRow("│", "│", "│"),
+        padding=1,
+        with_header_hide=None,
+    ),
+    "rounded_grid": TableFormat(
+        lineabove=Line("╭", "─", "┬", "╮"),
+        linebelowheader=Line("├", "─", "┼", "┤"),
+        linebetweenrows=Line("├", "─", "┼", "┤"),
+        linebelow=Line("╰", "─", "┴", "╯"),
+---
+    ),
+    "fancy_outline": TableFormat(
+        lineabove=Line("╒", "═", "╤", "╕"),
+        linebelowheader=Line("╞", "═", "╪", "╡"),
+        linebetweenrows=None,
+        linebelow=Line("╘", "═", "╧", "╛"),
+        headerrow=DataRow("│", "│", "│"),
+        datarow=DataRow("│", "│", "│"),
+        padding=1,
+        with_header_hide=None,
+    ),
+    "pipe": TableFormat(
+        lineabove=_pipe_line_with_colons,
+        linebelowheader=_pipe_line_with_colons,
+        linebetweenrows=None,
+        linebelow=None,
+        headerrow=DataRow("|", "|", "|"),
+        datarow=DataRow("|", "|", "|"),
+        padding=1,
+        with_header_hide=["lineabove"],
+    ),
+    "orgtbl": TableFormat(
+        lineabove=None,
+        linebelowheader=Line("|", "-", "+", "|"),
+        linebetweenrows=None,
+        linebelow=None,
+        headerrow=DataRow("|", "|", "|"),
+        datarow=DataRow("|", "|", "|"),
+        padding=1,
+        with_header_hide=None,
+    ),
+    "jira": TableFormat(
+        lineabove=None,
+        linebelowheader=None,
+        linebetweenrows=None,
+        linebelow=None,
+        headerrow=DataRow("||", "||", "||"),
+        datarow=DataRow("|", "|", "|"),
+        padding=1,
+        with_header_hide=None,
+    ),
+    "presto": TableFormat(
+        lineabove=None,
+        linebelowheader=Line("", "-", "+", ""),
+        linebetweenrows=None,
+        linebelow=None,

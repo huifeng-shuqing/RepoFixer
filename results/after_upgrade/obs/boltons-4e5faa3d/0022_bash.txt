@@ -1,0 +1,59 @@
+.                                                                    [100%]
+================================== FAILURES ===================================
+_ TestSpooledStringIO.test_negative_destination_rejected_without_moving (rolled=False, offset=-1, whence=0) _
+
+self = <tests.test_ioutils.TestSpooledStringIO testMethod=test_negative_destination_rejected_without_moving>
+
+    def test_negative_destination_rejected_without_moving(self):
+        for rolled in (False, True):
+            for offset, whence in ((-1, os.SEEK_SET), (-3, os.SEEK_CUR)):
+                with self.subTest(rolled=rolled, offset=offset, whence=whence):
+                    with ioutils.SpooledStringIO() as stream:
+                        stream.write('a\u2603bc')
+                        if rolled:
+                            stream.rollover()
+                        stream.seek(2)
+>                       with self.assertRaises(ValueError):
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                       AssertionError: ValueError not raised
+
+tests\test_ioutils.py:425: AssertionError
+_ TestSpooledStringIO.test_negative_destination_rejected_without_moving (rolled=False, offset=-3, whence=1) _
+
+self = <tests.test_ioutils.TestSpooledStringIO testMethod=test_negative_destination_rejected_without_moving>
+
+    def test_negative_destination_rejected_without_moving(self):
+        for rolled in (False, True):
+            for offset, whence in ((-1, os.SEEK_SET), (-3, os.SEEK_CUR)):
+                with self.subTest(rolled=rolled, offset=offset, whence=whence):
+                    with ioutils.SpooledStringIO() as stream:
+                        stream.write('a\u2603bc')
+                        if rolled:
+                            stream.rollover()
+                        stream.seek(2)
+>                       with self.assertRaises(ValueError):
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                       AssertionError: ValueError not raised
+
+tests\test_ioutils.py:425: AssertionError
+_ TestSpooledStringIO.test_negative_destination_rejected_without_moving (rolled=True, offset=-1, whence=0) _
+
+self = <tests.test_ioutils.TestSpooledStringIO testMethod=test_negative_destination_rejected_without_moving>
+
+    def test_negative_destination_rejected_without_moving(self):
+        for rolled in (False, True):
+            for offset, whence in ((-1, os.SEEK_SET), (-3, os.SEEK_CUR)):
+                with self.subTest(rolled=rolled, offset=offset, whence=whence):
+                    with ioutils.SpooledStringIO() as stream:
+                        stream.write('a\u2603bc')
+                        if rolled:
+                            stream.rollover()
+                        stream.seek(2)
+>                       with self.assertRaises(ValueError):
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                       AssertionError: ValueError not raised
+
+tests\test_ioutils.py:425: AssertionError
+_ TestSpooledStringIO.test_negative_destination_rejected_without_moving (rolled=True, offset=-3, whence=1) _
+
+self = <tests.test_ioutils.TestSpooledStringIO testMethod=test_negative_destination_rejected_without_moving>

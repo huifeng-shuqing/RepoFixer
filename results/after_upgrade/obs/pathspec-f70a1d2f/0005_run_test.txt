@@ -1,0 +1,40 @@
+>   			self.assertTrue(spec.match_file("d/child/grand/deep.txt"))
+E      AssertionError: False is not true
+
+tests\test_06_gitignore.py:1157: AssertionError
+_____________ GitIgnoreSpecIssue137Test.test_d [simple (minopt)] ______________
+
+self = <tests.test_06_gitignore.GitIgnoreSpecIssue137Test testMethod=test_d>
+
+    def test_d(self):
+    	"""
+    	Test terminal-globstar negation with excluded ancestor directories.
+    	"""
+    	for sub_test in self.parameterize_from_lines([
+    		"d/**/",
+    		"!d/child/",
+    	]):
+    		with sub_test() as spec:
+    			# PathSpec leaves the bare pattern-root directory unmatched so a
+    			# traversal can still reach its direct files.
+    			self.assertFalse(spec.match_file("d/"))
+    			self.assertFalse(spec.match_file("d/top.txt"))
+    			self.assertFalse(spec.match_file("d/child/"))
+    			self.assertFalse(spec.match_file("d/child/top.txt"))
+    			self.assertTrue(spec.match_file("d/child/grand/"))
+    			# Re-including child does not re-include the excluded grand directory.
+>   			self.assertTrue(spec.match_file("d/child/grand/deep.txt"))
+E      AssertionError: False is not true
+
+tests\test_06_gitignore.py:1157: AssertionError
+============================== warnings summary ===============================
+dataset/repos/pathspec-f70a1d2f/tests/test_01_util.py: 14 warnings
+  C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\pathspec-f70a1d2f\pathspec\util.py:158: DeprecationWarning: Pattern.match() is deprecated. Use Pattern.match_file() with a loop for similar results.
+    result_files = pattern.match(all_files)  # TODO: Replace with `.match_file()`.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+SUBFAILED[simple (unopt)] tests\test_06_gitignore.py::GitIgnoreSpecIssue137Test::test_d
+SUBFAILED[simple (minopt)] tests\test_06_gitignore.py::GitIgnoreSpecIssue137Test::test_d
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 2 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+2 failed, 236 passed, 515 skipped, 14 warnings, 718 subtests passed in 3.20s
