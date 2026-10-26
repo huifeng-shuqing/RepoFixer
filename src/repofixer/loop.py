@@ -46,6 +46,7 @@ Rules:
 - As soon as the tests pass, stop exploring and call `done` immediately.
 - Call `done` with a summary ONLY when the task is finished. Never call done while tests still fail.
 - When you need several independent pieces of information (several files or searches), request them in a single response with multiple tool calls.
+- Do not try to read the whole codebase: make a small targeted edit as soon as you have a plausible cause, then use test output to steer. Read-only exploration for more than ~10 steps counts as being stuck.
 - Be terse: report what you changed and what you verified.
 """
 
@@ -141,6 +142,8 @@ def run_agent(
     review: bool = False,
     max_review_rounds: int = 1,
     review_min_steps: int = 15,
+    read_nudge_at: int = 10,
+    read_force_at: int = 15,
 ) -> AgentRun:
     cm = ContextManager(obs_dir, context_budget)
     step_start = 1
@@ -167,6 +170,12 @@ def run_agent(
     last_call_sig: str | None = None
     consecutive_identical = 0
     loop_warned = False
+    # read-budget guard: steps since the last file-modifying tool call; a long
+    # read-only stretch means the model is stuck in exploration (the dominant
+    # failure mode on hard tasks: 40 steps of sed/grep and zero edits)
+    steps_since_edit = 0
+    read_nudged = False
+    read_forced = False
     # no_progress: true probe loops show tiny bash outputs repeatedly; real
     # investigation (sed/pytest) produces large outputs. Track per-step bash
     # output size; -1 marks a step that used any non-bash tool.
@@ -245,6 +254,33 @@ def run_agent(
                 recent_bash_sizes.append(step_bash_chars)
             else:
                 recent_bash_sizes.append(-1)
+
+            if any(tc.name in ("edit_file", "write_file") for tc in st.tool_calls):
+                steps_since_edit = 0
+            else:
+                steps_since_edit += 1
+            if (
+                steps_since_edit >= read_force_at
+                and not read_forced
+                and run.done_summary is None
+            ):
+                read_forced = True
+                cm.add_user(
+                    "You have spent many steps reading without any modification. "
+                    "Stop exploring now: call edit_file or write_file with your best "
+                    "minimal fix immediately, then run the tests and adjust from there."
+                )
+            elif (
+                steps_since_edit >= read_nudge_at
+                and not read_nudged
+                and run.done_summary is None
+            ):
+                read_nudged = True
+                cm.add_user(
+                    "You have been exploring for several steps without an edit. "
+                    "Make a small targeted edit with your current best hypothesis and "
+                    "use the test output to steer further."
+                )
 
             if (
                 consecutive_identical >= loop_warn_at

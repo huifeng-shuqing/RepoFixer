@@ -107,6 +107,28 @@ def test_solved_check_skipped_after_read_only_steps(ws):
     assert calls == []  # no edit/write step -> verify never invoked
 
 
+def test_read_budget_nudges_after_long_exploration(ws):
+    """Read-only stretches get a nudge at 10 steps and a forced edit at 15."""
+    (ws / "big.txt").write_text("x" * 600, encoding="utf-8")  # >400 chars so no_progress guard stays silent
+    seen: list[list[dict]] = []
+
+    class RecLLM:
+        def complete(self, messages, tools=None, temperature=0.2, model=None):
+            seen.append(list(messages))
+            i = len(seen)
+            return LLMResponse(text="", tool_calls=[_bash_call(f"c{i}", f"cat big.txt; echo step{i}")], finish_reason="tool_calls")
+
+    run = run_agent("task", RecLLM(), ToolRegistry(LocalEnv(ws)), ws / "t.jsonl", max_steps=16)
+    assert run.stopped_reason == "max_steps"
+    injected = sorted({
+        str(m.get("content"))
+        for msg in seen
+        for m in msg
+        if m.get("role") == "user" and ("exploring" in str(m.get("content")) or "reading" in str(m.get("content")))
+    })
+    assert len(injected) == 2  # nudge at 10, forced at 15 (deduped: history carries them forward)
+
+
 def test_no_progress_guard_stops_probe_loops(ws):
     """Probe loops: tiny varying bash outputs, never edits/tests."""
     llm = ScriptedLLM(
