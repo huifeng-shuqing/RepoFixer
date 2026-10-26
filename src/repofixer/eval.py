@@ -69,6 +69,17 @@ def load_dataset(path: Path) -> list[Task]:
     return tasks
 
 
+def _clean_for_verify(repo: Path) -> None:
+    """Deterministic verify: drop untracked test artifacts left by previous
+    test runs (some tasks' tests are order/state-dependent, e.g. boltons
+    spooled-file rollover creates a directory that makes the NEXT run fail).
+    Agent edits are tracked-file modifications and are preserved; a fix that
+    ADDS a new untracked source file is unsupported by this cleanup (dataset
+    tasks are modification-only)."""
+    if (repo / ".git").exists():
+        subprocess.run(["git", "-C", str(repo), "clean", "-fdq"], capture_output=True)
+
+
 def run_task(
     task: Task,
     llm: LLMClient,
@@ -122,6 +133,10 @@ def run_task(
             verify_env = {"PYTHONPATH": pypath}
         notes_text = load_notes(repo)
 
+        def _verify(timeout: int) -> bool:
+            _clean_for_verify(repo)
+            return env.run(task.verify_command, timeout=timeout, env=verify_env).ok
+
         def _attempt() -> EvalResult:
             run = run_agent(
                 task.problem_statement,
@@ -133,23 +148,23 @@ def run_task(
                 context_budget=context_budget,
                 obs_dir=obs_dir,
                 policy=SafetyPolicy("auto", workspace=repo),
-                solved_check=lambda: env.run(task.verify_command, timeout=min(task.timeout, 120), env=verify_env).ok,
+                solved_check=lambda: _verify(min(task.timeout, 120)),
                 notes=notes_text or None,
                 snapshot=True,
                 review=True,
             )
-            verify = env.run(task.verify_command, timeout=min(task.timeout, 180), env=verify_env)
+            verify_ok = _verify(min(task.timeout, 180))
             try:
                 append_note(
                     repo,
-                    f"{time.strftime('%Y-%m-%d')} {task.id} resolved={verify.ok} "
+                    f"{time.strftime('%Y-%m-%d')} {task.id} resolved={verify_ok} "
                     f"steps={len(run.steps)} reason={run.stopped_reason}: {run.done_summary or ''}".rstrip(),
                 )
             except OSError:
                 pass
             return EvalResult(
                 task_id=task.id,
-                resolved=verify.ok,
+                resolved=verify_ok,
                 stopped_reason=run.stopped_reason,
                 steps=len(run.steps),
                 prompt_tokens=run.prompt_tokens,

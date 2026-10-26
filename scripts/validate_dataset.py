@@ -31,6 +31,8 @@ def run(cmd: list[str], cwd: Path | None = None, timeout: int = 900) -> subproce
 
 
 def verify(command: str, cwd: Path, env: dict | None = None) -> int:
+    # deterministic verify: remove untracked artifacts left by earlier test runs
+    subprocess.run(["git", "-C", str(cwd), "clean", "-fdq"], capture_output=True)
     p = subprocess.run(
         command, cwd=str(cwd), shell=True, capture_output=True, text=True,
         encoding="utf-8", errors="replace", timeout=900, env={**os.environ, **(env or {})},
