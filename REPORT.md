@@ -97,3 +97,9 @@
 - **⑥ 分层模型路由**：`DEEPSEEK_SMALL_MODEL` 环境变量配置次级模型，用于上下文摘要与复审（Aider architect/editor 模式）；主循环决策仍用主模型。
 - **⑦ 并行工具引导**：system prompt 明确「多段独立信息单次请求多工具调用」；循环本就支持一次响应多工具。
 - **验证**：43 项单测全绿（新增 7 项：plan 读写、notes 回环与注入、快照不动 HEAD、复审重开循环/通过放行、MCP schema 转换）。前后对比评测：见 results/before_upgrade 与 results/after_upgrade（6 题子集）。
+
+### Block 7.1 — 小范围前后对比与逐项核验（2026-10-26）
+
+- **对比结果**（6 题子集，单次运行）：升级前 5/6（16.7 步，¥1.54），升级后 4/6（17.2 步，¥1.79）。差异在 n=6 的噪声范围内（±18pp），翻转题 inflection 与全量评测中的边缘翻转同源——**不能归因于升级，小样本无法定论**。详见 results/UPGRADE_COMPARISON.md。
+- **逐项对照核验**（七项升级 vs 已读参考源码）：计划清单↔opencode agent frontmatter、复审↔Claude Code reviewer、快照↔Cline checkpoints、笔记↔CLAUDE.md 约定、MCP↔gemini-cli/官方 SDK、路由↔aider 双模型、并行↔Anthropic 实践——一致或目标对齐，差异点见 UPGRADE_COMPARISON.md 第五节。
+- **待用户决策**：全量 29 题前后对比（约 ¥15）或边缘题复跑（约 ¥3–5）；openhands-sdk 参考仓库待补克隆。
