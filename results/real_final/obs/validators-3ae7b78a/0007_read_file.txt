@@ -1,0 +1,53 @@
+    50 | 
+    51 |     Examples:
+    52 |         >>> @validator
+    53 |         ... def even(value):
+    54 |         ...     return not (value % 2)
+    55 |         >>> even(4)
+    56 |         True
+    57 |         >>> even(5)
+    58 |         ValidationError(func=even, args={'value': 5})
+    59 | 
+    60 |     Args:
+    61 |         func:
+    62 |             Function which is to be decorated.
+    63 | 
+    64 |     Returns:
+    65 |         (Callable[..., ValidationError | Literal[True]]):
+    66 |             A decorator which returns either `ValidationError`
+    67 |             or `Literal[True]`.
+    68 | 
+    69 |     Raises:
+    70 |         (ValidationError): If `r_ve` or `RAISE_VALIDATION_ERROR` is `True`
+    71 |     """
+    72 | 
+    73 |     @wraps(func)
+    74 |     def wrapper(*args: Any, **kwargs: Any):
+    75 |         raise_validation_error = False
+    76 |         if "r_ve" in kwargs:
+    77 |             raise_validation_error = True
+    78 |             del kwargs["r_ve"]
+    79 |         if environ.get("RAISE_VALIDATION_ERROR", "False") == "True":
+    80 |             raise_validation_error = True
+    81 | 
+    82 |         try:
+    83 |             if raise_validation_error:
+    84 |                 if func(*args, **kwargs):
+    85 |                     return True
+    86 |                 else:
+    87 |                     raise ValidationError(func, _func_args_as_dict(func, *args, **kwargs))
+    88 |             else:
+    89 |                 return (
+    90 |                     True
+    91 |                     if func(*args, **kwargs)
+    92 |                     else ValidationError(func, _func_args_as_dict(func, *args, **kwargs))
+    93 |                 )
+    94 |         except (ValueError, TypeError, UnicodeError) as exp:
+    95 |             if raise_validation_error:
+    96 |                 raise ValidationError(
+    97 |                     func, _func_args_as_dict(func, *args, **kwargs), str(exp)
+    98 |                 ) from exp
+    99 |             else:
+   100 |                 return ValidationError(func, _func_args_as_dict(func, *args, **kwargs), str(exp))
+   101 | 
+   102 |     return wrapper

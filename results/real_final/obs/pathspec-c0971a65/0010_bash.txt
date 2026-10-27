@@ -1,0 +1,181 @@
+					# Add regex bracket expression to regex result.
+					regex += expr
+
+					# Set i to one past the closing bracket.
+					i = j
+
+				else:
+					# Failed to find closing bracket.
+					if errors == 'raise':
+						# Treat invalid range notation as an error.
+						raise _RangeNotationError((
+							f"Invalid range notation={pattern[i:j]!r} found in {pattern=!r}."
+						))
+					else:
+						# Treat opening bracket as a bracket literal instead of as an
+						# expression.
+						regex += '\\['
+
+			else:
+				# Regular character, escape it for regex.
+				regex += re.escape(char)
+
+		if escape:
+			# Trailing backslash found. According to the gitignore docs, this "is an
+			# invalid pattern that never matches".
+			raise _TrailingBackslashError()
+
+		return regex
+
+
+class GitIgnorePatternError(ValueError):
+	"""
+	The :class:`GitIgnorePatternError` class indicates an invalid gitignore
+	pattern.
+	"""
+	pass
+
+
+class _PosixClassError(GitIgnorePatternError):
+	"""
+	Raised internally when a bracket expression contains an unknown or negated
+	POSIX character class name. Git treats such a pattern as malformed.
+	"""
+	pass
+
+
+class _RangeNotationError(GitIgnorePatternError):
+	"""
+	Raised internally when an invalid range notation was found in a gitignore
+	pattern.
+	"""
+	pass
+
+
+class _TrailingBackslashError(GitIgnorePatternError):
+	"""
+	Raised internally when a trailing backslash is found at the end of a gitignore
+	pattern.
+	"""
+	pass
+===
+17:_BRACKET_TOKEN_REGEX = re.compile((
+18-	# Range, including escaped endpoints, but not the start of a POSIX class.
+19-	r'(\\.|[^\\])-(?!\[:)(\\.|[^\\])'
+20-	# Escaped character.
+21-	r'|\\(.)'
+22-	# POSIX class.
+23-	r'|\[:(\^?)([^:\]]*):\]'
+24-), re.DOTALL)
+25-"""
+26-Matches tokens inside a bracket expression:
+27-
+28-- A character range (groups 1 and 2).
+29-
+30-- A backslash escaped character (group 3).
+31-
+32--	Matches a POSIX bracket character class token such as ``[:alpha:]`` inside a
+33-	bracket expression. Group 4 captures a leading caret (unsupported by git);
+34-	group 5 captures the class name.
+35-"""
+36-
+37-_BYTES_ENCODING = 'latin1'
+38-"""
+39-The encoding to use when parsing a byte string pattern.
+40-"""
+41-
+42-_POSIX_CLASS_TO_REGEX: dict[str, str] = {
+43-	# Git's wildmatch implements POSIX bracket character classes using its own
+44-	# ASCII (locale-independent) ``is*`` functions, so each class maps to an
+45-	# explicit ASCII set. These are NOT the Unicode-aware equivalents (``\w``,
+46-	# ``\d``, ``\s``); using those would over-match non-ASCII characters that git
+47-	# never matches.
+48-	'alnum': '0-9A-Za-z',
+49-	'alpha': 'A-Za-z',
+50-	'blank': '\\t ',
+51-	'cntrl': '\\x00-\\x1f\\x7f',
+52-	'digit': '0-9',
+53-	'graph': '\\x21-\\x2e\\x30-\\x7e',
+54-	'lower': 'a-z',
+55-	'print': '\\x20-\\x2e\\x30-\\x7e',
+56-	'punct': '!-.:-@\\[-`{-~',
+57-	'space': '\\t\\n\\r ',
+--
+101:def _sub_bracket_token(match: re.Match[str]) -> str:
+102-	"""
+103:	Translate a single token matched by :data:`_BRACKET_TOKEN_REGEX`. A token can
+104-	be a range (groups 1 and 2), a backslash escaped character (group 3), or a
+105-	POSIX bracket character class (groups 4 and 5).
+106-
+107-	*match* (:class:`re.Match`) is the match object.
+108-
+109-	Returns the replacement string (:class:`str`).
+110-	"""
+111-	range_start, range_end, escape_char, class_negated, class_name = match.groups()
+112-
+113-	# Character range. A bracket expression cannot match a directory separator.
+114-	if range_start is not None:
+115-		range_start, range_end = range_start[-1], range_end[-1]
+116-		if range_start < '/' < range_end:
+117-			return re.escape(range_start) + '-.0-' + re.escape(range_end)
+118-		return re.escape(range_start) + '-' + re.escape(range_end)
+119-
+120-	# Backslash escaped character.
+121-	if escape_char:
+122-		return re.escape(escape_char)
+123-
+124-	# POSIX bracket character class.
+125-	class_regex = _POSIX_CLASS_TO_REGEX.get(class_name)
+126-	if class_regex is not None and not class_negated:
+127-		return class_regex
+128-
+129-	raise _PosixClassError((
+130-		f"Invalid character class={match.group(0)!r} found in pattern="
+131-		f"{match.string!r}."
+132-	))  # _PosixClassError
+133-
+134-
+135-class _GitIgnoreBasePattern(RegexPattern):
+136-	"""
+137-	.. warning:: This class is not part of the public API. It is subject to
+138-		change.
+139-
+140-	The :class:`_GitIgnoreBasePattern` class is the base implementation for a
+141-	compiled gitignore pattern.
+142-	"""
+143-
+--
+350:						body = _BRACKET_TOKEN_REGEX.sub(_sub_bracket_token, pattern[i:j - 1])
+351-					except _PosixClassError:
+352-						if errors == 'raise':
+353-							# EDGE CASE: Git discards patterns with an invalid range notation
+354-							# or an invalid POSIX class.
+355-							raise
+356-						else:
+357-							# Treat the whole bracket expression as a literal.
+358-							regex += re.escape(pattern[bracket_start:j])
+359-							i = j
+360-							continue
+361-
+362-					if is_expr_negated:
+363-						# Negated expressions must also exclude the directory separator.
+364-						# Preserve literal ']' and '-' when inserting '/' ahead of them.
+365-						if body.startswith((']', '-')):
+366-							body = '\\' + body
+367-						expr += '/'
+368-
+369-					expr += body + ']'
+370-
+371-					if errors == 'raise':
+372-						try:
+373-							re.compile(expr)
+374-						except re.error as e:  # Renamed to `re.PatternError` in 3.13.
+375-							raise _RangeNotationError((
+376-								f"Invalid range notation={pattern[i:j]!r} found in "
+377-								f"pattern={pattern!r}."
+378-							)) from e
+379-
+380-					# Add regex bracket expression to regex result.
+381-					regex += expr
+382-
+383-					# Set i to one past the closing bracket.

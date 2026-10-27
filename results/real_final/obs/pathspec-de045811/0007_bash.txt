@@ -1,0 +1,185 @@
+	return _registered_patterns[name]  # type: ignore[return-value]
+
+
+def match_file(patterns: Iterable[Pattern], file: str) -> bool:
+	"""
+	Matches the file to the patterns.
+
+	*patterns* (:class:`~collections.abc.Iterable` of :class:`.Pattern`) contains
+	the patterns to use.
+
+	*file* (:class:`str`) is the normalized file path to be matched against
+	*patterns*.
+
+	Returns :data:`True` if *file* matched; otherwise, :data:`False`.
+	"""
+	matched = False
+	for pattern in patterns:
+		if pattern.include is not None and pattern.match_file(file) is not None:
+			matched = pattern.include
+
+	return matched
+
+
+@deprecated((
+	"pathspec.util.match_files() is deprecated. Use match_file() with a loop for "
+	"better results."
+))
+def match_files(
+	patterns: Iterable[Pattern],
+	files: Iterable[str],
+) -> set[str]:
+	"""
+	.. version-deprecated:: 0.10.0
+		This function is no longer used. Use the :func:`.match_file` function with a
+		loop for better results.
+
+	Matches the files to the patterns.
+
+	*patterns* (:class:`~collections.abc.Iterable` of :class:`.Pattern`) contains
+	the patterns to use.
+
+	*files* (:class:`~collections.abc.Iterable` of :class:`str`) contains the
+	normalized file paths to be matched against *patterns*.
+
+	Returns the matched files (:class:`set` of :class:`str`).
+	"""
+	use_patterns = [__pat for __pat in patterns if __pat.include is not None]
+
+	return_files = set()
+	for file in files:
+		if match_file(use_patterns, file):
+			return_files.add(file)
+
+	return return_files
+
+
+def normalize_file(
+	file: StrPath,
+	separators: Optional[Collection[str]] = None,
+) -> str:
+	"""
+	Normalizes the file path to use the POSIX path separator (i.e., ``"/"``), and
+	make the paths relative (remove leading ``"/"``).
+
+	*file* (:class:`str` or :class:`os.PathLike`) is the file path.
+
+	*separators* (:class:`~collections.abc.Collection` of :class:`str`; or
+	:data:`None`) optionally contains the path separators to normalize. This does
+	not need to include the POSIX path separator (``"/"``), but including it will
+	not affect the results. Default is ``None`` for :data:`.NORMALIZE_PATH_SEPS`.
+	To prevent normalization, pass an empty container (e.g., an empty tuple
+	``()``).
+
+	Returns the normalized file path (:class:`str`).
+	"""
+	# Normalize path separators.
+	if separators is None:
+		separators = NORMALIZE_PATH_SEPS
+
+	assert separators is not None, separators
+
+	# Convert path object to string.
+	norm_file: str = os.fspath(file)
+
+	for sep in separators:
+		norm_file = norm_file.replace(sep, posixpath.sep)
+
+	if norm_file.startswith('/'):
+		# Make path relative.
+		norm_file = norm_file[1:]
+
+	elif norm_file.startswith('./'):
+		# Remove current directory prefix.
+		norm_file = norm_file[2:]
+
+	return norm_file
+
+
+@deprecated((
+	"pathspec.util.normalize_files() is deprecated. Use normalize_file() with a "
+	"loop for better results."
+63-		:data:`None`).
+64-		"""
+65:		return self._match(file, check_ancestors=True)
+66-
+67:	def _match(
+68:		self, file: str, check_ancestors: bool,
+69-	) -> tuple[Optional[bool], Optional[int]]:
+70-		"""
+71:		Implements :meth:`match_file`. *check_ancestors* (:class:`bool`) is
+72:		whether to ask if an ancestor directory of *file* is excluded; see
+73:		:meth:`_ancestor_excluded` for why it can be skipped.
+74-		"""
+75-		is_reversed = self._is_reversed
+76-
+77:		# Resolve the ancestor directory and the file separately: a file negation
+78:		# only applies while no ancestor directory is excluded.
+79-		dir_include: Optional[bool] = None
+80-		dir_index: Optional[int] = None
+81-		file_include: Optional[bool] = None
+82-		file_index: Optional[int] = None
+83-
+84-		for index, pattern in self._patterns:
+85-			if (
+86-				(include := pattern.include) is not None
+87-				and (match := pattern.match_file(file)) is not None
+88-			):
+89-				# Pattern matched.
+90-				if match.match.groupdict().get(_DIR_MARK):
+91:					# A pattern can match both a strict ancestor of the file and the
+92-					# file itself. For anchored patterns there is only one match, but
+93-					# `**/` compiles to the unanchored `(?P<ps_d>/)`: on "a/b/" it
+94-					# matches at "a/" and at "b/", and `match` only returns the first.
+95:					is_ancestor = is_self = False
+96-					assert pattern.regex is not None, pattern
+97:					for dir_match in pattern.regex.finditer(file):
+98:						if dir_match.end(_DIR_MARK) < len(file):
+99:							is_ancestor = True
+100-						else:
+101-							is_self = True
+102-
+103:					if is_ancestor and (dir_include is None or not is_reversed):
+104-						dir_include = include
+105-						dir_index = index
+106-
+107-					if is_self and (file_include is None or not is_reversed):
+108-						file_include = include
+109-						file_index = index
+110-				elif file_include is None or not is_reversed:
+111-					# Pattern matched by a file pattern.
+112-					file_include = include
+113-					file_index = index
+114-
+115:		if dir_include and check_ancestors and self._ancestor_excluded(file):
+116-			return (dir_include, dir_index)
+117-		elif file_include is not None:
+118-			return (file_include, file_index)
+119-		elif dir_include:
+120:			# An ancestor matched an exclude pattern, but the spec as a whole
+121:			# re-includes that ancestor, so the rule does not apply.
+122-			return (None, None)
+123-		else:
+124-			return (dir_include, dir_index)
+125-
+126:	def _ancestor_excluded(self, file: str) -> bool:
+127-		"""
+128:		Whether any strict ancestor directory of *file* is excluded. Git stops
+129:		descending at the first excluded directory, so the ancestors are asked
+130-		outermost first, each as a directory query (trailing slash included).
+131:		By the time an ancestor is asked, every ancestor above it is known not to
+132:		be excluded, so it is matched without checking its own ancestors again;
+133-		otherwise each level re-asks all the levels above it and the work grows
+134-		exponentially with depth.
+135-		"""
+136-		index = file.find('/')
+137-		while index != -1 and index + 1 < len(file):
+138:			ancestor_include, _ancestor_index = self._match(
+139:				file[:index + 1], check_ancestors=False,
+140-			)
+141:			if ancestor_include:
+142-				return True
+143-			index = file.find('/', index + 1)
+144-
+145-		return False
+146-

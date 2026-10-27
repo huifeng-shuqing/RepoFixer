@@ -1,0 +1,151 @@
+   140 | 
+   141 | 
+   142 | def camelize(string, uppercase_first_letter=True):
+   143 |     """
+   144 |     Convert strings to CamelCase.
+   145 | 
+   146 |     Examples::
+   147 | 
+   148 |         >>> camelize("device_type")
+   149 |         'DeviceType'
+   150 |         >>> camelize("device_type", False)
+   151 |         'deviceType'
+   152 | 
+   153 |     :func:`camelize` can be thought of as a inverse of :func:`underscore`,
+   154 |     although there are some cases where that does not hold::
+   155 | 
+   156 |         >>> camelize(underscore("IOError"))
+   157 |         'IoError'
+   158 | 
+   159 |     :param uppercase_first_letter: if set to `True` :func:`camelize` converts
+   160 |         strings to UpperCamelCase. If set to `False` :func:`camelize` produces
+   161 |         lowerCamelCase. Defaults to `True`.
+   162 |     """
+   163 |     if uppercase_first_letter:
+   164 |         return re.sub(r"(?:^|_)(.)", lambda m: m.group(1).upper(), string)
+   165 |     else:
+   166 |         return string[0].lower() + camelize(string)[1:]
+   167 | 
+   168 | 
+   169 | def dasherize(word):
+   170 |     """Replace underscores with dashes in the string.
+   171 | 
+   172 |     Example::
+   173 | 
+   174 |         >>> dasherize("puni_puni")
+   175 |         'puni-puni'
+   176 | 
+   177 |     """
+   178 |     return word.replace('_', '-')
+   179 | 
+   180 | 
+   181 | def humanize(word):
+   182 |     """
+   183 |     Capitalize the first word and turn underscores into spaces and strip a
+   184 |     trailing ``"_id"``, if any. Like :func:`titleize`, this is meant for
+   185 |     creating pretty output.
+   186 | 
+   187 |     Examples::
+   188 | 
+   189 |         >>> humanize("employee_salary")
+   190 |         'Employee salary'
+   191 |         >>> humanize("author_id")
+   192 |         'Author'
+   193 | 
+   194 |     """
+   195 |     word = re.sub(r"_id$", "", word)
+   196 |     word = word.replace('_', ' ')
+   197 |     word = re.sub(r"(?i)([a-z\d]*)", lambda m: m.group(1).lower(), word)
+   198 |     word = re.sub(r"^\w", lambda m: m.group(0).upper(), word)
+   199 |     return word
+   200 | 
+   201 | 
+   202 | def ordinal(number):
+   203 |     """
+   204 |     Return the suffix that should be added to a number to denote the position
+   205 |     in an ordered sequence such as 1st, 2nd, 3rd, 4th.
+   206 | 
+   207 |     Examples::
+   208 | 
+   209 |         >>> ordinal(1)
+   210 |         'st'
+   211 |         >>> ordinal(2)
+   212 |         'nd'
+   213 |         >>> ordinal(1002)
+   214 |         'nd'
+   215 |         >>> ordinal(1003)
+   216 |         'rd'
+   217 |         >>> ordinal(-11)
+   218 |         'th'
+   219 |         >>> ordinal(-1021)
+   220 |         'st'
+   221 | 
+   222 |     """
+   223 |     number = abs(int(number))
+   224 |     if number % 100 in (11, 12, 13):
+   225 |         return "th"
+   226 |     else:
+   227 |         return {
+   228 |             1: "st",
+   229 |             2: "nd",
+   230 |             3: "rd",
+   231 |         }.get(number % 10, "th")
+   232 | 
+   233 | 
+   234 | def ordinalize(number):
+   235 |     """
+   236 |     Turn a number into an ordinal string used to denote the position in an
+   237 |     ordered sequence such as 1st, 2nd, 3rd, 4th.
+   238 | 
+   239 |     Examples::
+   240 | 
+   241 |         >>> ordinalize(1)
+   242 |         '1st'
+   243 |         >>> ordinalize(2)
+   244 |         '2nd'
+   245 |         >>> ordinalize(1002)
+   246 |         '1002nd'
+   247 |         >>> ordinalize(1003)
+   248 |         '1003rd'
+   249 |         >>> ordinalize(-11)
+   250 |         '-11th'
+   251 |         >>> ordinalize(-1021)
+   252 |         '-1021st'
+   253 | 
+   254 |     """
+   255 |     return "{}{}".format(number, ordinal(number))
+   256 | 
+   257 | 
+   258 | def parameterize(string, separator='-'):
+   259 |     """
+   260 |     Replace special characters in a string so that it may be used as part of a
+   261 |     'pretty' URL.
+   262 | 
+   263 |     Example::
+   264 | 
+   265 |         >>> parameterize(u"Donald E. Knuth")
+   266 |         'donald-e-knuth'
+   267 | 
+   268 |     """
+   269 |     string = transliterate(string)
+   270 |     # Turn unwanted chars into the separator
+   271 |     string = re.sub(r"(?i)[^a-z0-9\-_]+", separator, string)
+   272 |     if separator:
+   273 |         re_sep = re.escape(separator)
+   274 |         # No more than one of the separator in a row.
+   275 |         string = re.sub(r'%s{2,}' % re_sep, separator, string)
+   276 |         # Remove leading/trailing separator.
+   277 |         string = re.sub(r"(?i)^{sep}|{sep}$".format(sep=re_sep), '', string)
+   278 | 
+   279 |     return string.lower()
+   280 | 
+   281 | 
+   282 | def pluralize(word):
+   283 |     """
+   284 |     Return the plural form of a word.
+   285 | 
+   286 |     Examples::
+   287 | 
+   288 |         >>> pluralize("posts")
+   289 |         'posts'
+... [135 more lines; pass offset=290 for next page]

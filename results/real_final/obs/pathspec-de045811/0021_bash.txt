@@ -1,0 +1,61 @@
+161:	def _match(
+162-		self, file: str, check_ancestors: bool,
+163-	) -> tuple[Optional[bool], Optional[int]]:
+164-		"""
+165-		Implements :meth:`match_file`. *check_ancestors* (:class:`bool`) is
+166-		whether to ask if an ancestor directory of *file* is excluded; see
+167-		:meth:`_ancestor_excluded` for why it can be skipped.
+168-		"""
+169-		# Find best match.
+170-		match_ids: Optional[list[int]] = self._set.Match(file)  # type: ignore[assignment]
+171-		if not match_ids:
+172-			return (None, None)
+173-
+174-		# Resolve the ancestor directory and the file separately: a file negation
+175-		# only applies while no ancestor directory is excluded.
+176-		dir_include: Optional[bool] = None
+177-		dir_index: int = -1
+178-		file_include: Optional[bool] = None
+179-		file_index: int = -1
+180-
+181-		regex_data = self._regex_data
+182-		for regex_id in match_ids:
+183-			regex_dat = regex_data[regex_id]
+184-
+185-			# WARNING: According to the documentation on `RE2::Set::Match()`, there is
+186-			# no guarantee matches will be produced in order!
+187-			include = regex_dat.include
+188-			index = regex_dat.index
+189-			if regex_dat.is_dir_pattern:
+190-				# Pattern matched by a directory pattern.
+191-				if index > dir_index:
+192-					dir_include = include
+193-					dir_index = index
+194-			elif index > file_index:
+195-				# Pattern matched by a file pattern.
+196-				file_include = include
+197-				file_index = index
+198-
+199-		assert dir_index != -1 or file_index != -1, (dir_index, file_index)
+200-		if dir_include and check_ancestors and self._ancestor_excluded(file):
+201-			return (dir_include, dir_index)
+202-		elif file_include is not None:
+203-			return (file_include, file_index)
+204-		elif dir_include:
+205-			# An ancestor matched an exclude pattern, but the spec as a whole
+206-			# re-includes that ancestor, so the rule does not apply.
+207-			return (None, None)
+208-		else:
+209-			return (dir_include, dir_index)
+210-
+211-	def _ancestor_excluded(self, file: str) -> bool:
+212-		"""
+213-		Whether any strict ancestor directory of *file* is excluded. Git stops
+214-		descending at the first excluded directory, so the ancestors are asked
+215-		outermost first, each as a directory query (trailing slash included).
+216-		By the time an ancestor is asked, every ancestor above it is known not to
+217-		be excluded, so it is matched without checking its own ancestors again;
+218-		otherwise each level re-asks all the levels above it and the work grows
+219-		exponentially with depth.
+220-		"""
+221-		index = file.find('/')

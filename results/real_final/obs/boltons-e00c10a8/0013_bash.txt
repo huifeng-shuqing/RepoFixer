@@ -1,0 +1,133 @@
+        # negatives need normalizing, as islice rejects them.
+        # NB: a negative step slices the reversed stream with forward bounds
+        # (x[2:4:-1] == reversed(x)[2:4]), behavior since 2013.
+        if start is not None and start < 0:
+            start = max(len(self) + start, 0)
+        if stop is not None and stop < 0:
+            stop = max(len(self) + stop, 0)
+        if step is not None and step < 0:
+            step = -step
+            iterable = reversed(self)
+        return islice(iterable, start, stop, step)
+
+    # list operations
+    def __getitem__(self, index):
+        try:
+            start, stop, step = index.start, index.stop, index.step
+        except AttributeError:
+            index = operator.index(index)
+        else:
+            iter_slice = self.iter_slice(start, stop, step)
+            return self.from_iterable(iter_slice)
+        real_index = self._get_real_index(index)
+        return self.item_list[real_index]
+
+    def pop(self, index=None):
+        "pop(index) -> remove the item at a given index (-1 by default)"
+        item_index_map = self.item_index_map
+        len_self = len(item_index_map)
+        if index is None or index == -1 or index == len_self - 1:
+            ret = self.item_list.pop()
+            del item_index_map[ret]
+        else:
+            real_index = self._get_real_index(index)
+            ret = self.item_list[real_index]
+            self.item_list[real_index] = _MISSING
+            del item_index_map[ret]
+            self._add_dead(real_index)
+        self._cull()
+        return ret
+
+    def count(self, val):
+---
+    # internal functions
+    @property
+    def _dead_index_count(self):
+        return len(self.item_list) - len(self.item_index_map)
+
+    def _compact(self):
+        if not self.dead_indices:
+            return
+        self._compactions += 1
+        dead_index_count = self._dead_index_count
+        items, index_map = self.item_list, self.item_index_map
+        self._c_max_size = max(self._c_max_size, len(items))
+        for i, item in enumerate(self):
+            items[i] = item
+            index_map[item] = i
+        del items[-dead_index_count:]
+        del self.dead_indices[:]
+
+    def _cull(self):
+        ded = self.dead_indices
+        if not ded:
+            return
+        items, ii_map = self.item_list, self.item_index_map
+        if not ii_map:
+            del items[:]
+            del ded[:]
+        elif len(ded) > 384:
+            self._compact()
+        elif self._dead_index_count > (len(items) / _COMPACTION_FACTOR):
+            self._compact()
+        elif items[-1] is _MISSING:  # get rid of dead right hand side
+            num_dead = 1
+            while items[-(num_dead + 1)] is _MISSING:
+                num_dead += 1
+            if ded and ded[-1][1] == len(items):
+                del ded[-1]
+            del items[-num_dead:]
+
+    def _get_real_index(self, index):
+        if index < 0:
+            index += len(self)
+        if index < 0 or index >= len(self):
+            raise IndexError('IndexedSet index out of range')
+        if not self.dead_indices:
+            return index
+        real_index = index
+        for d_start, d_stop in self.dead_indices:
+            if real_index < d_start:
+                break
+            real_index += d_stop - d_start
+        return real_index
+
+    def _get_apparent_index(self, index):
+        if index < 0:
+            index += len(self)
+        if not self.dead_indices:
+            return index
+        apparent_index = index
+        for d_start, d_stop in self.dead_indices:
+            if index < d_start:
+                break
+            apparent_index -= d_stop - d_start
+        return apparent_index
+
+    def _add_dead(self, start, stop=None):
+        # TODO: does not handle when the new interval subsumes
+        # multiple existing intervals
+        dints = self.dead_indices
+        if stop is None:
+            stop = start + 1
+        cand_int = [start, stop]
+        if not dints:
+            dints.append(cand_int)
+            return
+        int_idx = bisect_left(dints, cand_int)
+        dint = dints[int_idx - 1]
+        d_start, d_stop = dint
+        if start <= d_start <= stop:
+            dint[0] = start
+        elif start <= d_stop <= stop:
+            dint[1] = stop
+        else:
+            dints.insert(int_idx, cand_int)
+        return
+
+    # common operations (shared by set and list)
+    def __len__(self):
+        return len(self.item_index_map)
+
+    def __contains__(self, item):
+        return item in self.item_index_map

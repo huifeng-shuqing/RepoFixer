@@ -1,0 +1,61 @@
+219:	def _match(
+220-		self, file: str, check_ancestors: bool,
+221-	) -> tuple[Optional[bool], Optional[int]]:
+222-		"""
+223-		Implements :meth:`match_file`. *check_ancestors* (:class:`bool`) is
+224-		whether to ask if an ancestor directory of *file* is excluded; see
+225-		:meth:`_ancestor_excluded` for why it can be skipped.
+226-		"""
+227-		# NOTICE: According to benchmarking, a method callback is 13% faster than
+228-		# using a closure here.
+229-		db = self._db
+230-		if db is None:
+231-			# Database was not initialized because there were no patterns. Return no
+232-			# match.
+233-			return (None, None)
+234-
+235-		self._out = (None, -1, None, -1)
+236-		db.scan(file.encode('utf8'), match_event_handler=self.__on_match)
+237-
+238-		dir_include, dir_index, file_include, file_index = self._out
+239-		if dir_include and check_ancestors and self._ancestor_excluded(file):
+240-			out_include, out_index = dir_include, dir_index
+241-		elif file_include is not None:
+242-			out_include, out_index = file_include, file_index
+243-		elif dir_include:
+244-			# An ancestor matched an exclude pattern, but the spec as a whole
+245-			# re-includes that ancestor, so the rule does not apply.
+246-			out_include, out_index = None, -1
+247-		else:
+248-			out_include, out_index = dir_include, dir_index
+249-
+250-		return (out_include, out_index if out_index != -1 else None)
+251-
+252-	def _ancestor_excluded(self, file: str) -> bool:
+253-		"""
+254-		Whether any strict ancestor directory of *file* is excluded. Git stops
+255-		descending at the first excluded directory, so the ancestors are asked
+256-		outermost first, each as a directory query (trailing slash included).
+257-		By the time an ancestor is asked, every ancestor above it is known not to
+258-		be excluded, so it is matched without checking its own ancestors again;
+259-		otherwise each level re-asks all the levels above it and the work grows
+260-		exponentially with depth.
+261-		"""
+262-		index = file.find('/')
+263-		while index != -1 and index + 1 < len(file):
+264-			ancestor_include, _ancestor_index = self._match(
+265-				file[:index + 1], check_ancestors=False,
+266-			)
+267-			if ancestor_include:
+268-				return True
+269-			index = file.find('/', index + 1)
+270-
+271-		return False
+272-
+273-
+274-	@override
+275-	def __on_match(
+276-		self,
+277-		expr_id: int,
+278-		_from: int,
+279-		_to: int,

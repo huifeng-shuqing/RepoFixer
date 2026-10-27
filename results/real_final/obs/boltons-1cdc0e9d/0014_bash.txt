@@ -1,0 +1,92 @@
+    def get_histogram_counts(self, bins=None, **kw):
+        """Produces a list of ``(bin, count)`` pairs comprising a histogram of
+        the Stats object's data, using fixed-width bins. See
+        :meth:`Stats.format_histogram` for more details.
+
+        Args:
+            bins (int): maximum number of bins, or list of
+                floating-point bin boundaries. Defaults to the output of
+                Freedman's algorithm.
+            bin_digits (int): Number of digits used to round down the
+                bin boundaries. Defaults to 1.
+
+        The output of this method can be stored and/or modified, and
+        then passed to :func:`statsutils.format_histogram_counts` to
+        achieve the same text formatting as the
+        :meth:`~Stats.format_histogram` method. This can be useful for
+        snapshotting over time.
+        """
+        bin_digits = int(kw.pop('bin_digits', 1))
+        if kw:
+            raise TypeError('unexpected keyword arguments: %r' % kw.keys())
+
+        if not bins:
+            bins = self._get_bin_bounds()
+        else:
+            try:
+                bin_count = int(bins)
+            except TypeError:
+                try:
+                    bins = [float(x) for x in bins]
+                except Exception:
+                    raise ValueError('bins expected integer bin count or list'
+                                     ' of float bin boundaries, not %r' % bins)
+                if self.min < bins[0]:
+                    bins = [self.min] + bins
+            else:
+                bins = self._get_bin_bounds(bin_count)
+
+        # floor and ceil really should have taken ndigits, like round()
+        round_factor = 10.0 ** bin_digits
+        bins = [floor(b * round_factor) / round_factor for b in bins]
+        bins = sorted(set(bins))
+
+        idxs = [bisect.bisect(bins, d) - 1 for d in self.data]
+        count_map = Counter(idxs)
+
+        bin_counts = [(b, count_map.get(i, 0)) for i, b in enumerate(bins)]
+
+        return bin_counts
+
+----
+            format_bin (callable): Called on each bin to create a
+               label for the final output. Use this function to add
+               units, such as "ms" for milliseconds.
+
+        Should you want something more programmatically reusable, see
+        the :meth:`~Stats.get_histogram_counts` method, the output of
+        is used by format_histogram. The :meth:`~Stats.describe`
+        method is another useful summarization method, albeit less
+        visual.
+
+        .. _Freedman's algorithm: https://en.wikipedia.org/wiki/Freedman%E2%80%93Diaconis_rule
+        """
+        width = kw.pop('width', None)
+        format_bin = kw.pop('format_bin', None)
+        bin_counts = self.get_histogram_counts(bins=bins, **kw)
+        return format_histogram_counts(bin_counts,
+                                       width=width,
+                                       format_bin=format_bin)
+
+    def describe(self, quantiles=None, format=None):
+        """Provides standard summary statistics for the data in the Stats
+        object, in one of several convenient formats.
+
+        Args:
+            quantiles (list): A list of numeric values to use as
+                quantiles in the resulting summary. All values must be
+                0.0-1.0, with 0.5 representing the median. Defaults to
+                ``[0.25, 0.5, 0.75]``, representing the standard
+                quartiles.
+            format (str): Controls the return type of the function,
+                with one of three valid values: ``"dict"`` gives back
+                a :class:`dict` with the appropriate keys and
+                values. ``"list"`` is a list of key-value pairs in an
+                order suitable to pass to an OrderedDict or HTML
+                table. ``"text"`` converts the values to text suitable
+                for printing, as seen below.
+
+        Here is the information returned by a default ``describe``, as
+        presented in the ``"text"`` format:
+
+        >>> stats = Stats(range(1, 8))

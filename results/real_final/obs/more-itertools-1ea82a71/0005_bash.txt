@@ -1,0 +1,65 @@
+more_itertools/more.py:235:        raise ValueError('n must be at least 0')
+more_itertools/more.py:1550:        raise ValueError('n must be at least 0')
+more_itertools/recipes.py:156:        raise ValueError('n must be at least 0')
+Binary file more_itertools/__pycache__/more.cpython-314.pyc matches
+Binary file more_itertools/__pycache__/recipes.cpython-314.pyc matches
+215:def chunked(iterable, n, strict=False):
+216-    """Break *iterable* into lists of length *n*:
+217-
+218-        >>> list(chunked([1, 2, 3, 4, 5, 6], 3))
+219-        [[1, 2, 3], [4, 5, 6]]
+220-
+221-    By the default, the last yielded list will have fewer than *n* elements
+222-    if the length of *iterable* is not divisible by *n*:
+223-
+224-        >>> list(chunked([1, 2, 3, 4, 5, 6, 7, 8], 3))
+225-        [[1, 2, 3], [4, 5, 6], [7, 8]]
+226-
+227-    To use a fill-in value instead, see the :func:`grouper` recipe.
+228-
+229-    If the length of *iterable* is not divisible by *n* and *strict* is
+230-    ``True``, then ``ValueError`` will be raised before the last
+231-    list is yielded.
+232-
+233-    """
+234-    if n is not None and n < 0:
+235-        raise ValueError('n must be at least 0')
+236-
+237-    iterator = iter(partial(take, n, iter(iterable)), [])
+238-    if strict:
+239-        if n is None:
+240-            raise ValueError('n must not be None when using strict mode.')
+241-
+242-        def ret():
+243-            for chunk in iterator:
+244-                if len(chunk) != n:
+245-                    raise ValueError('iterable is not divisible by n.')
+246-                yield chunk
+247-
+248-        return ret()
+249-    else:
+250-        return iterator
+251-
+252-
+253-def first(iterable, default=_marker):
+254-    """Return the first item of *iterable*, or *default* if *iterable* is
+255-    empty.
+--
+4609:def chunked_even(iterable, n):
+4610-    """Break *iterable* into lists of approximately length *n*.
+4611-    Items are distributed such the lengths of the lists differ by at most
+4612-    1 item.
+4613-
+4614-    >>> iterable = [1, 2, 3, 4, 5, 6, 7]
+4615-    >>> n = 3
+4616-    >>> list(chunked_even(iterable, n))  # List lengths: 3, 2, 2
+4617-    [[1, 2, 3], [4, 5], [6, 7]]
+4618-    >>> list(chunked(iterable, n))  # List lengths: 3, 3, 1
+4619-    [[1, 2, 3], [4, 5, 6], [7]]
+4620-
+4621-    """
+4622-    iterator = iter(iterable)
+4623-
+4624-    # Initialize a buffer to process the chunks while keeping
+4625-    # some back to fill any underfilled chunks
+4626-    min_buffer = (n - 1) * (n - 2)

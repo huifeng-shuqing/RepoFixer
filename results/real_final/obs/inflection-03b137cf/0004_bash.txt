@@ -1,0 +1,42 @@
+6:    A port of Ruby on Rails' inflector to Python.
+32:    (r"(?i)(buffal|tomat)o$", r'\1oes'),
+53:    (r"(?i)(o)es$", r'\1'),
+66:    (r"(?i)(p)rogno(sis|ses)$", r"\1rognosis"),
+68:    (r"(?i)(d)iagno(sis|ses)$", r"\1iagnosis"),
+92:    A convenience function to add appropriate rules to plurals and singular
+143:    Convert strings to CamelCase.
+153:    there are some cases where that does not hold::
+158:    :param uppercase_first_letter: if set to `True` :func:`camelize` converts
+159:        strings to UpperCamelCase. If set to `False` :func:`camelize` produces
+160:        lowerCamelCase. Defaults to `True`.
+182:    Capitalize the first word and turn underscores into spaces and strip a
+203:    Return the suffix that should be added to a number to denote the position
+235:    Turn a number into an ordinal string used to denote the position in an
+259:    Replace special characters in a string so that it may be used as part of a
+269:    # Turn unwanted chars into the separator
+273:        # No more than one of the separator in a row.
+336:    Create the name of a table like Rails does for models to table names. This
+353:    Capitalize all the words and replace some characters in the string to
+378:    Replace non-ASCII characters with an ASCII approximation. If no
+385:        u'alamolo'
+404:    :func:`camelize`, though there are cases where that does not hold::
+........................................................................ [ 96%]
+..................                                                       [100%]
+================================== FAILURES ===================================
+__________________ test_pluralize_singular[potato-potatoes] ___________________
+
+singular = 'potato', plural = 'potatoes'
+
+    @pytest.mark.parametrize(("singular", "plural"), SINGULAR_TO_PLURAL)
+    def test_pluralize_singular(singular, plural):
+>       assert plural == inflection.pluralize(singular)
+E       AssertionError: assert 'potatoes' == 'potatos'
+E         
+E         - potatos
+E         + potatoes
+E         ?       +
+
+test_inflection.py:318: AssertionError
+=========================== short test summary info ===========================
+FAILED test_inflection.py::test_pluralize_singular[potato-potatoes] - Asserti...
+1 failed, 449 passed in 0.49s

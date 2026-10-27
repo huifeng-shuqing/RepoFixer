@@ -1,0 +1,185 @@
+def _isint(string, inttype=int):
+    """
+    >>> _isint("123")
+    True
+    >>> _isint("123.45")
+    False
+    """
+    return (
+        type(string) is inttype
+        or (
+            (hasattr(string, "is_integer") or hasattr(string, "__array__"))
+            and str(type(string)).startswith("<class 'numpy.int")
+        )  # numpy.int64 and similar
+        or (
+            isinstance(string, (bytes, str)) and _isconvertible(inttype, string)
+        )  # integer as string
+    )
+
+
+def _isbool(string):
+    """
+    >>> _isbool(True)
+    True
+    >>> _isbool("False")
+    True
+    >>> _isbool(1)
+    False
+    """
+    return type(string) is bool or (
+        isinstance(string, (bytes, str)) and string in ("True", "False")
+    )
+
+
+def _type(string, has_invisible=True, numparse=True):
+    """The least generic type (type(None), int, float, str, unicode).
+
+    Treats empty string as missing for the purposes of type deduction, so as to not influence
+    the type of an otherwise complete column; does *not* result in missingval replacement!
+
+    >>> _type(None) is type(None)
+    True
+    >>> _type("") is type(None)
+    True
+    >>> _type("foo") is type("")
+    True
+    >>> _type("1") is type(1)
+    True
+    >>> _type('\x1b[31m42\x1b[0m') is type(42)
+    True
+    >>> _type('\x1b[31m42\x1b[0m') is type(42)
+    True
+
+    """
+
+    if has_invisible and isinstance(string, (str, bytes)):
+        string = _strip_ansi(string)
+
+    if string is None or (isinstance(string, (bytes, str)) and not string):
+        return type(None)
+    elif hasattr(string, "isoformat"):  # datetime.datetime, date, and time
+        return str
+    elif _isbool(string):
+        return bool
+    elif numparse and (
+        _isint(string)
+        or (
+            isinstance(string, str)
+            and _isnumber_with_thousands_separator(string)
+            and "." not in string
+        )
+    ):
+        return int
+    elif numparse and (
+        _isnumber(string)
+        or (isinstance(string, str) and _isnumber_with_thousands_separator(string))
+    ):
+        return float
+    elif isinstance(string, bytes):
+        return bytes
+    else:
+        return str
+
+
+def _afterpoint(string):
+    """Symbols after a decimal point, -1 if the string lacks the decimal point.
+
+    >>> _afterpoint("123.45")
+    2
+    >>> _afterpoint("1001")
+    -1
+    >>> _afterpoint("eggs")
+    -1
+    >>> _afterpoint("123e45")
+    2
+    >>> _afterpoint("123,456.78")
+    2
+
+    """
+    if _isnumber(string) or _isnumber_with_thousands_separator(string):
+        if _isint(string):
+            return -1
+        else:
+            pos = string.rfind(".")
+            pos = string.lower().rfind("e") if pos < 0 else pos
+            if pos >= 0:
+                return len(string) - pos - 1
+            else:
+                return -1  # no point
+    else:
+        return -1  # not a number
+
+
+def _padleft(width, s):
+    """Flush right.
+
+    >>> _padleft(6, '\u044f\u0439\u0446\u0430') == '  \u044f\u0439\u0446\u0430'
+    True
+
+    """
+    fmt = "{0:>%ds}" % width
+    return fmt.format(s)
+
+
+def _padright(width, s):
+    """Flush left.
+
+    >>> _padright(6, '\u044f\u0439\u0446\u0430') == '\u044f\u0439\u0446\u0430  '
+    True
+
+    """
+    fmt = "{0:<%ds}" % width
+    return fmt.format(s)
+
+
+def _padboth(width, s):
+    """Center string.
+
+    >>> _padboth(6, '\u044f\u0439\u0446\u0430') == ' \u044f\u0439\u0446\u0430 '
+    True
+
+    """
+    fmt = "{0:^%ds}" % width
+    return fmt.format(s)
+
+
+def _padnone(ignore_width, s):
+    return s
+
+
+def _strip_ansi(s):
+    r"""Remove ANSI escape sequences, both CSI (color codes, etc) and OSC hyperlinks.
+
+    CSI sequences are simply removed from the output, while OSC hyperlinks are replaced
+    with the link text. Note: it may be desirable to show the URI instead but this is not
+    supported.
+
+    >>> repr(_strip_ansi('\x1B]8;;https://example.com\x1B\\This is a link\x1B]8;;\x1B\\'))
+    "'This is a link'"
+
+    >>> repr(_strip_ansi('\x1b[31mred\x1b[0m text'))
+    "'red text'"
+
+    """
+    if isinstance(s, str):
+        return _ansi_codes.sub(r"\4", s)
+    else:  # a bytestring
+        return _ansi_codes_bytes.sub(r"\4", s)
+
+
+def _visible_width(s):
+    """Visible width of a printed string. ANSI color codes are removed.
+
+    >>> _visible_width('\x1b[31mhello\x1b[0m'), _visible_width("world")
+    (5, 5)
+
+    """
+    # optional wide-character support
+    if wcwidth is not None and WIDE_CHARS_MODE:
+        # when already a string, it could contain terminal sequences,
+        # wcwidth >= 0.3.0 handles ANSI codes internally,
+        if hasattr(wcwidth, "width"):
+            return wcwidth.width(str(s))
+        # while previous versions need them stripped first.
+        if isinstance(s, (str, bytes)):
+            return wcwidth.wcswidth(_strip_ansi(str(s)))

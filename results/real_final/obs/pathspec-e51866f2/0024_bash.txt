@@ -1,0 +1,45 @@
+E        AssertionError: False is not true
+E        AssertionError: False is not true
+E         AssertionError: False != True : a.b
+E         AssertionError: False != True : a.b
+E         AssertionError: False != True : a0b
+E         AssertionError: False != True : a0b
+E         AssertionError: True != False : a/b
+E         AssertionError: True != False : a/b
+E         AssertionError: True != False : a/b
+E         AssertionError: True != False : a/b
+E         AssertionError: True != False : a/b
+E         AssertionError: True != False : a/b
+E         AssertionError: True != False : a/b
+E         AssertionError: True != False : a/b
+E         AssertionError: True != False : a/b
+E         AssertionError: True != False : a/b
+E         AssertionError: False != True : a.b
+E         AssertionError: False != True : a.b
+E         AssertionError: False != True : a0b
+E         AssertionError: False != True : a0b
+E         AssertionError: True != False : a/b
+E         AssertionError: True != False : a/b
+E         AssertionError: True != False : a/b
+E         AssertionError: True != False : a/b
+E         AssertionError: True != False : a/b
+E         AssertionError: True != False : a/b
+E         AssertionError: True != False : a/b
+E         AssertionError: True != False : a/b
+E         AssertionError: True != False : a/b
+E         AssertionError: True != False : a/b
+E         AssertionError: False != True : a.b
+E         AssertionError: False != True : a.b
+E         AssertionError: False != True : a0b
+E         AssertionError: False != True : a0b
+E         AssertionError: True != False : a/b
+E         AssertionError: True != False : a/b
+E         AssertionError: True != False : a/b
+E         AssertionError: True != False : a/b
+E         AssertionError: True != False : a/b
+E         AssertionError: True != False : a/b
+SUBFAILED(line='a[[:punct:]]b', spec=PathSpec(patterns=[GitIgnoreBasicPattern(pattern='a[[:punct:]]b', include=True)], backend='simple'), prefix='', backend='simple') tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_spec_separator
+SUBFAILED(line='a[[:punct:]]b', spec=PathSpec(patterns=[GitIgnoreBasicPattern(pattern='a[[:punct:]]b', include=True)], backend='simple'), prefix='dir/', backend='simple') tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_spec_separator
+SUBFAILED(line='a[[:punct:]]b', spec=PathSpec(patterns=[GitWildMatchPattern(pattern='a[[:punct:]]b', include=True)], backend='simple'), prefix='', backend='simple') tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_spec_separator
+SUBFAILED(line='a[[:punct:]]b', spec=PathSpec(patterns=[GitWildMatchPattern(pattern='a[[:punct:]]b', include=True)], backend='simple'), prefix='dir/', backend='simple') tests\test_08_gitignore_bracket_slash.py::BracketSlashTest::test_spec_separator
+56 failed, 4 passed, 4 skipped, 37 subtests passed in 0.20s

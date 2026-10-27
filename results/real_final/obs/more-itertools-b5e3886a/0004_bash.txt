@@ -1,0 +1,120 @@
+221:    """Common tests for ``peekable()`` and ``seekable()`` behavior"""
+222-
+223-    cls = None
+224-
+225-    def test_passthrough(self):
+226-        """Iterating a peekable without using ``peek()`` or ``prepend()``
+227-        should just give the underlying iterable's elements (a trivial test but
+228-        useful to set a baseline in case something goes wrong)"""
+229-        expected = [1, 2, 3, 4, 5]
+230-        actual = list(self.cls(expected))
+231-        self.assertEqual(actual, expected)
+232-
+233-    def test_peek_default(self):
+234-        """Make sure passing a default into ``peek()`` works."""
+235-        p = self.cls([])
+236-        self.assertEqual(p.peek(7), 7)
+237-
+238-    def test_truthiness(self):
+239-        """Make sure a ``peekable`` tests true iff there are items remaining in
+240-        the iterable.
+241-
+242-        """
+243-        p = self.cls([])
+244-        self.assertFalse(p)
+245-
+246-        p = self.cls(range(3))
+247-        self.assertTrue(p)
+248-
+249-    def test_simple_peeking(self):
+250-        """Make sure ``next`` and ``peek`` advance and don't advance the
+251-        iterator, respectively.
+--
+3707:    cls = mi.seekable
+3708-
+3709-    def test_exhaustion_reset(self):
+3710-        iterable = [str(n) for n in range(10)]
+3711-
+3712:        s = mi.seekable(iterable)
+3713-        self.assertEqual(list(s), iterable)  # Normal iteration
+3714-        self.assertEqual(list(s), [])  # Iterable is exhausted
+3715-
+3716-        s.seek(0)
+3717-        self.assertEqual(list(s), iterable)  # Back in action
+3718-
+3719-    def test_partial_reset(self):
+3720-        iterable = [str(n) for n in range(10)]
+3721-
+3722:        s = mi.seekable(iterable)
+3723-        self.assertEqual(mi.take(5, s), iterable[:5])  # Normal iteration
+3724-
+3725-        s.seek(1)
+3726-        self.assertEqual(list(s), iterable[1:])  # Get the rest of the iterable
+3727-
+3728-    def test_forward(self):
+3729-        iterable = [str(n) for n in range(10)]
+3730-
+3731:        s = mi.seekable(iterable)
+3732-        self.assertEqual(mi.take(1, s), iterable[:1])  # Normal iteration
+3733-
+3734-        s.seek(3)  # Skip over index 2
+3735-        self.assertEqual(list(s), iterable[3:])  # Result is similar to slicing
+3736-
+3737-        s.seek(0)  # Back to 0
+3738-        self.assertEqual(list(s), iterable)  # No difference in result
+3739-
+3740-    def test_past_end(self):
+3741-        iterable = [str(n) for n in range(10)]
+3742-
+3743:        s = mi.seekable(iterable)
+3744-        self.assertEqual(mi.take(1, s), iterable[:1])  # Normal iteration
+3745-
+3746-        s.seek(20)
+3747-        self.assertEqual(list(s), [])  # Iterable is exhausted
+3748-
+3749-        s.seek(0)  # Back to 0
+3750-        self.assertEqual(list(s), iterable)  # No difference in result
+3751-
+3752-    def test_elements(self):
+3753-        iterable = map(str, count())
+3754-
+3755:        s = mi.seekable(iterable)
+3756-        mi.take(10, s)
+3757-
+3758-        elements = s.elements()
+3759-        self.assertEqual(
+3760-            [elements[i] for i in range(10)], [str(n) for n in range(10)]
+3761-        )
+3762-        self.assertEqual(len(elements), 10)
+3763-
+3764-        mi.take(10, s)
+3765-        self.assertEqual(list(elements), [str(n) for n in range(20)])
+3766-
+3767-    def test_maxlen(self):
+3768-        iterable = map(str, count())
+3769-
+3770:        s = mi.seekable(iterable, maxlen=4)
+3771-        self.assertEqual(mi.take(10, s), [str(n) for n in range(10)])
+3772-        self.assertEqual(list(s.elements()), ['6', '7', '8', '9'])
+3773-
+3774-        s.seek(0)
+3775-        self.assertEqual(mi.take(14, s), [str(n) for n in range(6, 20)])
+3776-        self.assertEqual(list(s.elements()), ['16', '17', '18', '19'])
+3777-
+3778-    def test_maxlen_zero(self):
+3779-        iterable = [str(x) for x in range(5)]
+3780:        s = mi.seekable(iterable, maxlen=0)
+3781-        self.assertEqual(list(s), iterable)
+3782-        self.assertEqual(list(s.elements()), [])
+3783-
+3784-    def test_maxlen_zero_peek_does_not_drop_items(self):
+3785:        s = mi.seekable([10, 20, 30], maxlen=0)
+3786-        self.assertEqual(s.peek(), 10)
+3787-        self.assertEqual(s.peek(), 10)
+3788-        self.assertEqual(list(s), [10, 20, 30])
+3789-
+3790-    def test_maxlen_zero_bool_does_not_drop_items(self):
+3791:        s = mi.seekable([10, 20, 30], maxlen=0)
+3792-        self.assertTrue(s)
+3793-        self.assertEqual(list(s), [10, 20, 30])
+3794-

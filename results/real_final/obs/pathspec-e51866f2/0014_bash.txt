@@ -1,0 +1,82 @@
+	"""
+	The :class:`GitIgnoreBasicPatternIssue77Test` class tests the
+	:class:`.GitIgnoreBasicPattern` implementation for issue #77.
+	"""
+
+	def test_1_negate_with_caret(self):
+		"""
+		Test negation using the caret symbol ("^").
+		"""
+		pattern = GitIgnoreBasicPattern('a[^gy]c')
+		results = set(filter(pattern.match_file, [
+			'agc',
+			'ayc',
+			'abc',
+			'adc',
+		]))
+		self.assertEqual(results, {
+			'abc',
+			'adc',
+		})
+
+	def test_2_negate_with_exclamation_mark(self):
+		"""
+		Test negation using the exclamation mark ("!").
+		"""
+		pattern = GitIgnoreBasicPattern('a[!gy]c')
+		results = set(filter(pattern.match_file, [
+			'agc',
+			'ayc',
+			'abc',
+			'adc',
+		]))
+		self.assertEqual(results, {
+			'abc',
+			'adc',
+		})
+
+	def test_3_regex(self):
+		"""
+		Test the resulting regex for regex bracket expression negation.
+		"""
+		regex, include = GitIgnoreBasicPattern.pattern_to_regex('a[^b]c')
+		self.assertTrue(include)
+
+		equiv_regex, include = GitIgnoreBasicPattern.pattern_to_regex('a[!b]c')
+		self.assertTrue(include)
+
+		self.assertEqual(regex, equiv_regex)
+
+
+class GitIgnoreBasicPatternIssue81Test(TestCase):
+	def test_b_2_double(self):
+		"""
+		Test patterns with leading spaces.
+		"""
+		pattern = GitIgnoreSpecPattern('  foo')
+		self.assertIs(pattern.include, True)
+		self.assertEqual(pattern.regex.pattern, f'^(?s:.+/)?\\ \\ foo{_DIR_MARK_OPT}')
+		self.assertFalse(pattern.match_file('foo'))
+		self.assertFalse(pattern.match_file(' foo'))
+		self.assertTrue(pattern.match_file('  foo'))
+
+	def test_c_1_valid(self):
+		"""
+		Test patterns with valid range notation.
+		"""
+		for raw_pattern, regex in [
+			('[!a-z]', f'^(?s:.+/)?[^/a-z]{_DIR_MARK_OPT}'),
+			('[^a-z]', f'^(?s:.+/)?[^/a-z]{_DIR_MARK_OPT}'),
+			('[a-z]', f'^(?s:.+/)?[a-z]{_DIR_MARK_OPT}'),
+			('a[!a-z]', f'^(?s:.+/)?a[^/a-z]{_DIR_MARK_OPT}'),
+			('a[^a-z]', f'^(?s:.+/)?a[^/a-z]{_DIR_MARK_OPT}'),
+			('a[a-z]', f'^(?s:.+/)?a[a-z]{_DIR_MARK_OPT}'),
+		]:
+			with self.subTest(f"p={raw_pattern!r}"):
+				pattern = GitIgnoreSpecPattern(raw_pattern)
+				self.assertIs(pattern.include, True)
+				self.assertEqual(pattern.regex.pattern, regex)
+
+	def test_c_2_invalid(self):
+		"""
+		Test patterns with invalid range notation.

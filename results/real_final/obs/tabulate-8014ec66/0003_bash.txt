@@ -1,0 +1,80 @@
+150:    if not colaligns:  # e.g. printing an empty data frame (github issue #15)
+151-        colaligns = [""] * len(colwidths)
+152-    segments = "|".join(_pipe_segment_with_colons(a, w) for a, w in zip(colaligns, colwidths))
+153-    return f"|{segments}|"
+154-
+155-
+156-def _grid_segment_with_colons(colwidth, align):
+157-    """Return a segment of a horizontal line with optional colons which indicate
+158-    column's alignment in a grid table."""
+159-    width = colwidth
+160-    if align == "right":
+161-        return ("=" * (width - 1)) + ":"
+162-    elif align == "center":
+163-        return ":" + ("=" * (width - 2)) + ":"
+164-    elif align == "left":
+165-        return ":" + ("=" * (width - 1))
+166-    else:
+167-        return "=" * width
+168-
+169-
+170-def _grid_line_with_colons(colwidths, colaligns):
+171-    """Return a horizontal line with optional colons to indicate column's alignment
+172-    in a grid table."""
+173-    if not colaligns:
+174-        colaligns = [""] * len(colwidths)
+175-    segments = "+".join(_grid_segment_with_colons(w, a) for a, w in zip(colaligns, colwidths))
+176-    return f"+{segments}+"
+177-
+178-
+179-def _mediawiki_row_with_attrs(separator, cell_values, colwidths, colaligns):
+180-    alignment = {
+181-        "left": "",
+182-        "right": 'style="text-align: right;"| ',
+183-        "center": 'style="text-align: center;"| ',
+184-        "decimal": 'style="text-align: right;"| ',
+185-    }
+186-    # hard-coded padding _around_ align attribute and value together
+187-    # rather than padding parameter which affects only the value
+188-    values_with_attrs = [
+189-        " " + alignment.get(a, "") + c + " " for c, a in zip(cell_values, colaligns)
+190-    ]
+--
+525:    "github": TableFormat(
+526-        lineabove=Line("|", "-", "|", "|"),
+527-        linebelowheader=Line("|", "-", "|", "|"),
+528-        linebetweenrows=None,
+529-        linebelow=None,
+530-        headerrow=DataRow("|", "|", "|"),
+531-        datarow=DataRow("|", "|", "|"),
+532-        padding=1,
+533-        with_header_hide=["lineabove"],
+534-    ),
+535-    "pipe": TableFormat(
+536-        lineabove=_pipe_line_with_colons,
+537-        linebelowheader=_pipe_line_with_colons,
+538-        linebetweenrows=None,
+539-        linebelow=None,
+540-        headerrow=DataRow("|", "|", "|"),
+541-        datarow=DataRow("|", "|", "|"),
+542-        padding=1,
+543-        with_header_hide=["lineabove"],
+544-    ),
+545-    "orgtbl": TableFormat(
+546-        lineabove=None,
+547-        linebelowheader=Line("|", "-", "+", "|"),
+548-        linebetweenrows=None,
+549-        linebelow=None,
+550-        headerrow=DataRow("|", "|", "|"),
+551-        datarow=DataRow("|", "|", "|"),
+552-        padding=1,
+553-        with_header_hide=None,
+554-    ),
+555-    "jira": TableFormat(
+556-        lineabove=None,
+557-        linebelowheader=None,
+558-        linebetweenrows=None,
+559-        linebelow=None,
+560-        headerrow=DataRow("||", "||", "||"),
+561-        datarow=DataRow("|", "|", "|"),
+562-        padding=1,

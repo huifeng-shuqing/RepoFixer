@@ -1,0 +1,72 @@
+
+		Returns the matched files (:class:`~collections.abc.Iterator` of
+		:class:`str` or :class:`os.PathLike`).
+		"""
+		if not _is_iterable(files):
+			raise TypeError(f"files:{files!r} is not an iterable.")
+
+		for orig_file in files:
+			norm_file = normalize_file(orig_file, separators)
+			include, _index = self._backend.match_file(norm_file)
+
+			if negate:
+				include = not include
+
+			if include:
+				yield orig_file
+
+	def match_tree_entries(
+		self,
+		root: StrPath,
+		on_error: Optional[Callable[[OSError], None]] = None,
+		follow_links: Optional[bool] = None,
+		*,
+		negate: Optional[bool] = None,
+	) -> Iterator[TreeEntry]:
+		"""
+		Walks the specified root path for all files and matches them to this
+		path-spec.
+
+		*root* (:class:`str` or :class:`os.PathLike`) is the root directory to
+		search.
+79:def enumerate_patterns(
+80-	patterns: Iterable[TPattern],
+81-	filter: bool,
+82-	reverse: bool,
+83-) -> list[tuple[int, TPattern]]:
+84-	"""
+85-	Enumerate the patterns.
+86-
+87-	*patterns* (:class:`Iterable` of :class:`.Pattern`) contains the patterns.
+88-
+89-	*filter* (:class:`bool`) is whether to remove no-op patterns (:data:`True`),
+90-	or keep them (:data:`False`).
+91-
+92-	*reverse* (:class:`bool`) is whether to reverse the pattern order
+93-	(:data:`True`), or keep the order (:data:`True`).
+94-
+95-	Returns the enumerated patterns (:class:`list` of :class:`tuple`).
+96-	"""
+97-	out_patterns = [
+98-		(__i, __pat)
+99-		for __i, __pat in enumerate(patterns)
+100-		if not filter or __pat.include is not None
+101-	]
+102-	if reverse:
+103-		out_patterns.reverse()
+104-
+105-	return out_patterns
+106-
+107-
+108-def get_regex_flags(regex: Union[re.Pattern, str, bytes, None]) -> int:
+109-	"""
+110-	Get the compile flags of a pattern's regular expression.
+111-
+112-	*regex* (:class:`re.Pattern`, :class:`bytes`, :class:`str`, or
+113-	:data:`None`) is the regular expression of a :class:`.RegexPattern`.
+114-
+115-	Returns the flags (:class:`int`) of a regular expression compiled by
+116-	Python's *re* module, or zero (:class:`int`) for anything else (a native
+117-	backend only ever sees the expression of a foreign pattern).
+118-	"""
+119-	if isinstance(regex, re.Pattern):

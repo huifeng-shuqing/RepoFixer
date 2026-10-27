@@ -1,0 +1,40 @@
+tests\test_03_gitignore_basic.py:1010: AssertionError
+________ GitIgnoreBasicPatternIssue93Test.test_c_1_valid [p='a[^a-z]'] ________
+
+self = <tests.test_03_gitignore_basic.GitIgnoreBasicPatternIssue93Test testMethod=test_c_1_valid>
+
+    def test_c_1_valid(self):
+    	"""
+    	Test patterns with valid range notation.
+    	"""
+    	for raw_pattern, regex in [
+    		('[!a-z]', f'^(?s:.+/)?[^/a-z]{_DIR_OPT}'),
+    		('[^a-z]', f'^(?s:.+/)?[^/a-z]{_DIR_OPT}'),
+    		('[a-z]', f'^(?s:.+/)?[a-z]{_DIR_OPT}'),
+    		('a[!a-z]', f'^(?s:.+/)?a[^/a-z]{_DIR_OPT}'),
+    		('a[^a-z]', f'^(?s:.+/)?a[^/a-z]{_DIR_OPT}'),
+    		('a[a-z]', f'^(?s:.+/)?a[a-z]{_DIR_OPT}'),
+    	]:
+    		with self.subTest(f"p={raw_pattern!r}"):
+    			pattern = GitIgnoreBasicPattern(raw_pattern)
+    			self.assertIs(pattern.include, True)
+>   			self.assertEqual(pattern.regex.pattern, regex)
+E      AssertionError: '^(?s:.+/)?a[^a-z](?:/|\\Z)' != '^(?s:.+/)?a[^/a-z](?:/|\\Z)'
+E      - ^(?s:.+/)?a[^a-z](?:/|\Z)
+E      + ^(?s:.+/)?a[^/a-z](?:/|\Z)
+E      ?              +
+
+tests\test_03_gitignore_basic.py:1010: AssertionError
+============================== warnings summary ===============================
+dataset/repos/pathspec-e51866f2/tests/test_01_util.py: 14 warnings
+  C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\pathspec-e51866f2\pathspec\util.py:158: DeprecationWarning: Pattern.match() is deprecated. Use Pattern.match_file() with a loop for similar results.
+    result_files = pattern.match(all_files)  # TODO: Replace with `.match_file()`.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+SUBFAILED[p='[!a-z]'] tests\test_03_gitignore_basic.py::GitIgnoreBasicPatternIssue93Test::test_c_1_valid
+SUBFAILED[p='[^a-z]'] tests\test_03_gitignore_basic.py::GitIgnoreBasicPatternIssue93Test::test_c_1_valid
+SUBFAILED[p='a[!a-z]'] tests\test_03_gitignore_basic.py::GitIgnoreBasicPatternIssue93Test::test_c_1_valid
+SUBFAILED[p='a[^a-z]'] tests\test_03_gitignore_basic.py::GitIgnoreBasicPatternIssue93Test::test_c_1_valid
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 4 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+4 failed, 85 passed, 16 skipped, 14 warnings, 114 subtests passed in 0.40s

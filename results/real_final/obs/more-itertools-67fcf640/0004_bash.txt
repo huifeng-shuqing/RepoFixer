@@ -1,0 +1,138 @@
+    child iterables based on a *key* function.
+
+        >>> iterable = ['a1', 'b1', 'c1', 'a2', 'b2', 'c2', 'b3']
+        >>> s = bucket(iterable, key=lambda x: x[0])  # Bucket by 1st character
+        >>> sorted(list(s))  # Get the keys
+        ['a', 'b', 'c']
+        >>> a_iterable = s['a']
+        >>> next(a_iterable)
+        'a1'
+        >>> next(a_iterable)
+        'a2'
+        >>> list(s['b'])
+        ['b1', 'b2', 'b3']
+
+    The original iterable will be advanced and its items will be cached until
+    they are used by the child iterables. This may require significant storage.
+
+    By default, attempting to select a bucket to which no items belong  will
+    exhaust the iterable and cache all values.
+    If you specify a *validator* function, selected buckets will instead be
+    checked against it.
+
+        >>> from itertools import count
+        >>> it = count(1, 2)  # Infinite sequence of odd numbers
+        >>> key = lambda x: x % 10  # Bucket by last digit
+        >>> validator = lambda x: x in {1, 3, 5, 7, 9}  # Odd digits only
+        >>> s = bucket(it, key=key, validator=validator)
+        >>> 2 in s
+        False
+        >>> list(s[2])
+        []
+
+    .. seealso:: :func:`map_reduce`, :func:`groupby_transform`
+
+    If storage is not a concern, :func:`map_reduce` returns a Python
+    dictionary, which is generally easier to work with. If the elements
+    with the same key are already adjacent, :func:`groupby_transform`
+    or :func:`itertools.groupby` can be used without any caching overhead.
+
+    """
+
+    def __init__(self, iterable, key, validator=None):
+        self._it = iter(iterable)
+        self._key = key
+        self._cache = defaultdict(deque)
+        self._validator = validator or (lambda x: True)
+
+    def __contains__(self, value):
+        if not self._validator(value):
+            return False
+
+        try:
+            item = next(self[value])
+        except StopIteration:
+            return False
+        else:
+            self._cache[value].appendleft(item)
+
+        return True
+
+    def _get_values(self, value):
+        """
+        Helper to yield items from the parent iterator that match *value*.
+        Items that don't match are stored in the local cache as they
+        are encountered.
+        """
+        while True:
+            # If we've cached some items that match the target value, emit
+            # the first one and evict it from the cache.
+            if self._cache.get(value):
+                yield self._cache[value].popleft()
+            # Otherwise we need to advance the parent iterator to search for
+            # a matching item, caching the rest.
+            else:
+                while True:
+                    try:
+                        item = next(self._it)
+                    except StopIteration:
+                        return
+                    item_value = self._key(item)
+                    if item_value == value:
+                        if value not in self._cache:
+                            self._cache[value] = deque()
+                        yield item
+                        break
+                    elif self._validator(item_value):
+                        self._cache[item_value].append(item)
+
+    def __iter__(self):
+        for item in self._it:
+            item_value = self._key(item)
+            if self._validator(item_value):
+                self._cache[item_value].append(item)
+
+        return iter(self._cache)
+
+    def __getitem__(self, value):
+        if not self._validator(value):
+            return iter(())
+
+        return self._get_values(value)
+
+
+def spy(iterable, n=1):
+    """Return a 2-tuple with a list containing the first *n* elements of
+    *iterable*, and an iterator with the same items as *iterable*.
+    This allows you to "look ahead" at the items in the iterable without
+    advancing it.
+
+    There is one item in the list by default:
+
+        >>> iterable = 'abcdefg'
+        >>> head, iterable = spy(iterable)
+        >>> head
+        ['a']
+        >>> list(iterable)
+        ['a', 'b', 'c', 'd', 'e', 'f', 'g']
+
+    You may use unpacking to retrieve items instead of lists:
+
+        >>> (head,), iterable = spy('abcdefg')
+1084:    def test_validator(self):
+1087:        validator = lambda x: 0 < x < 10  # No leading zeros
+1088:        D = mi.bucket(iterable, key, validator=validator)
+1102:    def test_list_validator(self):
+1105:        validator = lambda x: x != 20
+1106:        D = mi.bucket(iterable, key, validator=validator)
+1112:    def test_falsey_validator_is_honoured(self):
+1113:        # A falsey callable is still a valid validator and must not be
+1120:        self.assertFalse(allowed)  # Sanity: the validator itself is falsey
+1121:        D = mi.bucket(iter([10, 20, 11, 21]), key=lambda x: x, validator=allowed)
+1141:    def test_in_does_not_add_key_with_validator(self):
+1142:        # A key the validator accepts but the iterable never produces
+1145:        validator = lambda x: x in {10, 20, 30}
+1146:        D = mi.bucket(iterable, key, validator=validator)
+4677:        # Even if the validator returns false, we pass through
+4678:        validator = lambda x: False
+4680:        actual = list(mi.filter_except(validator, iterable, Exception))

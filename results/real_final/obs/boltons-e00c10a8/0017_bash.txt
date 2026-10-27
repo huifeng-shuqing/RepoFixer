@@ -1,0 +1,75 @@
+115:        self._compactions = 0
+116-        self._c_max_size = 0
+117-        if other:
+118-            self.update(other)
+119-
+120-    # internal functions
+121-    @property
+122-    def _dead_index_count(self):
+123-        return len(self.item_list) - len(self.item_index_map)
+124-
+125:    def _compact(self):
+126-        if not self.dead_indices:
+127-            return
+128:        self._compactions += 1
+129-        dead_index_count = self._dead_index_count
+130-        items, index_map = self.item_list, self.item_index_map
+131-        self._c_max_size = max(self._c_max_size, len(items))
+132-        for i, item in enumerate(self):
+133-            items[i] = item
+134-            index_map[item] = i
+135-        del items[-dead_index_count:]
+136-        del self.dead_indices[:]
+137-
+138:    def _cull(self):
+139-        ded = self.dead_indices
+140-        if not ded:
+141-            return
+142-        items, ii_map = self.item_list, self.item_index_map
+143-        if not ii_map:
+144-            del items[:]
+145-            del ded[:]
+146-        elif len(ded) > 384:
+147:            self._compact()
+148-        elif self._dead_index_count > (len(items) / _COMPACTION_FACTOR):
+149:            self._compact()
+150-        elif items[-1] is _MISSING:  # get rid of dead right hand side
+151-            num_dead = 1
+152-            while items[-(num_dead + 1)] is _MISSING:
+153-                num_dead += 1
+154-            if ded and ded[-1][1] == len(items):
+155-                del ded[-1]
+156-            del items[-num_dead:]
+157-
+158-    def _get_real_index(self, index):
+159-        if index < 0:
+160-            index += len(self)
+161-        if index < 0 or index >= len(self):
+--
+250:        self._cull()
+251-
+252-    def discard(self, item):
+253-        "discard(item) -> discard item from the set (does not raise)"
+254-        try:
+255-            self.remove(item)
+256-        except KeyError:
+257-            pass
+258-
+259-    def clear(self):
+260-        "clear() -> empty the set"
+261-        del self.item_list[:]
+262-        del self.dead_indices[:]
+--
+437:        self._cull()
+438-        return ret
+439-
+440-    def count(self, val):
+441-        "count(val) -> count number of instances of value (0 or 1)"
+442-        if val in self.item_index_map:
+443-            return 1
+444-        return 0
+445-
+446-    def reverse(self):
+447-        "reverse() -> reverse the contents of the set in-place"
+448-        reversed_list = list(reversed(self))
+449-        self.item_list[:] = reversed_list

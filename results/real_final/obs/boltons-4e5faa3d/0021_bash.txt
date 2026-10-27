@@ -1,0 +1,80 @@
+    def isatty(self):
+        self._checkClosed()
+        return self.buffer.isatty()
+
+    @property
+    def closed(self):
+        return self.buffer.closed
+
+    @property
+    def pos(self):
+        return self.tell()
+
+    @property
+    def buf(self):
+        return self.getvalue()
+
+    def fileno(self):
+        self.rollover()
+        return self.buffer.fileno()
+
+    def truncate(self, size=None):
+        """
+        Truncate the contents of the buffer.
+
+        Custom version of truncate that takes either no arguments (like the
+        real SpooledTemporaryFile) or a single argument that truncates the
+        value to a certain index location.
+        """
+        self._checkClosed()
+        if size is None:
+            return self.buffer.truncate()
+
+        if size < 0:
+            raise OSError(EINVAL, "Negative size not allowed")
+
+        # Emulate truncation to a particular location
+        pos = self.tell()
+        self.seek(size)
+        self.buffer.truncate()
+        if pos < size:
+            self.seek(pos)
+
+    def getvalue(self):
+        """Return the entire files contents."""
+        self._checkClosed()
+        pos = self.tell()
+        self.seek(0)
+        val = self.read()
+        self.seek(pos)
+        return val
+
+===
+        self.buffer.seek(0)
+        total = 0
+        while True:
+            ret = self.read(READ_CHUNK_SIZE)
+            if not ret:
+                break
+            total += len(ret)
+        self.buffer.seek(pos)
+        return total
+
+
+def is_text_fileobj(fileobj):
+    if getattr(fileobj, 'encoding', False):
+        # codecs.open and io.TextIOBase
+        return True
+    if getattr(fileobj, 'getvalue', False):
+        # StringIO.StringIO / io.StringIO
+        try:
+            if isinstance(fileobj.getvalue(), str):
+                return True
+        except Exception:
+===
+143:    def close(self):
+146:    def flush(self):
+155:    def closed(self):
+166:    def fileno(self):
+170:    def truncate(self, size=None):
+192:    def getvalue(self):

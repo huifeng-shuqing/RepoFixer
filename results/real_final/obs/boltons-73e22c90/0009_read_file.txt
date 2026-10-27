@@ -1,0 +1,61 @@
+   430 | 
+   431 |         >>> kurtosis(range(9))
+   432 |         1.99125
+   433 | 
+   434 |         With a kurtosis of 1.99125, [0, 1, 2, 3, 4, 5, 6, 7, 8] is more
+   435 |         centrally distributed than the normal curve.
+   436 |         """
+   437 |         data, s_dev = self.data, self.std_dev
+   438 |         if len(data) > 1 and s_dev > 0:
+   439 |             return (sum(self._get_pow_diffs(4)) /
+   440 |                     float((len(data) - 1) * (s_dev ** 4)))
+   441 |         else:
+   442 |             return 0.0
+   443 |     kurtosis = _StatsProperty('kurtosis', _calc_kurtosis)
+   444 | 
+   445 |     def _calc_pearson_type(self):
+   446 |         precision = self._pearson_precision
+   447 |         skewness = self.skewness
+   448 |         kurtosis = self.kurtosis
+   449 |         beta1 = skewness ** 2.0
+   450 |         beta2 = kurtosis * 1.0
+   451 | 
+   452 |         # TODO: range checks?
+   453 | 
+   454 |         c0 = (4 * beta2) - (3 * beta1)
+   455 |         c1 = skewness * (beta2 + 3)
+   456 |         c2 = (2 * beta2) - (3 * beta1) - 6
+   457 | 
+   458 |         if round(c1, precision) == 0:
+   459 |             if round(beta2, precision) == 3:
+   460 |                 return 0  # Normal
+   461 |             else:
+   462 |                 if beta2 < 3:
+   463 |                     return 2  # Symmetric Beta
+   464 |                 elif beta2 > 3:
+   465 |                     return 7
+   466 |         elif round(c2, precision) == 0:
+   467 |             return 3  # Gamma
+   468 |         else:
+   469 |             k = c1 ** 2 / (4 * c0 * c2)
+   470 |             if k < 0:
+   471 |                 return 1  # Beta
+   472 |             elif round(k, precision) == 1:
+   473 |                 return 5  # Type V
+   474 |             elif k < 1:
+   475 |                 return 4  # Type IV
+   476 |             else:
+   477 |                 return 6  # Type VI
+   478 |         raise RuntimeError('missed a spot')
+   479 |     pearson_type = _StatsProperty('pearson_type', _calc_pearson_type)
+   480 | 
+   481 |     @staticmethod
+   482 |     def _get_quantile(sorted_data, q):
+   483 |         data, n = sorted_data, len(sorted_data)
+   484 |         idx = q / 1.0 * (n - 1)
+   485 |         idx_f, idx_c = int(floor(idx)), int(ceil(idx))
+   486 |         if idx_f == idx_c:
+   487 |             return data[idx_f]
+   488 |         return (data[idx_f] * (idx_c - idx)) + (data[idx_c] * (idx - idx_f))
+   489 | 
+... [354 more lines; pass offset=490 for next page]

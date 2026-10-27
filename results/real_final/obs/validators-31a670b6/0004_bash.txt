@@ -1,0 +1,106 @@
+    "KES", "KGS", "KHR", "KID", "KMF", "KPW", "KRW", "KWD", "KYD", "KZT",
+    "LAK", "LBP", "LKR", "LRD", "LSL", "LYD",
+    "MAD", "MDL", "MGA", "MKD", "MMK", "MNT", "MOP", "MRU", "MUR", "MVR",
+    "MWK", "MXN", "MYR", "MZN",
+    "NAD", "NGN", "NIO", "NOK", "NPR", "NZD",
+    "OMR",
+    "PAB", "PEN", "PGK", "PHP", "PKR", "PLN", "PYG",
+    "QAR",
+    "RON", "RSD", "RUB", "RWF",
+    "SAR", "SBD", "SCR", "SDG", "SEK", "SGD", "SHP", "SLL", "SOS",
+    "SRD", "SSP", "STN", "SVC", "SYP", "SZL",
+    "THB", "TJS", "TMT", "TND", "TOP", "TRY", "TTD", "TWD", "TZS",
+    "UAH", "UGX", "USD", "UYU", "UZS",
+    "VED", "VES", "VND", "VUV",
+    "WST",
+    "XAF", "XCD", "XDR", "XOF", "XPF",
+    "YER",
+    "ZAR", "ZMW", "ZWL"
+}
+_currency_symbols = {
+    # https://en.wikipedia.org/wiki/Currency_sign_(generic)
+    "؋", "฿", "₵", "₡", "¢", "$", "₫", "֏", "€", "ƒ", "₣", "₲", "₴", "₭", "₾", "£", "₺", "₼", "₦",
+    "₱", "元", "圆", "圓", "﷼", "៛", "₽", "₹", "रू", "රු", "૱", "௹", "꠸", "Rs", "₪", "⃀" "৳", "₸",
+    "₮", "₩", "¥", "円", "₿", "¤"
+}
+# fmt: on
+
+
+def _get_code_type(format_type: str):
+    """Returns the type of country code."""
+    if format_type.isdecimal():
+        return "numeric"
+    if format_type.isalpha():
+        if len(format_type) == 2:
+            return "alpha2"
+        if len(format_type) == 3:
+            return "alpha3"
+    return "invalid"
+
+
+@validator
+def calling_code(value: str, /):
+    """Validates given calling code.
+
+    This performs country's calling code validation.
+
+    Examples:
+        >>> calling_code('+91')
+        True
+        >>> calling_code('-31')
+        ValidationError(func=calling_code, args={'value': '-31'})
+
+    Args:
+        value:
+            Country's calling code string to validate.
+
+    Returns:
+        (Literal[True]): If `value` is a valid calling code.
+        (ValidationError): If `value` is an invalid calling code.
+    """
+    if not value:
+        ("", "auto"),
+        ("123456", "auto"),
+        ("XY", "alpha2"),
+        ("PPP", "alpha3"),
+        ("123", "numeric"),
+        ("us", "auto"),
+        ("uSa", "auto"),
+        ("US ", "auto"),
+        ("U.S", "auto"),
+        ("1ND", "unknown"),
+        ("ISR", None),
+    ],
+)
+def test_returns_failed_validation_on_invalid_country_code(value: str, iso_format: str):
+    """Test returns failed validation on invalid country code."""
+    assert isinstance(country_code(value, iso_format=iso_format), ValidationError)
+
+
+@pytest.mark.parametrize(
+    ("value", "skip_symbols", "ignore_case"),
+    [("$", False, False), ("⃀", False, False), ("৳", False, False), ("uSd", True, True)],
+)
+def test_returns_true_on_valid_currency(value: str, skip_symbols: bool, ignore_case: bool):
+    """Test returns true on valid currency."""
+    assert currency(value, skip_symbols=skip_symbols, ignore_case=ignore_case)
+
+
+@pytest.mark.parametrize(
+    ("value", "skip_symbols", "ignore_case"),
+    [
+        ("$", True, False),
+        ("⃀", True, False),
+        ("৳", True, False),
+        ("⃀৳", False, False),
+        ("uSd", True, False),
+        ("Bucks", True, True),
+    ],
+)
+def test_returns_failed_validation_invalid_currency(
+    value: str, skip_symbols: bool, ignore_case: bool
+):
+    """Test returns failed validation invalid currency."""
+    assert isinstance(
+        currency(value, skip_symbols=skip_symbols, ignore_case=ignore_case), ValidationError
+    )

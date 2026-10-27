@@ -1,0 +1,119 @@
+....FFF.............                                                     [100%]
+================================== FAILURES ===================================
+______________________ test_barrel_list_getitem_past_end ______________________
+
+    def test_barrel_list_getitem_past_end():
+        # bl[len(bl)] used to return an element from the middle
+        bl = _multi_sublist_bl()
+        try:
+            bl[len(bl)]
+        except IndexError:
+            pass
+        else:
+>           assert False, 'expected IndexError'
+E           AssertionError: expected IndexError
+E           assert False
+
+tests\test_listutils.py:162: AssertionError
+_______________________ test_barrel_list_insert_at_end ________________________
+
+    def test_barrel_list_insert_at_end():
+        # insert(len(bl), x) used to insert mid-list; list.insert clamps to append
+        bl = _multi_sublist_bl()
+        bl.insert(len(bl), 'end')
+>       assert bl[-1] == 'end'
+E       AssertionError: assert 29999 == 'end'
+
+tests\test_listutils.py:169: AssertionError
+___________________ test_barrel_list_pop_after_tail_drained ___________________
+
+    def test_barrel_list_pop_after_tail_drained():
+        # pop() used to raise IndexError on a non-empty BarrelList whose tail
+        # sublist had been emptied by indexed pops
+        bl = _multi_sublist_bl()
+        for _ in range(len(bl.lists[-1])):
+            bl.pop(len(bl) - 1)
+        expected = bl[-1]
+>       assert bl.pop() == expected
+               ^^^^^^^^
+
+tests\test_listutils.py:183: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = BarrelList([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, ...18680, 18681, 18682, 18683, 18684, 18685, 18686, 18687, 18688, 18689, 18690, 18691, 18692, 18693, 18694, 18695, 18696])
+a = ()
+
+    def pop(self, *a):
+        lists = self.lists
+        if len(lists) == 1 and not a:
+            return self.lists[0].pop()
+        index = a and a[0]
+        if index == () or index is None or index == -1:
+>           ret = lists[-1].pop()
+                  ^^^^^^^^^^^^^^^
+E           IndexError: pop from empty list
+
+boltons\listutils.py:159: IndexError
+=========================== short test summary info ===========================
+FAILED tests/test_listutils.py::test_barrel_list_getitem_past_end - Assertion...
+FAILED tests/test_listutils.py::test_barrel_list_insert_at_end - AssertionErr...
+FAILED tests/test_listutils.py::test_barrel_list_pop_after_tail_drained - Ind...
+import sys
+
+from boltons.listutils import SplayList, BarrelList
+
+
+def test_splay_list():
+    splay = SplayList(range(10))
+    splay.swap(0, 9)
+    assert splay[0] == 9
+    assert splay[-1] == 0
+
+    splay.shift(-2)
+    assert splay[0] == 8
+    assert splay[-1] == 0
+    assert len(splay) == 10
+
+
+def test_barrel_list():
+    bl = BarrelList()
+    bl.insert(0, 0)
+    assert bl[0] == 0
+    assert len(bl) == 1
+    bl.insert(1, 1)
+    assert list(bl) == [0, 1]
+    bl.insert(0, -1)
+    assert list(bl) == [-1, 0, 1]
+    bl.extend(range(int(1e5)))
+    assert len(bl) == (1e5 + 3)
+    bl._balance_list(0)
+    assert len(bl) == (1e5 + 3)
+    bl.pop(50000)
+    assert len(bl) == (1e5 + 3 - 1)
+
+    bl2 = BarrelList(TEST_INTS)
+    bl2.sort()
+    assert list(bl2[:5]) == [0, 74, 80, 96, 150]
+    assert list(bl2[:-5:-1]) == [50508, 46607, 46428, 43442]
+
+    # a hundred thousand integers
+    bl3 = BarrelList(range(int(1e5)))
+    for i in range(10000):
+        # move the middle ten thou to the beginning
+        bl3.insert(0, bl3.pop(len(bl3) // 2))
+    assert len(bl3) == 1e5  # length didn't change
+    assert bl3[0] == 40001  # first value changed as expected
+    assert bl3[-1] == sorted(bl3)[-1]  # last value didn't change
+
+    del bl3[10:5000]
+    assert bl3[0] == 40001
+    assert len(bl3) == 1e5 - (5000 - 10)  # length stayed co
+    bl3[:20:2] = range(0, -10, -1)
+    assert bl3[6] == -3  # some truly tricky stepping/slicing works
+
+
+def test_barrel_list_insert_before_start_matches_list():
+    bl = BarrelList(range(int(1e5)))
+    bl._balance_list(0)
+
+    bl.insert(-int(1e9), 'start')

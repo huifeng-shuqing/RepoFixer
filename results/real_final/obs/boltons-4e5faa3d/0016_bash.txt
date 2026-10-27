@@ -1,0 +1,117 @@
+    def seek(self, pos, mode=0):
+        """Traverse from offset to the specified codepoint"""
+        self._checkClosed()
+        # Seek to position from the start of the file
+        if mode == os.SEEK_SET:
+            self.buffer.seek(0)
+            self._traverse_codepoints(0, pos)
+            self._tell = pos
+        # Seek to new position relative to current position
+        elif mode == os.SEEK_CUR:
+            start_pos = self.tell()
+            self._traverse_codepoints(self.tell(), pos)
+            self._tell = start_pos + pos
+        elif mode == os.SEEK_END:
+            self.buffer.seek(0)
+            dest_position = self.len - pos
+            self._traverse_codepoints(0, dest_position)
+            self._tell = dest_position
+        else:
+            raise ValueError(
+                f"Invalid whence ({mode}, should be 0, 1, or 2)"
+            )
+        return self.tell()
+
+    def readline(self, length=None):
+        self._checkClosed()
+        ret = self.buffer.readline(length).decode('utf-8')
+        self._tell = self.tell() + len(ret)
+        return ret
+
+    def readlines(self, sizehint=0):
+        ret = [x.decode('utf-8') for x in self.buffer.readlines(sizehint)]
+        self._tell = self.tell() + sum(len(x) for x in ret)
+        return ret
+
+    @property
+    def buffer(self):
+        try:
+            return self._buffer
+        except AttributeError:
+            self._buffer = EncodedFile(BytesIO(), data_encoding='utf-8')
+        return self._buffer
+
+    @property
+    def _rolled(self):
+        return not isinstance(self.buffer.stream, BytesIO)
+
+    def rollover(self):
+        """Roll the buffer over to a TempFile"""
+        if not self._rolled:
+            tmp = EncodedFile(TemporaryFile(dir=self._dir),
+                              data_encoding='utf-8')
+            pos = self.buffer.tell()
+            tmp.write(self.buffer.getvalue())
+            tmp.seek(pos)
+            self.buffer.close()
+            self._buffer = tmp
+
+    def tell(self):
+        """Return the codepoint position"""
+        self._checkClosed()
+        return self._tell
+
+    @property
+    def len(self):
+        """Determine the number of codepoints in the file"""
+        pos = self.buffer.tell()
+        self.buffer.seek(0)
+====
+394:    def test_write_returns_character_count(self):
+395-        for rolled in (False, True):
+396-            with self.subTest(rolled=rolled):
+397-                with ioutils.SpooledStringIO() as stream:
+398-                    if rolled:
+399-                        stream.rollover()
+400-                    self.assertEqual(stream.write('a\u2603b'), 3)
+401-                    self.assertEqual(stream.write(''), 0)
+402-                    self.assertEqual(stream.getvalue(), 'a\u2603b')
+403-
+404:    def test_relative_backwards_seek_uses_character_position(self):
+405-        for rolled in (False, True):
+406-            with self.subTest(rolled=rolled):
+407-                with ioutils.SpooledStringIO() as stream:
+408-                    stream.write('a\u2603bc')
+409-                    if rolled:
+410-                        stream.rollover()
+411-                    stream.seek(3)
+412-                    self.assertEqual(stream.seek(-2, os.SEEK_CUR), 1)
+413-                    self.assertEqual(stream.read(2), '\u2603b')
+414-                    self.assertEqual(stream.tell(), 3)
+415-
+416:    def test_negative_destination_rejected_without_moving(self):
+417-        for rolled in (False, True):
+418-            for offset, whence in ((-1, os.SEEK_SET), (-3, os.SEEK_CUR)):
+419-                with self.subTest(rolled=rolled, offset=offset, whence=whence):
+420-                    with ioutils.SpooledStringIO() as stream:
+421-                        stream.write('a\u2603bc')
+422-                        if rolled:
+423-                            stream.rollover()
+424-                        stream.seek(2)
+425-                        with self.assertRaises(ValueError):
+426-                            stream.seek(offset, whence)
+427-                        self.assertEqual(stream.tell(), 2)
+428-                        self.assertEqual(stream.read(), 'bc')
+429-
+430-    def test_tell_codepoints(self):
+431-        """Verify tell() returns codepoint position, not bytes position"""
+432-        self.spooled_flo.write(self.test_str)
+433-        self.spooled_flo.seek(0)
+434-        self.spooled_flo.read(40)
+435-        self.assertEqual(self.spooled_flo.tell(), 40)
+436-        self.spooled_flo.seek(10)
+437-        self.assertEqual(self.spooled_flo.tell(), 10)
+438-
+439-    def test_codepoints_all_enc(self):
+440-        """"Test getting read, seek, tell, on various codepoints"""
+441-        test_str = "\u2014\u2014\u2014"

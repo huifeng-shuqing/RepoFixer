@@ -1,0 +1,133 @@
+        if iterable:
+            self.extend(iterable)
+
+    @property
+    def _cur_size_limit(self):
+        len_self, size_factor = len(self), self._size_factor
+        return int(round(size_factor * math_log(len_self + 2, 2)))
+
+    def _translate_index(self, index):
+        if index < 0:
+            index += len(self)
+        rel_idx, lists = index, self.lists
+        for list_idx in range(len(lists)):
+            len_list = len(lists[list_idx])
+            if rel_idx < len_list:
+                break
+            rel_idx -= len_list
+        if rel_idx < 0:
+            return None, None
+        return list_idx, rel_idx
+
+---
+        list_idx, rel_idx = self._translate_index(index)
+        if list_idx is None:
+            raise IndexError()
+        del self.lists[list_idx][rel_idx]
+
+    def __setitem__(self, index, item):
+        try:
+            start, stop, step = index.start, index.stop, index.step
+        except AttributeError:
+            index = operator.index(index)
+        else:
+            if len(self.lists) == 1:
+                self.lists[0][index] = item
+            else:
+                tmp = list(self)
+                tmp[index] = item
+                self.lists[:] = [tmp]
+            self._balance_list(0)
+            return
+        list_idx, rel_idx = self._translate_index(index)
+        if list_idx is None:
+            raise IndexError()
+        self.lists[list_idx][rel_idx] = item
+
+    def __getslice__(self, start, stop):
+        iter_slice = self.iter_slice(start, stop, 1)
+        return self.from_iterable(iter_slice)
+
+    def __setslice__(self, start, stop, sequence):
+        if len(self.lists) == 1:
+            self.lists[0][start:stop] = sequence
+        else:
+            tmp = list(self)
+            tmp[start:stop] = sequence
+            self.lists[:] = [tmp]
+        self._balance_list(0)
+        return
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}({list(self)!r})'
+
+    def sort(self):
+        # poor pythonist's mergesort, it's faster than sorted(self)
+        # when the lists' average length is greater than 512.
+        if len(self.lists) == 1:
+            self.lists[0].sort()
+        else:
+            for li in self.lists:
+                li.sort()
+            tmp_sorted = sorted(chain.from_iterable(self.lists))
+            del self.lists[:]
+            self.lists.append(tmp_sorted)
+            self._balance_list(0)
+
+    def reverse(self):
+        for cur in self.lists:
+            cur.reverse()
+        self.lists.reverse()
+
+    def count(self, item):
+        return sum([cur.count(item) for cur in self.lists])
+
+    def index(self, item):
+        len_accum = 0
+        for cur in self.lists:
+            try:
+                rel_idx = cur.index(item)
+                return len_accum + rel_idx
+            except ValueError:
+                len_accum += len(cur)
+        raise ValueError(f'{item!r} is not in list')
+
+
+BList = BarrelList
+
+
+class SplayList(list):
+    """Like a `splay tree`_, the SplayList facilitates moving higher
+    utility items closer to the front of the list for faster access.
+
+    .. _splay tree: https://en.wikipedia.org/wiki/Splay_tree
+---
+61:# TODO: .discard_many(), .remove_many()
+242:    def remove(self, item):
+243:        "remove(item) -> remove item from the set, raises if not present"
+255:            self.remove(item)
+356:    def intersection_update(self, *others):
+357:        "intersection_update(*others) -> discard self.difference(*others)"
+361:    def difference_update(self, *others):
+362:        "difference_update(*others) -> discard self.intersection(*others)"
+368:    def symmetric_difference_update(self, other):  # note singular 'other'
+369:        "symmetric_difference_update(other) -> in-place XOR with other"
+378:    def __ior__(self, *others):
+382:    def __iand__(self, *others):
+383:        self.intersection_update(*others)
+386:    def __isub__(self, *others):
+387:        self.difference_update(*others)
+390:    def __ixor__(self, *others):
+391:        self.symmetric_difference_update(*others)
+425:        "pop(index) -> remove the item at a given index (-1 by default)"
+624:                self._excluded.remove(item)
+628:    def remove(self, item):
+632:            self._included.remove(item)
+662:    def __iand__(self, other):
+702:    def __ior__(self, other):
+780:    def symmetric_difference_update(self, other):
+786:                self._excluded.symmetric_difference_update(exc)
+793:                self._included.symmetric_difference_update(inc)
+921:    def difference_update(self, other):
+927:    def __isub__(self, other):
+940:                self._included.difference_update(inc)

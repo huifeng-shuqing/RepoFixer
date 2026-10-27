@@ -1,0 +1,77 @@
+            tmp.write(self.buffer.getvalue())
+            tmp.seek(pos)
+            self.buffer.close()
+            self._buffer = tmp
+
+    def tell(self):
+        """Return the codepoint position"""
+        self._checkClosed()
+        return self._tell
+
+    @property
+    def len(self):
+        """Determine the number of codepoints in the file"""
+        pos = self.buffer.tell()
+        self.buffer.seek(0)
+===
+===
+import io
+import os
+import codecs
+import random
+import string
+
+from tempfile import mkdtemp
+from unittest import TestCase
+from zipfile import ZipFile, ZIP_DEFLATED
+
+
+from boltons import ioutils
+
+CUR_FILE_PATH = os.path.abspath(__file__)
+
+
+class AssertionsMixin:
+
+    def assertIsNone(self, item, msg=None):
+        self.assertTrue(item is None, msg)
+
+
+class BaseTestMixin:
+    """
+    A set of tests that work the same for SpooledBtyesIO and SpooledStringIO
+    """
+
+    def test_getvalue_norollover(self):
+        """Make sure getvalue function works with in-memory flo"""
+        self.spooled_flo.write(self.test_str)
+        self.assertEqual(self.spooled_flo.getvalue(), self.test_str)
+
+    def test_getvalue_rollover(self):
+        """Make sure getvalue function works with on-disk flo"""
+        self.spooled_flo.write(self.test_str)
+        self.assertFalse(self.spooled_flo._rolled)
+        self.spooled_flo.rollover()
+        self.assertEqual(self.spooled_flo.getvalue(), self.test_str)
+        self.assertTrue(self.spooled_flo._rolled)
+
+    def test_rollover_custom_directory(self):
+        """dir keyword argument is passed to TemporaryFile instantiation"""
+        custom_dir = mkdtemp()
+        try:
+            # Re-instantiate self.spooled_flo with the custom dir argument
+            _spooled_flo = type(self.spooled_flo)(dir=custom_dir)
+            self.assertEqual(_spooled_flo._dir, custom_dir)
+            # TemporaryFile is kind of a black box, we can't really test it
+            # since the directory entry for the file is removed immediately
+            # after the file is created. So we can't check path using fd.name
+            # or listdir(custom_dir). We could either convert rollover() to
+            # use NamedtemporaryFile-s or assume it's well tested enough that
+            # passing dir= into the constructor will work as expected. We'll
+            # call rollover() with the dir attribute set just to ensure
+            # nothing has gone absurdly wrong.
+            _spooled_flo.write(self.test_str)
+            _spooled_flo.rollover()
+            self.assertEqual(_spooled_flo.getvalue(), self.test_str)
+            self.assertTrue(_spooled_flo._rolled)
+            _spooled_flo.close()

@@ -1,0 +1,131 @@
+140:def _pipe_segment_with_colons(align, colwidth):
+142:    indicate column's alignment (as in `pipe` output format)."""
+154:def _pipe_line_with_colons(colwidths, colaligns):
+156:    alignment (as in `pipe` output format)."""
+157:    if not colaligns:  # e.g. printing an empty data frame (github issue #15)
+159:    segments = "|".join(_pipe_segment_with_colons(a, w) for a, w in zip(colaligns, colwidths))
+355:_table_formats = {
+356:    "simple": TableFormat(
+366:    "plain": TableFormat(
+376:    "grid": TableFormat(
+386:    "simple_grid": TableFormat(
+396:    "rounded_grid": TableFormat(
+406:    "heavy_grid": TableFormat(
+416:    "mixed_grid": TableFormat(
+426:    "double_grid": TableFormat(
+436:    "fancy_grid": TableFormat(
+446:    "colon_grid": TableFormat(
+456:    "outline": TableFormat(
+466:    "simple_outline": TableFormat(
+476:    "rounded_outline": TableFormat(
+486:    "heavy_outline": TableFormat(
+496:    "mixed_outline": TableFormat(
+506:    "double_outline": TableFormat(
+516:    "fancy_outline": TableFormat(
+526:    "pipe": TableFormat(
+527:        lineabove=_pipe_line_with_colons,
+528:        linebelowheader=_pipe_line_with_colons,
+536:    "orgtbl": TableFormat(
+546:    "jira": TableFormat(
+556:    "presto": TableFormat(
+566:    "pretty": TableFormat(
+576:    "psql": TableFormat(
+586:    "rst": TableFormat(
+596:    "mediawiki": TableFormat(
+611:    "moinmoin": TableFormat(
+621:    "html": TableFormat(
+631:    "unsafehtml": TableFormat(
+641:    "latex": TableFormat(
+651:    "latex_raw": TableFormat(
+661:    "latex_booktabs": TableFormat(
+671:    "latex_longtable": TableFormat(
+681:    "tsv": TableFormat(
+691:    "textile": TableFormat(
+701:    "asciidoc": TableFormat(
+713:# "github" is an alias for "pipe": both produce GitHub-flavored Markdown with
+715:_table_formats["github"] = _table_formats["pipe"]
+718:tabulate_formats = sorted(_table_formats.keys())
+734:    "pipe": "pipe",
+741:    "github": "github",
+775:# https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda
+826:    return TableFormat(
+1825:    'plain', 'simple', 'grid', 'pipe', 'orgtbl', 'rst', 'mediawiki',
+2063:    "pipe" is like tables in PHP Markdown Extra extension or Pandoc
+2064:    pipe_tables:
+2067:    ...                ["strings", "numbers"], "pipe"))
+2082:    >>> print(tabulate([["spam", 41.9999], ["eggs", "451.0"]], tablefmt="pipe"))
+2088:    are slightly different from "pipe" format by not using colons to
+2450:        tablefmt = _table_formats.get(tablefmt, _table_formats["simple"])
+2898:    See also https://github.com/astanin/python-tabulate
+2912:                              plain, simple, grid, fancy_grid, pipe, orgtbl,
+    If `original` is not a list to begin with (i.e. scalar value) a list of
+    length `num_desired` completely populated with `default will be returned
+    """
+    if isinstance(original, Iterable) and not isinstance(original, str):
+        return original + [default] * (num_desired - len(original))
+    else:
+        return [default] * num_desired
+
+
+def _pad_row(cells, padding):
+    if cells:
+        if cells == SEPARATING_LINE:
+            return SEPARATING_LINE
+        pad = " " * padding
+        padded_cells = [pad + cell + pad for cell in cells]
+        return padded_cells
+    else:
+        return cells
+
+
+def _build_simple_row(padded_cells: list[list], rowfmt: DataRow) -> str:
+    "Format row according to DataRow format without padding."
+    begin = rowfmt.begin
+    sep = rowfmt.sep
+    end = rowfmt.end
+    escape_map: dict = rowfmt.escape_map
+
+    if escape_map:
+        def escape_char(c):
+            return escape_map.get(c, c)
+        escaped_cells = ["".join(map(escape_char, cell)) for cell in padded_cells]
+    else:
+        escaped_cells = padded_cells
+
+    return (begin + sep.join(escaped_cells) + end).rstrip()
+
+
+def _build_row(padded_cells: list[list], colwidths: list[int], colaligns: list[str], rowfmt: Union[DataRow, Callable]) -> str:
+    "Return a string which represents a row of data cells."
+    if not rowfmt:
+        return None
+    if callable(rowfmt):
+        return rowfmt(padded_cells, colwidths, colaligns)
+    else:
+        return _build_simple_row(padded_cells, rowfmt)
+
+
+def _append_basic_row(lines, padded_cells, colwidths, colaligns, rowfmt, rowalign=None):
+    # NOTE: rowalign is ignored and exists for api compatibility with _append_multiline_row
+    lines.append(_build_row(padded_cells, colwidths, colaligns, rowfmt))
+    return lines
+
+
+def _align_cell_veritically(text_lines, num_lines, column_width, row_alignment):
+    delta_lines = num_lines - len(text_lines)
+    blank = [" " * column_width]
+    if row_alignment == "bottom":
+        return blank * delta_lines + text_lines
+    elif row_alignment == "center":
+        top_delta = delta_lines // 2
+        bottom_delta = delta_lines - top_delta
+        return top_delta * blank + text_lines + bottom_delta * blank
+    else:
+        return text_lines + blank * delta_lines
+
+
+def _append_multiline_row(
+    lines, padded_multiline_cells, padded_widths, colaligns, rowfmt, pad, rowalign=None
+):
+    colwidths = [w - 2 * pad for w in padded_widths]
+    cells_lines = [c.splitlines() for c in padded_multiline_cells]

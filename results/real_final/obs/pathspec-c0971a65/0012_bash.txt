@@ -1,0 +1,134 @@
+}
+"""
+Maps each POSIX bracket character class name to ASCII regex ranges, excluding
+the directory separator as required by git's wildmatch behavior.
+"""
+
+
+def _strip_trailing_ws(pattern: str) -> str:
+	"""
+	Strip trailing spaces and line endings from the pattern while considering
+	that they can be escaped. Other whitespace is part of the filename.
+
+	*pattern* (:class:`str`) is the pattern.
+
+	Returns the modified pattern (:class:`str`).
+	"""
+	i = len(pattern) - 1
+	if i == -1 or pattern[i] not in ' \r\n':
+		# Fast path: pattern does not end with a space or line ending.
+		return pattern
+
+	# Scan past spaces and line endings.
+	i -= 1
+	while i >= 0 and pattern[i] in ' \r\n':
+		i -= 1
+
+	last_ws = i + 1
+
+	# Count backslashes.
+	while i >= 0 and pattern[i] == '\\':
+		i -= 1
+
+	bs_count = last_ws - i - 1
+	if bs_count % 2 == 1:
+		# Odd count, first whitespace character is escaped, strip the rest.
+		last_ws += 1
+
+	# Strip trailing whitespace.
+	return pattern[:last_ws]
+
+
+def _sub_bracket_token(match: re.Match[str]) -> str:
+	"""
+	Translate a single token matched by :data:`_BRACKET_TOKEN_REGEX`. A token can
+	be a range (groups 1 and 2), a backslash escaped character (group 3), or a
+	POSIX bracket character class (groups 4 and 5).
+
+	*match* (:class:`re.Match`) is the match object.
+
+	Returns the replacement string (:class:`str`).
+	"""
+	range_start, range_end, escape_char, class_negated, class_name = match.groups()
+
+	# Character range. A bracket expression cannot match a directory separator.
+	if range_start is not None:
+		range_start, range_end = range_start[-1], range_end[-1]
+		if range_start < '/' < range_end:
+			return re.escape(range_start) + '-.0-' + re.escape(range_end)
+		return re.escape(range_start) + '-' + re.escape(range_end)
+
+	# Backslash escaped character.
+	if escape_char:
+		return re.escape(escape_char)
+
+	# POSIX bracket character class.
+	class_regex = _POSIX_CLASS_TO_REGEX.get(class_name)
+	if class_regex is not None and not class_negated:
+		return class_regex
+
+	raise _PosixClassError((
+		f"Invalid character class={match.group(0)!r} found in pattern="
+		f"{match.string!r}."
+	))  # _PosixClassError
+
+
+class _GitIgnoreBasePattern(RegexPattern):
+	"""
+	.. warning:: This class is not part of the public API. It is subject to
+		change.
+
+	The :class:`_GitIgnoreBasePattern` class is the base implementation for a
+	compiled gitignore pattern.
+	"""
+
+	# Keep the dict-less class hierarchy.
+	__slots__ = ()
+
+	def __init__(
+		self,
+		pattern: Union[AnyStr, re.Pattern, None],
+		include: Optional[bool] = None,
+===
+					#
+					# A backslash escapes the next character (e.g. "[\]]" matches ']'),
+					# the same as outside of a bracket expression.
+					#
+					# Translate POSIX character classes (e.g. "[:alpha:]") into their
+					# ASCII regex equivalents. Git's wildmatch supports these, but
+					# Python's `re` does not, so passing them through verbatim builds a
+					# broken regex that silently mismatches (and warns about a nested
+					# set).
+					try:
+						body = _BRACKET_TOKEN_REGEX.sub(_sub_bracket_token, pattern[i:j - 1])
+					except _PosixClassError:
+						if errors == 'raise':
+							# EDGE CASE: Git discards patterns with an invalid range notation
+							# or an invalid POSIX class.
+							raise
+						else:
+							# Treat the whole bracket expression as a literal.
+							regex += re.escape(pattern[bracket_start:j])
+							i = j
+							continue
+
+					if is_expr_negated:
+						# Negated expressions must also exclude the directory separator.
+						# Preserve literal ']' and '-' when inserting '/' ahead of them.
+						if body.startswith((']', '-')):
+							body = '\\' + body
+						expr += '/'
+
+					expr += body + ']'
+
+					if errors == 'raise':
+						try:
+							re.compile(expr)
+						except re.error as e:  # Renamed to `re.PatternError` in 3.13.
+							raise _RangeNotationError((
+								f"Invalid range notation={pattern[i:j]!r} found in "
+								f"pattern={pattern!r}."
+							)) from e
+
+					# Add regex bracket expression to regex result.
+					regex += expr

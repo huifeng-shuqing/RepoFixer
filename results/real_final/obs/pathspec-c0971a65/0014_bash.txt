@@ -1,0 +1,119 @@
+			elif char == '?':
+				# Single-character wildcard. Match any single character (except a
+				# slash).
+				regex += '[^/]'
+
+			elif char == '[':
+				# Bracket expression (range notation) wildcard. Except for the beginning
+				# exclamation mark, the whole bracket expression can be used directly as
+				# regex, but we have to find where the expression ends.
+				# - "[][!]" matches ']', '[' and '!'.
+				# - "[]-]" matches ']' and '-'.
+				# - "[!]a-]" matches any character except ']', 'a' and '-'.
+				bracket_start = i - 1
+				j = i
+
+				# Pass bracket expression negation.
+				if j < end and (pattern[j] == '!' or pattern[j] == '^'):
+					j += 1
+
+				# Pass first closing bracket if it is at the beginning of the
+				# expression.
+				if j < end and pattern[j] == ']':
+					j += 1
+
+				# Find closing bracket. Stop once we reach the end or find it.
+				while j < end and pattern[j] != ']':
+					if pattern[j] == '\\':
+						# Skip over an escaped character so an escaped closing bracket
+						# ("\]") does not end the bracket expression.
+						j += 2
+					elif pattern[j:j+2] == '[:':
+      3 '[!a&&b].pdf', as_bytes=False, errors='literal') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[!a&&b].pdf', as_bytes=False, errors=None) tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[!a&&b].pdf', as_bytes=False, errors='null') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[!a&&b].pdf', as_bytes=False, errors='raise') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[!a&&b].pdf', as_bytes=True, errors='literal') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[!a&&b].pdf', as_bytes=True, errors=None) tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[!a&&b].pdf', as_bytes=True, errors='null') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[!a&&b].pdf', as_bytes=True, errors='raise') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      1 '[!a&&b].pdf', style='gitignore', backend='simple') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_spec_literals
+      1 '[!a&&b].pdf', style='gitwildmatch', backend='simple') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_spec_literals
+      1 '[!a&&b].pdf', style=None, backend='simple') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_spec_literals
+      3 '[!a~~b].pdf', as_bytes=False, errors='literal') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[!a~~b].pdf', as_bytes=False, errors=None) tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[!a~~b].pdf', as_bytes=False, errors='null') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[!a~~b].pdf', as_bytes=False, errors='raise') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[!a~~b].pdf', as_bytes=True, errors='literal') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[!a~~b].pdf', as_bytes=True, errors=None) tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[!a~~b].pdf', as_bytes=True, errors='null') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[!a~~b].pdf', as_bytes=True, errors='raise') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      1 '[!a~~b].pdf', style='gitignore', backend='simple') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_spec_literals
+      1 '[!a~~b].pdf', style='gitwildmatch', backend='simple') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_spec_literals
+      1 '[!a~~b].pdf', style=None, backend='simple') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_spec_literals
+      3 '[[:digit:]&&a-c].pdf', as_bytes=False, errors='literal') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[[:digit:]&&a-c].pdf', as_bytes=False, errors=None) tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[[:digit:]&&a-c].pdf', as_bytes=False, errors='null') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[[:digit:]&&a-c].pdf', as_bytes=False, errors='raise') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[[:digit:]&&a-c].pdf', as_bytes=True, errors='literal') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[[:digit:]&&a-c].pdf', as_bytes=True, errors=None) tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[[:digit:]&&a-c].pdf', as_bytes=True, errors='null') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[[:digit:]&&a-c].pdf', as_bytes=True, errors='raise') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      1 '[[:digit:]&&a-c].pdf', style='gitignore', backend='simple') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_spec_literals
+      1 '[[:digit:]&&a-c].pdf', style='gitwildmatch', backend='simple') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_spec_literals
+      1 '[[:digit:]&&a-c].pdf', style=None, backend='simple') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_spec_literals
+      3 '[[]draft].md', as_bytes=False, errors='literal') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[[]draft].md', as_bytes=False, errors=None) tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[[]draft].md', as_bytes=False, errors='null') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[[]draft].md', as_bytes=False, errors='raise') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[[]draft].md', as_bytes=True, errors='literal') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[[]draft].md', as_bytes=True, errors=None) tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[[]draft].md', as_bytes=True, errors='null') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[[]draft].md', as_bytes=True, errors='raise') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      1 '[[]draft].md', style='gitignore', backend='simple') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_spec_literals
+      1 '[[]draft].md', style='gitwildmatch', backend='simple') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_spec_literals
+      1 '[[]draft].md', style=None, backend='simple') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_spec_literals
+      3 '[^a||b].pdf', as_bytes=False, errors='literal') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[^a||b].pdf', as_bytes=False, errors=None) tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[^a||b].pdf', as_bytes=False, errors='null') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[^a||b].pdf', as_bytes=False, errors='raise') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[^a||b].pdf', as_bytes=True, errors='literal') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[^a||b].pdf', as_bytes=True, errors=None) tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[^a||b].pdf', as_bytes=True, errors='null') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[^a||b].pdf', as_bytes=True, errors='raise') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      1 '[^a||b].pdf', style='gitignore', backend='simple') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_spec_literals
+      1 '[^a||b].pdf', style='gitwildmatch', backend='simple') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_spec_literals
+      1 '[^a||b].pdf', style=None, backend='simple') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_spec_literals
+      3 '[a&&b].pdf', as_bytes=False, errors='literal') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[a&&b].pdf', as_bytes=False, errors=None) tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[a&&b].pdf', as_bytes=False, errors='null') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[a&&b].pdf', as_bytes=False, errors='raise') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[a&&b].pdf', as_bytes=True, errors='literal') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[a&&b].pdf', as_bytes=True, errors=None) tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[a&&b].pdf', as_bytes=True, errors='null') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[a&&b].pdf', as_bytes=True, errors='raise') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      1 '[a&&b].pdf', style='gitignore', backend='simple') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_spec_literals
+      1 '[a&&b].pdf', style='gitwildmatch', backend='simple') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_spec_literals
+      1 '[a&&b].pdf', style=None, backend='simple') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_spec_literals
+      3 '[a||b].pdf', as_bytes=False, errors='literal') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[a||b].pdf', as_bytes=False, errors=None) tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[a||b].pdf', as_bytes=False, errors='null') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[a||b].pdf', as_bytes=False, errors='raise') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[a||b].pdf', as_bytes=True, errors='literal') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[a||b].pdf', as_bytes=True, errors=None) tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[a||b].pdf', as_bytes=True, errors='null') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[a||b].pdf', as_bytes=True, errors='raise') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      1 '[a||b].pdf', style='gitignore', backend='simple') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_spec_literals
+      1 '[a||b].pdf', style='gitwildmatch', backend='simple') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_spec_literals
+      1 '[a||b].pdf', style=None, backend='simple') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_spec_literals
+      3 '[a~~b].pdf', as_bytes=False, errors='literal') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[a~~b].pdf', as_bytes=False, errors=None) tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[a~~b].pdf', as_bytes=False, errors='null') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[a~~b].pdf', as_bytes=False, errors='raise') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[a~~b].pdf', as_bytes=True, errors='literal') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[a~~b].pdf', as_bytes=True, errors=None) tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[a~~b].pdf', as_bytes=True, errors='null') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      3 '[a~~b].pdf', as_bytes=True, errors='raise') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_pattern_literals
+      1 '[a~~b].pdf', style='gitignore', backend='simple') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_spec_literals
+      1 '[a~~b].pdf', style='gitwildmatch', backend='simple') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_spec_literals
+      1 '[a~~b].pdf', style=None, backend='simple') tests\test_10_gitignore_bracket_literals.py::BracketLiteralTest::test_spec_literals

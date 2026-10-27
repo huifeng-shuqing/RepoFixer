@@ -1,0 +1,40 @@
+    
+        if len_data < 4:
+            if not count:
+                count = len_data
+            dx = (max_data - min_data) / float(count)
+            bins = [min_data + (dx * i) for i in range(count)]
+        elif count is None:
+            # freedman algorithm for fixed-width bin selection
+            q25, q75 = self.get_quantile(0.25), self.get_quantile(0.75)
+            dx = 2 * (q75 - q25) / (len_data ** (1 / 3.0))
+>           bin_count = max(1, int(ceil((max_data - min_data) / dx)))
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           ZeroDivisionError: division by zero
+
+boltons\statsutils.py:564: ZeroDivisionError
+============================== warnings summary ===============================
+tests/test_funcutils_fb_py3.py::test_wraps_async
+  C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\boltons-1cdc0e9d\tests\test_funcutils_fb_py3.py:236: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    assert asyncio.iscoroutinefunction(f)
+
+tests/test_funcutils_fb_py3.py::test_wraps_async
+  C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\boltons-1cdc0e9d\tests\test_funcutils_fb_py3.py:240: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    assert asyncio.iscoroutinefunction(f2)
+
+tests/test_ioutils.py::TestMultiFileReader::test_open
+  C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\boltons-1cdc0e9d\tests\test_ioutils.py:491: DeprecationWarning: codecs.open() is deprecated. Use open() instead.
+    utf8_file_str = codecs.open(CUR_FILE_PATH, encoding='utf8').read()
+
+tests/test_ioutils.py::TestMultiFileReader::test_open
+  C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\boltons-1cdc0e9d\tests\test_ioutils.py:492: DeprecationWarning: codecs.open() is deprecated. Use open() instead.
+    f1, f2 = (codecs.open(CUR_FILE_PATH, encoding='utf8'),
+
+tests/test_ioutils.py::TestMultiFileReader::test_open
+  C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\boltons-1cdc0e9d\tests\test_ioutils.py:493: DeprecationWarning: codecs.open() is deprecated. Use open() instead.
+    codecs.open(CUR_FILE_PATH, encoding='utf8'))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_statsutils.py::test_histogram_zero_interquartile_range - Ze...
+1 failed, 505 passed, 5 warnings in 3.17s

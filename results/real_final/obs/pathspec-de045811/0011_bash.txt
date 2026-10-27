@@ -1,0 +1,71 @@
+						dir_index = index
+
+					if is_self and (file_include is None or not is_reversed):
+						file_include = include
+						file_index = index
+				elif file_include is None or not is_reversed:
+					# Pattern matched by a file pattern.
+					file_include = include
+					file_index = index
+
+		if dir_include and check_ancestors and self._ancestor_excluded(file):
+			return (dir_include, dir_index)
+		elif file_include is not None:
+			return (file_include, file_index)
+		elif dir_include:
+			# An ancestor matched an exclude pattern, but the spec as a whole
+			# re-includes that ancestor, so the rule does not apply.
+			return (None, None)
+		else:
+			return (dir_include, dir_index)
+
+	def _ancestor_excluded(self, file: str) -> bool:
+		"""
+		Whether any strict ancestor directory of *file* is excluded. Git stops
+		descending at the first excluded directory, so the ancestors are asked
+		outermost first, each as a directory query (trailing slash included).
+		By the time an ancestor is asked, every ancestor above it is known not to
+		be excluded, so it is matched without checking its own ancestors again;
+		otherwise each level re-asks all the levels above it and the work grows
+		exponentially with depth.
+		"""
+    		(['d/**/', '!d/child/'], ['d/child/grand/deep.txt']),
+    		(['a/**', '!a/b/**'], ['a/b/file.txt', 'a/b/c/deep.txt']),
+    		(['a/**', '!*.txt'], ['a/b/file.txt']),
+    		(['*', '!*.txt'], ['a/top.txt', 'a/b/file.txt']),
+    	):
+    		for sub_test in self.parameterize_from_lines(lines):
+    			with sub_test() as spec:
+    				results = list(spec.check_files(iter(paths)))
+>   				self.assertEqual(
+    					[(r.include, r.index) for r in results],
+    					[(True, 0)] * len(paths),
+    					(lines, results),
+    				)
+E       AssertionError: Lists differ: [(False, 1), (False, 1)] != [(True, 0), (True, 0)]
+E       
+E       First differing element 0:
+E       (False, 1)
+E       (True, 0)
+E       
+E       - [(False, 1), (False, 1)]
+E       + [(True, 0), (True, 0)] : (['*', '!*.txt'], [CheckResult(file='a/top.txt', include=False, index=1), CheckResult(file='a/b/file.txt', include=False, index=1)])
+
+tests\test_09_gitignore_ancestor_negation.py:26: AssertionError
+=========================== short test summary info ===========================
+SUBFAILED[simple (unopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (minopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (unopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (minopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (unopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (minopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (unopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (minopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (unopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (minopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (unopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (minopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (unopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+SUBFAILED[simple (minopt)] tests\test_09_gitignore_ancestor_negation.py::AncestorNegationTest::test_excluded_ancestor
+!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 14 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+14 failed, 2 passed, 48 skipped, 2 subtests passed in 0.17s

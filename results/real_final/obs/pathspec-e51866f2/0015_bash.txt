@@ -1,0 +1,101 @@
+"""
+This module provides common classes for the gitignore patterns.
+"""
+from __future__ import annotations
+
+import re
+from typing import (
+	Literal,
+	Optional,  # Replaced by `X | None` in 3.10.
+	Union)  # Replaced by `X | Y` in 3.10.
+
+from pathspec.pattern import (
+	RegexPattern)
+from pathspec._typing import (
+	AnyStr)  # Removed in 3.18.
+
+_BRACKET_TOKEN_REGEX = re.compile((
+	# Escaped character.
+	r'\\(.)'
+	# POSIX class.
+	r'|\[:(\^?)([^:\]]*):\]'
+), re.DOTALL)
+"""
+Matches tokens inside a bracket expression:
+
+- A backslash escaped character (group 1).
+
+-	Matches a POSIX bracket character class token such as ``[:alpha:]`` inside a
+	bracket expression. Group 2 captures a leading caret (unsupported by git);
+	group 3 captures the class name.
+"""
+
+_BYTES_ENCODING = 'latin1'
+"""
+The encoding to use when parsing a byte string pattern.
+"""
+
+_POSIX_CLASS_TO_REGEX: dict[str, str] = {
+	# Git's wildmatch implements POSIX bracket character classes using its own
+	# ASCII (locale-independent) ``is*`` functions, so each class maps to an
+	# explicit ASCII set. These are NOT the Unicode-aware equivalents (``\w``,
+	# ``\d``, ``\s``); using those would over-match non-ASCII characters that git
+	# never matches.
+	'alnum': '0-9A-Za-z',
+	'alpha': 'A-Za-z',
+	'blank': '\\t ',
+	'cntrl': '\\x00-\\x1f\\x7f',
+	'digit': '0-9',
+	'graph': '\\x21-\\x7e',
+	'lower': 'a-z',
+	'print': '\\x20-\\x7e',
+	'punct': '!-/:-@\\[-`{-~',
+	'space': '\\t\\n\\r ',
+	'upper': 'A-Z',
+	'xdigit': '0-9A-Fa-f',
+}
+"""
+Maps each POSIX bracket character class name to the ASCII regex range that
+reproduces git's wildmatch behavior.
+"""
+		while i < end:
+			# Get next character.
+			char = pattern[i]
+			i += 1
+
+			if escape:
+				# Escape the character.
+				escape = False
+				regex += re.escape(char)
+
+			elif char == '\\':
+				# Escape character, escape next character.
+				escape = True
+
+			elif char == '*':
+				# Multi-character wildcard. Match any string (except slashes), including
+				# an empty string.
+				regex += '[^/]*'
+
+			elif char == '?':
+				# Single-character wildcard. Match any single character (except a
+				# slash).
+				regex += '[^/]'
+
+			elif char == '[':
+				# Bracket expression (range notation) wildcard. Except for the beginning
+				# exclamation mark, the whole bracket expression can be used directly as
+				# regex, but we have to find where the expression ends.
+				# - "[][!]" matches ']', '[' and '!'.
+				# - "[]-]" matches ']' and '-'.
+				# - "[!]a-]" matches any character except ']', 'a' and '-'.
+				bracket_start = i - 1
+				j = i
+
+				# Pass bracket expression negation.
+				if j < end and (pattern[j] == '!' or pattern[j] == '^'):
+					j += 1
+
+				# Pass first closing bracket if it is at the beginning of the
+				# expression.
+				if j < end and pattern[j] == ']':

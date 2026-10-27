@@ -1,0 +1,103 @@
+    assert format_bin_out == NORM_DATA_FORMAT_BIN_OUTPUT
+
+
+NORM_DATA_FREEDMAN_OUTPUT = """\
+ 3.7:  5 ################
+ 5.2: 10 ################################
+ 6.8:  9 #############################
+ 8.3: 21 ###################################################################
+ 9.9: 22 ######################################################################
+11.4: 16 ###################################################
+13.0: 10 ################################
+14.5:  7 ######################"""
+
+NORM_DATA_TEN_BIN_OUTPUT = """\
+ 3.7:  5 ##############
+ 4.9:  5 ##############
+ 6.1:  6 #################
+ 7.3: 12 ##################################
+ 8.5: 11 ###############################
+ 9.7: 25 ######################################################################
+10.9: 12 ##################################
+12.1: 12 ##################################
+13.4:  5 ##############
+14.6:  7 ####################"""
+
+# make sure the minimum gets added
+NORM_DATA_SINGLE_SUBPAR_BIN_OUTPUT = """\
+ 3.7: 75 ######################################################################
+12.0: 25 #######################"""
+
+NORM_DATA_FORMAT_BIN_OUTPUT = """\
+ 3.7ms: 10 ###################
+ 6.1ms: 18 ##################################
+ 8.5ms: 36 ####################################################################
+10.9ms: 24 #############################################
+13.4ms: 12 #######################"""
+
+
+def main():
+    print(Stats(NORM_DATA).format_histogram(10))
+
+----
+        >>> stats = Stats(range(1, 8))
+        >>> print(stats.describe(format='text'))
+        count:    7
+        mean:     4.0
+        std_dev:  2.0
+        mad:      2.0
+        min:      1
+        0.25:     2.5
+        0.5:      4
+        0.75:     5.5
+        max:      7
+
+        For more advanced descriptive statistics, check out my blog
+        post on the topic `Statistics for Software
+        <https://www.paypal-engineering.com/2016/04/11/statistics-for-software/>`_.
+
+        """
+        if format is None:
+            format = 'dict'
+        elif format not in ('dict', 'list', 'text'):
+            raise ValueError('invalid format for describe,'
+                             ' expected one of "dict"/"list"/"text", not %r'
+                             % format)
+        quantiles = quantiles or [0.25, 0.5, 0.75]
+        q_items = []
+        for q in quantiles:
+            q_val = self.get_quantile(q)
+            q_items.append((str(q), q_val))
+
+        items = [('count', self.count),
+                 ('mean', self.mean),
+                 ('std_dev', self.std_dev),
+                 ('mad', self.mad),
+                 ('min', self.min)]
+
+        items.extend(q_items)
+        items.append(('max', self.max))
+        if format == 'dict':
+            ret = dict(items)
+        elif format == 'list':
+            ret = items
+        elif format == 'text':
+            ret = '\n'.join(['{}{}'.format((label + ':').ljust(10), val)
+                             for label, val in items])
+        return ret
+
+
+def describe(data, quantiles=None, format=None):
+    """A convenience function to get standard summary statistics useful
+    for describing most data. See :meth:`Stats.describe` for more
+    details.
+
+    >>> print(describe(range(7), format='text'))
+    count:    7
+    mean:     3.0
+    std_dev:  2.0
+    mad:      2.0
+    min:      0
+    0.25:     1.5
+    0.5:      3
+    0.75:     4.5

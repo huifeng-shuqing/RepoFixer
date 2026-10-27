@@ -1,0 +1,30 @@
+            # passing dir= into the constructor will work as expected. We'll
+            # call rollover() with the dir attribute set just to ensure
+            # nothing has gone absurdly wrong.
+            _spooled_flo.write(self.test_str)
+            _spooled_flo.rollover()
+            self.assertEqual(_spooled_flo.getvalue(), self.test_str)
+            self.assertTrue(_spooled_flo._rolled)
+            _spooled_flo.close()
+        finally:
+>           os.rmdir(custom_dir)
+E           OSError: [WinError 145] Ŀ¼���ǿյġ�: 'C:\\Users\\wuqiong\\Documents\\deepseek-harness\\default-workspace\\repair-agent\\dataset\\repos\\boltons-4e5faa3d\\tmpe371n9be'
+
+tests\test_ioutils.py:62: OSError
+============================== warnings summary ===============================
+tests/test_ioutils.py::TestMultiFileReader::test_open
+  C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\boltons-4e5faa3d\tests\test_ioutils.py:561: DeprecationWarning: codecs.open() is deprecated. Use open() instead.
+    utf8_file_str = codecs.open(CUR_FILE_PATH, encoding='utf8').read()
+
+tests/test_ioutils.py::TestMultiFileReader::test_open
+  C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\boltons-4e5faa3d\tests\test_ioutils.py:562: DeprecationWarning: codecs.open() is deprecated. Use open() instead.
+    f1, f2 = (codecs.open(CUR_FILE_PATH, encoding='utf8'),
+
+tests/test_ioutils.py::TestMultiFileReader::test_open
+  C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\boltons-4e5faa3d\tests\test_ioutils.py:563: DeprecationWarning: codecs.open() is deprecated. Use open() instead.
+    codecs.open(CUR_FILE_PATH, encoding='utf8'))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_ioutils.py::TestSpooledBytesIO::test_rollover_custom_directory
+1 failed, 87 passed, 3 warnings, 12 subtests passed in 0.21s

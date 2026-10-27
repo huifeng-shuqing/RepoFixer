@@ -1,0 +1,73 @@
+97:def _sub_bracket_token(match: re.Match[str]) -> str:
+98-	"""
+99-	Translate a single token matched by :data:`_BRACKET_TOKEN_REGEX`. A token can
+100-	be a backslash escaped character (group 1), a POSIX bracket character class
+101-	(groups 2 and 3).
+102-
+103-	*match* (:class:`re.Match`) is the match object.
+104-
+105-	Returns the replacement string (:class:`str`).
+106-	"""
+107-	escape_char, class_negated, class_name = match.groups()
+108-
+109-	# Backslash escaped character.
+110-	if escape_char:
+111-		return re.escape(escape_char)
+112-
+113-	# POSIX bracket character class.
+114-	class_regex = _POSIX_CLASS_TO_REGEX.get(class_name)
+115-	if class_regex is not None and not class_negated:
+116-		return class_regex
+117-
+118-	raise _PosixClassError((
+119-		f"Invalid character class={match.group(0)!r} found in pattern="
+120-		f"{match.string!r}."
+121-	))  # _PosixClassError
+122-
+--
+336:						body = _BRACKET_TOKEN_REGEX.sub(_sub_bracket_token, pattern[i:j])
+337-					except _PosixClassError:
+338-						if errors == 'raise':
+339-							# EDGE CASE: Git discards patterns with an invalid range notation
+340-							# or an invalid POSIX class.
+341-							raise
+342-						else:
+343-							# Treat the whole bracket expression as a literal.
+344-							regex += re.escape(pattern[bracket_start:j])
+345-							i = j
+346-							continue
+347-
+348-					expr += body
+349-
+350-					if errors == 'raise':
+351-						try:
+352-							re.compile(expr)
+353-						except re.error as e:  # Renamed to `re.PatternError` in 3.13.
+354-							raise _RangeNotationError((
+355-								f"Invalid range notation={pattern[i:j]!r} found in "
+356-								f"pattern={pattern!r}."
+357-							)) from e
+358-
+228:		self.assertEqual(regex, '^spam/[^/]')
+363:		self.assertEqual(regex, '^(?s:.+/)?api/[^/]')
+397:		self.assertEqual(regex, f'^(?s:.+/)?foo\\-[^/]*\\-bar{_DIR_OPT}')
+429:		self.assertEqual(regex, f'^(?s:.+/)?\\~temp\\-[^/]*{_DIR_OPT}')
+460:		self.assertEqual(regex, f'^(?s:.+/)?[^/]*\\.py{_DIR_OPT}')
+869:		pattern = GitIgnoreBasicPattern('a[^gy]c')
+901:		regex, include = GitIgnoreBasicPattern.pattern_to_regex('a[^b]c')
+922:		self.assertEqual(pattern.regex.pattern, '^libfoo/[^/]')
+932:		self.assertEqual(pattern.regex.pattern, rf'^libfoo/[^/]+/?\Z')
+961:		self.assertEqual(pattern.regex.pattern, f'^(?s:.+/)?foo[^/]*[^/]*{_DIR_OPT}')
+970:		self.assertEqual(pattern.regex.pattern, f'^foo[^/]*[^/]*/bar{_DIR_OPT}')
+1000:			('[!a-z]', f'^(?s:.+/)?[^/a-z]{_DIR_OPT}'),
+1001:			('[^a-z]', f'^(?s:.+/)?[^/a-z]{_DIR_OPT}'),
+1002:			('[a-z]', f'^(?s:.+/)?[a-z]{_DIR_OPT}'),
+1003:			('a[!a-z]', f'^(?s:.+/)?a[^/a-z]{_DIR_OPT}'),
+1004:			('a[^a-z]', f'^(?s:.+/)?a[^/a-z]{_DIR_OPT}'),
+1005:			('a[a-z]', f'^(?s:.+/)?a[a-z]{_DIR_OPT}'),
+1019:			('[^]', f'^(?s:.+/)?\\[\\^\\]{_DIR_OPT}'),
+1021:			('a[^]', f'^(?s:.+/)?a\\[\\^\\]{_DIR_OPT}'),
+1045:			('[^', f'^(?s:.+/)?\\[\\^{_DIR_OPT}'),
+1048:			('[a-z', f'^(?s:.+/)?\\[a\\-z{_DIR_OPT}'),
+1052:			('a[^', f'^(?s:.+/)?a\\[\\^{_DIR_OPT}'),
+1054:			('a[a-z', f'^(?s:.+/)?a\\[a\\-z{_DIR_OPT}'),

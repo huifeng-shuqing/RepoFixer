@@ -1,0 +1,94 @@
+    :func:`camelize`, though there are cases where that does not hold::
+
+        >>> camelize(underscore("IOError"))
+        'IoError'
+
+    """
+    word = re.sub(r"([A-Z]+)([A-Z][a-z])", r'\1_\2', word)
+    word = re.sub(r"([a-z\d])([A-Z])", r'\1_\2', word)
+    word = word.replace("-", "_")
+    return word.lower()
+
+
+_irregular('person', 'people')
+_irregular('man', 'men')
+_irregular('human', 'humans')
+_irregular('child', 'children')
+_irregular('sex', 'sexes')
+_irregular('move', 'moves')
+_irregular('cow', 'kine')
+_irregular('zombie', 'zombies')
+---
+    ("newsletter", "newsletters"),
+
+    ("old_news", "old_news"),
+    ("news", "news"),
+
+    ("series", "series"),
+    ("species", "species"),
+
+    ("quiz", "quizzes"),
+
+    ("perspective", "perspectives"),
+
+    ("ox", "oxen"),
+    ("passerby", "passersby"),
+    ("photo", "photos"),
+    ("buffalo", "buffaloes"),
+    ("tomato", "tomatoes"),
+    ("potato", "potatoes"),
+    ("dwarf", "dwarves"),
+    ("elf", "elves"),
+    ("information", "information"),
+    ("equipment", "equipment"),
+    ("bus", "buses"),
+    ("status", "statuses"),
+    ("status_code", "status_codes"),
+    ("mouse", "mice"),
+
+    ("louse", "lice"),
+    ("house", "houses"),
+    ("octopus", "octopi"),
+    ("virus", "viri"),
+---
+        assert uncountable_word == inflection.singularize(uncountable_word)
+        assert uncountable_word == inflection.pluralize(uncountable_word)
+        assert(
+            inflection.pluralize(uncountable_word) ==
+            inflection.singularize(uncountable_word)
+        )
+
+        assert "sponsor" == inflection.singularize(countable_word)
+        assert "sponsors" == inflection.pluralize(countable_word)
+        assert (
+            "sponsor" ==
+            inflection.singularize(inflection.pluralize(countable_word))
+        )
+    finally:
+        inflection.UNCOUNTABLES.remove(uncountable_word)
+
+
+@pytest.mark.parametrize(("singular", "plural"), SINGULAR_TO_PLURAL)
+def test_pluralize_singular(singular, plural):
+    assert plural == inflection.pluralize(singular)
+    assert plural.capitalize() == inflection.pluralize(singular.capitalize())
+
+
+@pytest.mark.parametrize(("singular", "plural"), SINGULAR_TO_PLURAL)
+def test_singularize_plural(singular, plural):
+    assert singular == inflection.singularize(plural)
+    assert singular.capitalize() == inflection.singularize(plural.capitalize())
+
+
+@pytest.mark.parametrize(("singular", "plural"), SINGULAR_TO_PLURAL)
+def test_pluralize_plural(singular, plural):
+    assert plural == inflection.pluralize(plural)
+    assert plural.capitalize() == inflection.pluralize(plural.capitalize())
+
+
+@pytest.mark.parametrize(("before", "titleized"), MIXTURE_TO_TITLEIZED)
+def test_titleize(before, titleized):
+    assert titleized == inflection.titleize(before)
+
+
+@pytest.mark.parametrize(("camel", "underscore"), CAMEL_TO_UNDERSCORE)

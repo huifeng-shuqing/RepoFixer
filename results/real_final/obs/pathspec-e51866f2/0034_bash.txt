@@ -1,0 +1,70 @@
+97:def _exclude_separator(expr: str) -> str:
+98-	"""
+99-	Remove the directory separator (``/``) from a non-negated regex bracket
+100-	expression so that it never matches a path separator.
+101-
+102-	*expr* (:class:`str`) is the regex bracket expression (e.g. ``"[a-z]"``).
+103-
+104-	Returns the modified bracket expression (:class:`str`).
+105-	"""
+106-	# Strip the enclosing brackets.
+107-	body = expr[1:-1]
+108-
+109-	# Split the body into tokens: escaped characters, POSIX class expansions
+110-	# (already translated to plain ranges) and single characters.
+111-	tokens: list[str] = []
+112-	i, end = 0, len(body)
+113-	while i < end:
+114-		if body[i] == '\\' and i + 1 < end:
+115-			tokens.append(body[i:i + 2])
+116-			i += 2
+117-		else:
+118-			tokens.append(body[i])
+119-			i += 1
+120-
+121-	# Remove any token that matches the separator.
+122-	out: list[str] = []
+123-	i, count = 0, len(tokens)
+124-	while i < count:
+125-		token = tokens[i]
+126-		if token == '/':
+127-			i += 1
+128-			continue
+129-		# Range notation: "start-end".
+130-		if i + 2 < count and tokens[i + 1] == '-':
+131-			start, stop = token, tokens[i + 2]
+132-			if len(start) == 1 and len(stop) == 1 and ord(start) <= ord('/') <= ord(stop):
+133-				# Split the range around the separator.
+134-				if ord(start) < ord('/'):
+135-					out.extend([start, '-', chr(ord('/') - 1)])
+136-				if ord('/') < ord(stop):
+137-					out.extend([chr(ord('/') + 1), '-', stop])
+138-				i += 3
+139-				continue
+140-			out.extend([start, '-', stop])
+141-			i += 3
+142-			continue
+143-		out.append(token)
+144-		i += 1
+145-
+146-	if not out:
+147-		# Nothing left to match. Use an expression that never matches.
+148-		return '(?!)'
+149-
+150-	return '[' + ''.join(out) + ']'
+151-
+152-
+153-def _sub_bracket_token(match: re.Match[str]) -> str:
+154-	"""
+155-	Translate a single token matched by :data:`_BRACKET_TOKEN_REGEX`. A token can
+156-	be a backslash escaped character (group 1), a POSIX bracket character class
+157-	(groups 2 and 3).
+--
+410:						expr = _exclude_separator(expr)
+411-
+412-					if errors == 'raise':
+413-						try:
+414-							re.compile(expr)
+415-						except re.error as e:  # Renamed to `re.PatternError` in 3.13.
+416-							raise _RangeNotationError((
+417-								f"Invalid range notation={pattern[i:j]!r} found in "

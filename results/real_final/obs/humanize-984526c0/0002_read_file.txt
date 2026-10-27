@@ -1,0 +1,81 @@
+   100 |     Returns:
+   101 |         str: Ordinal string.
+   102 |     """
+   103 |     import math
+   104 | 
+   105 |     try:
+   106 |         if not math.isfinite(float(value)):
+   107 |             return _format_not_finite(float(value))
+   108 |         value = int(value)
+   109 |     except (TypeError, ValueError):
+   110 |         return str(value)
+   111 |     gender = "male" if gender == "male" else "female"
+   112 |     digit = 0 if value % 100 in (11, 12, 13) else value % 10
+   113 |     return f"{value}{P_(f'{digit} ({gender})', _ORDINAL_SUFFIXES[digit])}"
+   114 | 
+   115 | 
+   116 | def intcomma(value: NumberOrString, ndigits: int | None = None) -> str:
+   117 |     """Converts an integer to a string containing commas every three digits.
+   118 | 
+   119 |     For example, 3000 becomes "3,000" and 45000 becomes "45,000". To maintain some
+   120 |     compatibility with Django's `intcomma`, this function also accepts floats.
+   121 | 
+   122 |     Examples:
+   123 |         ```pycon
+   124 |         >>> intcomma(100)
+   125 |         '100'
+   126 |         >>> intcomma("1000")
+   127 |         '1,000'
+   128 |         >>> intcomma(1_000_000)
+   129 |         '1,000,000'
+   130 |         >>> intcomma(1_234_567.25)
+   131 |         '1,234,567.25'
+   132 |         >>> intcomma(1234.5454545, 2)
+   133 |         '1,234.55'
+   134 |         >>> intcomma(14308.40, 1)
+   135 |         '14,308.4'
+   136 |         >>> intcomma("14308.40", 1)
+   137 |         '14,308.4'
+   138 |         >>> intcomma(None)
+   139 |         'None'
+   140 | 
+   141 |         ```
+   142 | 
+   143 |     Args:
+   144 |         value (int, float, str): Integer or float to convert.
+   145 |         ndigits (int, None): Digits of precision for rounding after the decimal point.
+   146 | 
+   147 |     Returns:
+   148 |         str: String containing commas every three digits.
+   149 |     """
+   150 |     import math
+   151 | 
+   152 |     thousands_sep = thousands_separator()
+   153 |     decimal_sep = decimal_separator()
+   154 |     try:
+   155 |         if isinstance(value, str):
+   156 |             value = value.replace(thousands_sep, "").replace(decimal_sep, ".")
+   157 |             if not math.isfinite(float(value)):
+   158 |                 return _format_not_finite(float(value))
+   159 |             if "." in value:
+   160 |                 value = float(value)
+   161 |             else:
+   162 |                 value = int(value)
+   163 |         else:
+   164 |             if not math.isfinite(float(value)):
+   165 |                 return _format_not_finite(float(value))
+   166 |             float(value)
+   167 |     except (TypeError, ValueError):
+   168 |         return str(value)
+   169 | 
+   170 |     if ndigits is not None:
+   171 |         result = f"{value:,.{ndigits}f}"
+   172 |     else:
+   173 |         result = f"{value:,}"
+   174 |     if thousands_sep != "," or decimal_sep != ".":
+   175 |         result = result.translate(str.maketrans(",.", thousands_sep + decimal_sep))
+   176 |     return result
+   177 | 
+   178 | 
+   179 | powers = [10**x for x in (3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 100)]
+... [392 more lines; pass offset=180 for next page]

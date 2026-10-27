@@ -1,0 +1,109 @@
+# depending on the formatter
+_DEFAULT_ALIGN = "default"
+
+
+# if True, enable wide-character (CJK) support
+WIDE_CHARS_MODE = wcwidth is not None
+
+# Constant that can be used as part of passed rows to generate a separating line
+# It is purposely an unprintable character, very unlikely to be used in a table
+SEPARATING_LINE = "\001"
+
+Line = namedtuple("Line", ["begin", "hline", "sep", "end"])
+
+
+@dataclass
+class DataRow:
+    begin: str
+    sep: str
+    end: str
+    escape_map: dict = None
+
+
+# A table structure is supposed to be:
+#
+#     --- lineabove ---------
+#         headerrow
+#     --- linebelowheader ---
+#         datarow
+#     --- linebetweenrows ---
+#     ... (more datarows) ...
+#     --- linebetweenrows ---
+#         last datarow
+#     --- linebelow ---------
+#
+# TableFormat's line* elements can be
+#
+#   - either None, if the element is not used,
+#   - or a Line tuple,
+#   - or a function: [col_widths], [col_alignments] -> string.
+#
+# TableFormat's *row elements can be
+        linebelow=Line("╘", "═", "╧", "╛"),
+        headerrow=DataRow("│", "│", "│"),
+        datarow=DataRow("│", "│", "│"),
+        padding=1,
+        with_header_hide=None,
+    ),
+    "pipe": TableFormat(
+        lineabove=_pipe_line_with_colons,
+        linebelowheader=_pipe_line_with_colons,
+        linebetweenrows=None,
+        linebelow=None,
+        headerrow=DataRow("|", "|", "|"),
+        datarow=DataRow("|", "|", "|"),
+        padding=1,
+        with_header_hide=["lineabove"],
+    ),
+    "orgtbl": TableFormat(
+        lineabove=None,
+        linebelowheader=Line("|", "-", "+", "|"),
+        linebetweenrows=None,
+        linebelow=None,
+    if cells:
+        if cells == SEPARATING_LINE:
+            return SEPARATING_LINE
+        pad = " " * padding
+        padded_cells = [pad + cell + pad for cell in cells]
+        return padded_cells
+    else:
+        return cells
+
+
+def _build_simple_row(padded_cells: list[list], rowfmt: DataRow) -> str:
+    "Format row according to DataRow format without padding."
+    begin = rowfmt.begin
+    sep = rowfmt.sep
+    end = rowfmt.end
+    escape_map: dict = rowfmt.escape_map
+
+    if escape_map:
+        def escape_char(c):
+            return escape_map.get(c, c)
+        escaped_cells = ["".join(map(escape_char, cell)) for cell in padded_cells]
+    else:
+        escaped_cells = padded_cells
+
+    return (begin + sep.join(escaped_cells) + end).rstrip()
+
+
+def _build_row(padded_cells: list[list], colwidths: list[int], colaligns: list[str], rowfmt: Union[DataRow, Callable]) -> str:
+    "Return a string which represents a row of data cells."
+    if not rowfmt:
+        return None
+79:    escape_map: dict = None
+336:def _rst_escape_first_column(rows, headers):
+791:_ansi_escape_pat = rf"""
+809:_ansi_codes = re.compile(_ansi_escape_pat, re.VERBOSE)
+810:_ansi_codes_bytes = re.compile(_ansi_escape_pat.encode("utf8"), re.VERBOSE)
+1326:            val_striped = val.encode("unicode_escape").decode("utf-8")
+1334:                        val = val_new.encode("utf-8").decode("unicode_escape")
+2290:        list_of_lists, headers = _rst_escape_first_column(list_of_lists, headers)
+2515:    escape_map: dict = rowfmt.escape_map
+2517:    if escape_map:
+2519:            return escape_map.get(c, c)
+2764:            total_escape_len = 0
+2769:                    if group in chunk[last_group : i + total_escape_len + escape_len - 1]:
+2770:                        total_escape_len += escape_len
+2773:            cur_line.append(chunk[: i + total_escape_len - 1])
+2774:            reversed_chunks[-1] = chunk[i + total_escape_len - 1 :]
