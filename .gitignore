@@ -20,3 +20,5 @@ reference/
 .repofixer/
 
 .repofixer_cache/
+data/tasks_failed10.jsonl
+data/tasks_reading4.jsonl
