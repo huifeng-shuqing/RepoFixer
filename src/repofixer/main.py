@@ -54,7 +54,17 @@ def main(argv: list[str] | None = None) -> int:
 
     mcp_p = sub.add_parser("mcp", help="serve the tool set over MCP stdio (needs `uv sync --extra mcp`)")
     mcp_p.add_argument("--workspace", "-w", default=".")
+
+    rb_p = sub.add_parser("rollback", help="restore a shadow snapshot sha (recorded with run --snapshot)")
+    rb_p.add_argument("sha")
+    rb_p.add_argument("--workspace", "-w", default=".")
     args = parser.parse_args(argv)
+
+    if args.cmd == "rollback":
+        from .loop import rollback
+
+        print(rollback(Path(args.workspace).resolve(), args.sha))
+        return 0
 
     if args.cmd == "mcp":
         from .mcp_server import serve

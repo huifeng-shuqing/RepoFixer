@@ -23,7 +23,7 @@ from pathlib import Path
 from .environment import create_env
 from .llm import LLMClient
 from .loop import run_agent
-from .notes import append_note, load_notes
+from .notes import append_note, extract_and_merge, load_notes
 from .tools import ToolRegistry
 
 # price per 1M tokens (input, output), in yuan — rough estimate, configurable later
@@ -171,6 +171,9 @@ def run_task(
                 if run.final_summary:
                     note += f" [blocked: {run.final_summary[:200]}]"
                 append_note(repo, note)
+                if not verify_ok and run.final_summary:
+                    # failures are where durable pitfalls live: extract + merge
+                    extract_and_merge(repo, note, llm)
             except OSError:
                 pass
             return EvalResult(

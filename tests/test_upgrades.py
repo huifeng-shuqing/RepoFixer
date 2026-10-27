@@ -1,4 +1,5 @@
 """Tests for the upgrade batch: plan tool, repo notes, snapshots, review."""
+import json
 import subprocess
 
 from repofixer.environment import LocalEnv
@@ -75,6 +76,42 @@ def test_notes_roundtrip(ws):
     assert "second entry" in load_notes(ws)
 
 
+def test_extract_and_merge_dedupes_and_caps(ws):
+    from repofixer.notes import extract_and_merge
+
+    class ExtLLM:
+        def __init__(self, outputs):
+            self.outputs = list(outputs)
+
+        def complete(self, messages, tools=None, temperature=0.2, model=None):
+            return LLMResponse(text=self.outputs.pop(0), finish_reason="stop")
+
+    append_note(ws, "build: uv run pytest")
+    out1 = extract_and_merge(ws, "task failed at test_x", ExtLLM(["- build: uv run pytest\n- pitfall: cache in .pytest_cache"]))
+    assert out1
+    text = load_notes(ws)
+    assert text.count("- build: uv run pytest") == 1  # deduped
+    assert "- pitfall: cache in .pytest_cache" in text
+    # cap: keep only the newest MAX_FACTS facts
+    many = [f"- fact {i}" for i in range(40)]
+    extract_and_merge(ws, "session", ExtLLM(["\n".join(many)]))
+    text2 = load_notes(ws)
+    assert "fact 39" in text2 and "fact 0" not in text2
+    assert len([l for l in text2.splitlines() if l.strip().startswith("-")]) <= 30
+
+
+def test_extract_and_merge_survives_llm_error(ws):
+    from repofixer.notes import extract_and_merge
+
+    class BoomLLM:
+        def complete(self, messages, tools=None, temperature=0.2, model=None):
+            raise ConnectionError("down")
+
+    append_note(ws, "- kept")
+    assert extract_and_merge(ws, "session", BoomLLM()) == ""
+    assert "- kept" in load_notes(ws)
+
+
 def test_notes_injected_into_system(ws):
     class CaptureLLM:
         def __init__(self):
@@ -108,6 +145,45 @@ def test_snapshot_preserves_baseline(ws):
     assert (ws / "f.txt").read_text(encoding="utf-8") == "hello"
 
 
+# ---------- safety rules file ----------
+
+def _write_rules(ws, rules):
+    d = ws / ".repofixer"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "rules.json").write_text(
+        json.dumps({"rules": rules}), encoding="utf-8"
+    )
+
+
+def test_rules_allow_overrides_builtin(ws):
+    from repofixer.safety import SafetyPolicy
+
+    _write_rules(ws, [{"tool": "bash", "pattern": "pytest", "action": "allow"}])
+    p = SafetyPolicy("auto", workspace=ws)
+    assert p.check("bash", {"command": "pytest -q"}) is None  # allowed by rule
+
+
+def test_rules_last_match_wins(ws):
+    from repofixer.safety import SafetyPolicy
+
+    _write_rules(ws, [
+        {"tool": "bash", "pattern": "git", "action": "allow"},
+        {"tool": "bash", "pattern": "git push", "action": "deny"},
+    ])
+    p = SafetyPolicy("auto", workspace=ws)
+    assert p.check("bash", {"command": "git status"}) is None
+    assert p.check("bash", {"command": "git push origin main"}) is not None  # deny wins
+
+
+def test_rules_deny_non_dangerous(ws):
+    from repofixer.safety import SafetyPolicy
+
+    _write_rules(ws, [{"tool": "bash", "pattern": "curl", "action": "deny"}])
+    p = SafetyPolicy("auto", workspace=ws)
+    r = p.check("bash", {"command": "curl http://x"})
+    assert r is not None and not r.ok
+
+
 # ---------- final summary ----------
 
 def test_final_summary_on_failed_run(ws):
@@ -129,6 +205,15 @@ def test_final_summary_on_failed_run(ws):
     assert run.done_summary is None
     assert run.stopped_reason == "max_steps"
     assert run.final_summary == "blocked: could not reproduce the failing test"
+
+
+def test_rollback_restores_snapshot(ws):
+    from repofixer.loop import rollback
+
+    head_before = _git_repo(ws)
+    (ws / "f.txt").write_text("CHANGED", encoding="utf-8")
+    rollback(ws, head_before)
+    assert (ws / "f.txt").read_text(encoding="utf-8") == "hello"
 
 
 # ---------- MCP conversion ----------

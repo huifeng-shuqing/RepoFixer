@@ -114,6 +114,17 @@ def _get_diff(workspace: Path | None) -> str:
         return ""
 
 
+def rollback(workspace: Path, sha: str) -> str:
+    """Restore a shadow snapshot recorded during a run (`repofixer rollback`)."""
+    if not (workspace / ".git").exists():
+        return "error: no git repository at the workspace"
+    try:
+        p = _git(workspace, ["reset", "--hard", sha])
+        return (p.stdout or "") + (p.stderr or "") or f"reset to {sha[:12]}"
+    except Exception as e:
+        return f"error: {e}"
+
+
 def _final_summary(task: str, llm: LLMClient, cm: ContextManager, reason: str, max_steps: int) -> str | None:
     """OpenCode-style forced final summary: one last (cheap) call asking the
     model what blocked completion, so failed runs self-report their root cause
