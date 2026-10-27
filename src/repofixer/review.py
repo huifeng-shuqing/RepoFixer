@@ -44,3 +44,24 @@ def review_feedback(issues: str) -> str:
         "A reviewer examined your changes and found issues. Address them before finishing:\n"
         f"{issues}"
     )
+
+
+def final_summary(task: str, llm, cm, reason: str, max_steps: int) -> str | None:
+    """OpenCode-style forced final summary: one last (cheap) call asking the
+    model what blocked completion, so failed runs self-report their root cause
+    instead of ending with a bare stop reason."""
+    messages = [
+        {"role": "system", "content": (
+            "You are a repair agent whose run was terminated by the harness. "
+            "In at most 80 words, state concisely what blocked you from "
+            "finishing and what remains to be done."
+        )},
+        {"role": "user", "content": f"Task: {task}\n\nRun ended with reason: {reason} (max {max_steps} steps)."},
+    ]
+    last = [m for m in cm.messages if m["role"] == "assistant"]
+    if last:
+        messages.append({"role": "user", "content": f"Your last output: {str(last[-1].get('content'))[:800]}"})
+    try:
+        return llm.complete(messages, None, temperature=0.0, model=getattr(llm, "small_model", None)).text.strip()
+    except Exception:
+        return None

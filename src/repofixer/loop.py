@@ -20,7 +20,6 @@ Reliability (M5):
 from __future__ import annotations
 
 import json
-import subprocess
 import time
 from collections import deque
 from dataclasses import dataclass, field
@@ -29,8 +28,10 @@ from pathlib import Path
 from typing import Callable
 
 from .context import ContextManager, estimate_tokens
+from .gitutil import diff as _get_diff
+from .gitutil import snapshot as _snapshot
 from .llm import LLMClient
-from .review import build_review_messages, parse_verdict, review_feedback
+from .review import build_review_messages, final_summary, parse_verdict, review_feedback
 from .safety import SafetyPolicy
 from .tools import ToolRegistry, ToolResult
 from .trace import StepTrace, ToolCallTrace, TraceWriter
@@ -79,72 +80,6 @@ class AgentRun:
     @property
     def total_tokens(self) -> int:
         return self.prompt_tokens + self.completion_tokens
-
-
-def _git(workspace: Path, args: list[str], timeout: int = 60) -> subprocess.CompletedProcess:
-    return subprocess.run(
-        ["git", "-C", str(workspace)] + args,
-        capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=timeout,
-    )
-
-
-def _snapshot(workspace: Path | None, step_no: int) -> str | None:
-    """Shadow-git snapshot (Cline-style): create a commit object via
-    `git stash create` WITHOUT moving HEAD or the working tree, so the eval
-    reset (`git checkout -- .`) keeps restoring the original baseline."""
-    if workspace is None or not (workspace / ".git").exists():
-        return None
-    try:
-        _git(workspace, ["add", "-A"])
-        p = _git(workspace, ["-c", "user.name=repofixer", "-c", "user.email=repofixer@local",
-                             "stash", "create", f"repofixer snapshot (step {step_no})"])
-        sha = p.stdout.strip()
-        _git(workspace, ["reset"])  # unstage; keep worktree, keep HEAD
-        return sha or None
-    except Exception:
-        return None
-
-
-def _get_diff(workspace: Path | None) -> str:
-    if workspace is None or not (workspace / ".git").exists():
-        return ""
-    try:
-        return _git(workspace, ["diff"]).stdout or ""
-    except Exception:
-        return ""
-
-
-def rollback(workspace: Path, sha: str) -> str:
-    """Restore a shadow snapshot recorded during a run (`repofixer rollback`)."""
-    if not (workspace / ".git").exists():
-        return "error: no git repository at the workspace"
-    try:
-        p = _git(workspace, ["reset", "--hard", sha])
-        return (p.stdout or "") + (p.stderr or "") or f"reset to {sha[:12]}"
-    except Exception as e:
-        return f"error: {e}"
-
-
-def _final_summary(task: str, llm: LLMClient, cm: ContextManager, reason: str, max_steps: int) -> str | None:
-    """OpenCode-style forced final summary: one last (cheap) call asking the
-    model what blocked completion, so failed runs self-report their root cause
-    instead of ending with a bare stop reason."""
-    messages = [
-        {"role": "system", "content": (
-            "You are a repair agent whose run was terminated by the harness. "
-            "In at most 80 words, state concisely what blocked you from "
-            "finishing and what remains to be done."
-        )},
-        {"role": "user", "content": f"Task: {task}\n\nRun ended with reason: {reason} (max {max_steps} steps)."},
-    ]
-    # include the last model message for context
-    last = [m for m in cm.messages if m["role"] == "assistant"]
-    if last:
-        messages.append({"role": "user", "content": f"Your last output: {str(last[-1].get('content'))[:800]}"})
-    try:
-        return llm.complete(messages, None, temperature=0.0, model=getattr(llm, "small_model", None)).text.strip()
-    except Exception:
-        return None
 
 
 def save_state(path: Path, step_next: int, messages: list[dict], max_steps: int) -> None:
@@ -457,7 +392,7 @@ def run_agent(
             if state_path is not None:
                 save_state(state_path, step_no + 1, cm.messages, max_steps)
         if run.done_summary is None and run.steps:
-            run.final_summary = _final_summary(task, llm, cm, run.stopped_reason, max_steps)
+            run.final_summary = final_summary(task, llm, cm, run.stopped_reason, max_steps)
         run.evictions = list(cm.evictions)
         cm.write_eviction_log()
     finally:

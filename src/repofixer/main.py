@@ -61,7 +61,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.cmd == "rollback":
-        from .loop import rollback
+        from .gitutil import rollback
 
         print(rollback(Path(args.workspace).resolve(), args.sha))
         return 0

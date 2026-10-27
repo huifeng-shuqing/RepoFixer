@@ -208,7 +208,7 @@ def test_final_summary_on_failed_run(ws):
 
 
 def test_rollback_restores_snapshot(ws):
-    from repofixer.loop import rollback
+    from repofixer.gitutil import rollback
 
     head_before = _git_repo(ws)
     (ws / "f.txt").write_text("CHANGED", encoding="utf-8")
