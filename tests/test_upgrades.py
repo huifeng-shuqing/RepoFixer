@@ -108,6 +108,29 @@ def test_snapshot_preserves_baseline(ws):
     assert (ws / "f.txt").read_text(encoding="utf-8") == "hello"
 
 
+# ---------- final summary ----------
+
+def test_final_summary_on_failed_run(ws):
+    """A failed run triggers one last (tool-free) call that self-reports the blocker."""
+    from repofixer.tools import ToolRegistry
+
+    class ScriptedFinalLLM:
+        def __init__(self):
+            self.n = 0
+
+        def complete(self, messages, tools=None, temperature=0.2, model=None):
+            self.n += 1
+            if tools is None:
+                return LLMResponse(text="blocked: could not reproduce the failing test", finish_reason="stop")
+            return LLMResponse(text="", tool_calls=[{"id": f"c{self.n}", "name": "bash", "arguments": {"command": f"echo probe{self.n}"}}], finish_reason="tool_calls")
+
+    llm = ScriptedFinalLLM()
+    run = run_agent("task", llm, ToolRegistry(LocalEnv(ws)), ws / "t.jsonl", max_steps=2)
+    assert run.done_summary is None
+    assert run.stopped_reason == "max_steps"
+    assert run.final_summary == "blocked: could not reproduce the failing test"
+
+
 # ---------- MCP conversion ----------
 
 def test_mcp_tool_conversion(ws):

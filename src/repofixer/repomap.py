@@ -17,8 +17,10 @@ only python/javascript are parsed; other files are skipped.
 """
 from __future__ import annotations
 
+import json
+import os
 import re
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 try:
@@ -40,7 +42,7 @@ try:
 except Exception:  # pragma: no cover - degraded mode, repo map simply disabled
     _HAS_TREESITTER = False
 
-SKIP_DIRS = {".git", ".venv", "__pycache__", "node_modules", ".pytest_cache", "vendor", ".tmp"}
+SKIP_DIRS = {".git", ".venv", "__pycache__", "node_modules", ".pytest_cache", "vendor"}
 MAX_FILE_BYTES = 300_000
 IDENT_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]{2,}")
 STOPWORDS = {
@@ -191,10 +193,73 @@ def render_map(symbols: list[Symbol], scores: list[float], token_budget: int = 1
     return "\n".join(lines)
 
 
+def _source_signature(root: Path) -> str:
+    """Stable fingerprint of the parseable source files (aider-style mtime
+    cache key): change any source file and the signature changes."""
+    import hashlib
+
+    sig = []
+    for pat in ("**/*.py", "**/*.js"):
+        for f in sorted(root.glob(pat)):
+            if any(part in (".venv", "node_modules", ".git") for part in f.parts):
+                continue
+            try:
+                sig.append(f"{f.relative_to(root)}:{f.stat().st_mtime_ns}")
+            except OSError:
+                continue
+    return hashlib.sha256("\n".join(sig).encode()).hexdigest()
+
+
+def _cache_path(root: Path) -> Path | None:
+    # cache lives outside the repo (repo copies get reset/cleaned by eval)
+    import hashlib
+
+    try:
+        cache_root = Path(os.environ.get("REPOFIXER_CACHE_DIR", str(root.parent / ".repofixer_cache")))
+        cache_root.mkdir(parents=True, exist_ok=True)
+        return cache_root / f"{hashlib.sha256(str(root.resolve()).encode()).hexdigest()}.json"
+    except OSError:
+        return None
+
+
+def _load_symbols(root: Path) -> list[Symbol]:
+    """tree-sitter extraction with an mtime-keyed disk cache."""
+    p = _cache_path(root)
+    if p is not None and p.exists():
+        try:
+            data = json.loads(p.read_text(encoding="utf-8"))
+            if data.get("signature") == _source_signature(root):
+                rows = []
+                for s in data.get("symbols", []):
+                    s["path"] = Path(s["path"])  # cache stores str
+                    rows.append(Symbol(**s))
+                return rows
+        except (OSError, json.JSONDecodeError, TypeError):
+            pass
+    symbols = extract_symbols(root)
+    if p is not None and symbols:
+        try:
+            rows = []
+            for s in symbols:
+                d = asdict(s)
+                d["path"] = str(d["path"])  # WindowsPath is not JSON-serializable
+                rows.append(d)
+            p.write_text(
+                json.dumps(
+                    {"signature": _source_signature(root), "symbols": rows},
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+        except (OSError, TypeError):
+            pass
+    return symbols
+
+
 def build_repo_map(root: Path, task: str, token_budget: int = 1000) -> str:
     if not _HAS_TREESITTER:
         return ""
-    symbols = extract_symbols(root)
+    symbols = _load_symbols(root)
     if not symbols:
         return ""
     graph = build_graph(symbols)

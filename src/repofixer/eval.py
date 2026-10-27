@@ -56,6 +56,7 @@ class EvalResult:
     wall_ms: int
     trace_path: str = ""
     error: str = ""
+    final_summary: str = ""
 
 
 def load_dataset(path: Path) -> list[Task]:
@@ -163,11 +164,13 @@ def run_task(
             )
             verify_ok = _verify_final(min(task.timeout, 180))
             try:
-                append_note(
-                    repo,
+                note = (
                     f"{time.strftime('%Y-%m-%d')} {task.id} resolved={verify_ok} "
-                    f"steps={len(run.steps)} reason={run.stopped_reason}: {run.done_summary or ''}".rstrip(),
+                    f"steps={len(run.steps)} reason={run.stopped_reason}: {run.done_summary or ''}".rstrip()
                 )
+                if run.final_summary:
+                    note += f" [blocked: {run.final_summary[:200]}]"
+                append_note(repo, note)
             except OSError:
                 pass
             return EvalResult(
@@ -179,6 +182,7 @@ def run_task(
                 completion_tokens=run.completion_tokens,
                 wall_ms=int((time.time() - t0) * 1000),
                 trace_path=str(trace_path),
+                final_summary=run.final_summary,
             )
 
         try:

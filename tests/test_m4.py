@@ -47,6 +47,49 @@ def test_summarize_test_output_keeps_failures():
     assert len(s.splitlines()) < 100
 
 
+# ---------- mtime cache ----------
+
+def test_map_cache_reuses_symbols(ws):
+    import repofixer.repomap as rm
+
+    (ws / "m.py").write_text("def foo(a, b):\n    return a + b\n", encoding="utf-8")
+    calls = []
+    orig = rm.extract_symbols
+
+    def counting(root):
+        calls.append(1)
+        return orig(root)
+
+    rm.extract_symbols = counting
+    try:
+        rm.build_repo_map(ws, "foo", token_budget=200)
+        rm.build_repo_map(ws, "foo", token_budget=200)
+        assert len(calls) == 1  # second call hits the mtime cache
+    finally:
+        rm.extract_symbols = orig
+
+
+def test_map_cache_invalidated_on_change(ws):
+    import repofixer.repomap as rm
+
+    (ws / "m.py").write_text("def foo():\n    pass\n", encoding="utf-8")
+    calls = []
+    orig = rm.extract_symbols
+
+    def counting(root):
+        calls.append(1)
+        return orig(root)
+
+    rm.extract_symbols = counting
+    try:
+        rm.build_repo_map(ws, "foo", token_budget=200)
+        (ws / "m.py").write_text("def foo():\n    pass\n\ndef bar():\n    pass\n", encoding="utf-8")
+        rm.build_repo_map(ws, "foo", token_budget=200)
+        assert len(calls) == 2  # source changed -> re-extracted
+    finally:
+        rm.extract_symbols = orig
+
+
 # ---------- context management ----------
 
 def test_context_tiering_previews_long_output(ws):

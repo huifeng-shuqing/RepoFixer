@@ -18,3 +18,5 @@ data/tasks_subset6.jsonl
 
 reference/
 .repofixer/
+
+.repofixer_cache/

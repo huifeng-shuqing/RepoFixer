@@ -73,6 +73,7 @@ class AgentRun:
     review_feedback: str | None = None
     review_triggered: bool = False
     plan: dict | None = None
+    final_summary: str | None = None
     snapshots: list[str] = field(default_factory=list)
 
     @property
@@ -111,6 +112,28 @@ def _get_diff(workspace: Path | None) -> str:
         return _git(workspace, ["diff"]).stdout or ""
     except Exception:
         return ""
+
+
+def _final_summary(task: str, llm: LLMClient, cm: ContextManager, reason: str, max_steps: int) -> str | None:
+    """OpenCode-style forced final summary: one last (cheap) call asking the
+    model what blocked completion, so failed runs self-report their root cause
+    instead of ending with a bare stop reason."""
+    messages = [
+        {"role": "system", "content": (
+            "You are a repair agent whose run was terminated by the harness. "
+            "In at most 80 words, state concisely what blocked you from "
+            "finishing and what remains to be done."
+        )},
+        {"role": "user", "content": f"Task: {task}\n\nRun ended with reason: {reason} (max {max_steps} steps)."},
+    ]
+    # include the last model message for context
+    last = [m for m in cm.messages if m["role"] == "assistant"]
+    if last:
+        messages.append({"role": "user", "content": f"Your last output: {str(last[-1].get('content'))[:800]}"})
+    try:
+        return llm.complete(messages, None, temperature=0.0, model=getattr(llm, "small_model", None)).text.strip()
+    except Exception:
+        return None
 
 
 def save_state(path: Path, step_next: int, messages: list[dict], max_steps: int) -> None:
@@ -422,6 +445,8 @@ def run_agent(
                 break
             if state_path is not None:
                 save_state(state_path, step_no + 1, cm.messages, max_steps)
+        if run.done_summary is None and run.steps:
+            run.final_summary = _final_summary(task, llm, cm, run.stopped_reason, max_steps)
         run.evictions = list(cm.evictions)
         cm.write_eviction_log()
     finally:
