@@ -130,3 +130,15 @@
 - tabulate-8014ec66：40 步耗尽（原始）→ 16 步（推进熔断）→ **5 步 solved_early（Plan-Act）**——同题三次运行步数 40/16/5 递减，Plan-Act 的规划前置直接消除了探索浪费，是本批机制中效果最明确的单项。
 - pathspec 三题（c0971a65/e51866f2 仍 40 步耗尽、f70a1d2f 25 步 no_progress）依旧失败：递归匹配类难题的计划也救不了——**瓶颈确认为模型推理能力，而非机制**。
 - 结论：Plan-Act 的价值定位 = 中难题的效率放大器（步数/成本大幅下降）+ 探索行为结构化；真难题需要换模型（deepseek-reasoner 对照）或 best-of-2。
+
+### Block 9 — 收尾冲刺（2026-10-27）
+
+- **借鉴清单落地**（61 项单测全绿）：
+  1. 终步强制总结（OpenCode 思路）：失败运行最后一次便宜调用自述根因 → AgentRun.final_summary → results.jsonl + 仓库笔记；
+  2. repomap mtime 缓存（Aider 思路）：符号按源文件 mtime 签名缓存于仓库外，无效即重解析（修掉 .tmp 扫描误跳过）；
+  3. khoj 式抽取记忆：失败任务经 small_model 抽取 ≤5 条持久事实，去重合并、上限 30 条；
+  4. SafetyPolicy 规则文件（opencode 形态）：`.repofixer/rules.json` 有序 allow/ask/deny，后匹配者胜，可覆盖内置黑名单；
+  5. 快照回滚闭环：`repofixer rollback <sha>`。
+- **冗余审计**：全模块引用扫描无死代码；停止跟踪两个可再生成的评测子集文件。
+- **整合重构 pass 1**：git 辅助函数迁至 `gitutil.py`（loop/main/tests 共用），终步总结迁至 `review.py`（评审职责聚合），loop.py 不再依赖 subprocess。
+- **全面验证**：61 单测 +1 skip 全绿；数据集门禁 29/29；CLI 五命令（run/eval/map/mcp/rollback）正常；MCP 8 工具转换正常；**真实 API 端到端 smoke：calc_bug 5 步解决、终验 PASS**。
