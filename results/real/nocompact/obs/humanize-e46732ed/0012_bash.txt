@@ -1,10 +1,10 @@
 cd C:/practice/ProductionPractice/RuyiHermesAgent/apps/desktop
-PATH="/c/practice/ProductionPractice/RuyiHermesAgent/.venv/Scripts:/c/Windows/System32:/c/Windows:/c/Windows/System32/Wbem:/c/Program Files/nodejs:/c/Users/wuqiong/.local/bin:/c/Program Files/Git/cmd"
+PATH="/c/practice/ProductionPractice/RuyiHermesAgent/.venv/Scripts:/c/Windows/System32:/c/Windows:/c/Windows/System32/Wbem:/c/Program Files/nodejs:/c/<USER>/.local/bin:/c/Program Files/Git/cmd"
 HERMES_DESKTOP_HERMES_ROOT="C:/practice/ProductionPractice/RuyiHermesAgent"
 HERMES_HOME="C:/practice/ProductionPractice/RuyiHermesAgent/workspace"
 /c/practice/ProductionPractice/RuyiHermesAgent/node_modules/electron/dist/electron.exe .
 cd C:/practice/ProductionPractice/RuyiHermesAgent/apps/desktop
-PATH="/c/practice/ProductionPractice/RuyiHermesAgent/.venv/Scripts:/c/Windows/System32:/c/Windows:/c/Windows/System32/Wbem:/c/Program Files/nodejs:/c/Users/wuqiong/.local/bin"
+PATH="/c/practice/ProductionPractice/RuyiHermesAgent/.venv/Scripts:/c/Windows/System32:/c/Windows:/c/Windows/System32/Wbem:/c/Program Files/nodejs:/c/<USER>/.local/bin"
 HERMES_DESKTOP_HERMES_ROOT="C:/practice/ProductionPractice/RuyiHermesAgent"
 HERMES_HOME="C:/practice/ProductionPractice/RuyiHermesAgent/workspace"
 /c/practice/ProductionPractice/RuyiHermesAgent/node_modules/electron/dist/electron.exe .

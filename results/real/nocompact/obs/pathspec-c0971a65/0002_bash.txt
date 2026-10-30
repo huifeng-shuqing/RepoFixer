@@ -1,4 +1,4 @@
-/c/Users/wuqiong/Documents/deepseek-harness/default-workspace/repair-agent/work/repos_nocompact/pathspec-c0971a65
+/c/<USER>/Documents/deepseek-harness/default-workspace/repair-agent/work/repos_nocompact/pathspec-c0971a65
 total 226
 drwxr-xr-x 1 吴琼 197121     0 10月 23 18:06 .
 drwxr-xr-x 1 吴琼 197121     0 10月 23 17:05 ..

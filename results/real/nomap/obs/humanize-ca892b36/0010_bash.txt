@@ -45,14 +45,14 @@ drwxr-xr-x 1 吴琼 197121         0  3月  2  2025 .vivado_hls
 drwxr-xr-x 1 吴琼 197121         0  9月 11  2024 .vscode
 drwxr-xr-x 1 吴琼 197121         0  5月  7 08:54 .vscode-shared
 drwxr-xr-x 1 吴琼 197121         0  9月 11  2024 .Xilinx
-lrwxrwxrwx 1 吴琼 197121        61  2月  3  2025 「开始」菜单 -> /c/Users/wuqiong/AppData/Roaming/Microsoft/Windows/Start Menu
+lrwxrwxrwx 1 吴琼 197121        61  2月  3  2025 「开始」菜单 -> /c/<USER>/AppData/Roaming/Microsoft/Windows/Start Menu
 -rw-r--r-- 1 吴琼 197121     14206  2月 23  2025 0.7.11
 drwxr-xr-x 1 吴琼 197121         0  2月 17  2025 anaconda3
 drwxr-xr-x 1 吴琼 197121         0  7月 14 17:32 AppData
-lrwxrwxrwx 1 吴琼 197121        32  2月  3  2025 Application Data -> /c/Users/wuqiong/AppData/Roaming
+lrwxrwxrwx 1 吴琼 197121        32  2月  3  2025 Application Data -> /c/<USER>/AppData/Roaming
 drwxr-xr-x 1 吴琼 197121         0 10月 12  2023 Autodesk
 drwxr-xr-x 1 吴琼 197121         0  2月  4  2025 Contacts
-lrwxrwxrwx 1 吴琼 197121        60  2月  3  2025 Cookies -> /c/Users/wuqiong/AppData/Local/Microsoft/Windows/INetCookies
+lrwxrwxrwx 1 吴琼 197121        60  2月  3  2025 Cookies -> /c/<USER>/AppData/Local/Microsoft/Windows/INetCookies
 drwxr-xr-x 1 吴琼 197121         0 10月 22 20:44 Desktop
 drwxr-xr-x 1 吴琼 197121         0 10月 23 15:11 Documents
 drwxr-xr-x 1 吴琼 197121         0  7月 14 17:34 Doubao
@@ -60,11 +60,11 @@ drwxr-xr-x 1 吴琼 197121         0 10月 22 20:42 Downloads
 drwxr-xr-x 1 吴琼 197121         0 10月 20 18:51 Favorites
 drwxr-xr-x 1 吴琼 197121         0  3月 24  2026 IdeaProjects
 drwxr-xr-x 1 吴琼 197121         0  2月  4  2025 Links
-lrwxrwxrwx 1 吴琼 197121        30  2月  3  2025 Local Settings -> /c/Users/wuqiong/AppData/Local
+lrwxrwxrwx 1 吴琼 197121        30  2月  3  2025 Local Settings -> /c/<USER>/AppData/Local
 -rw-r--r-- 1 吴琼 197121      7753  9月  1 20:31 make_motor_doc.py
 drwxr-xr-x 1 吴琼 197121         0 10月 20 18:51 Music
-lrwxrwxrwx 1 吴琼 197121        26  2月  3  2025 My Documents -> /c/Users/wuqiong/Documents
-lrwxrwxrwx 1 吴琼 197121        68  2月  3  2025 NetHood -> /c/Users/wuqiong/AppData/Roaming/Microsoft/Windows/Network Shortcuts
+lrwxrwxrwx 1 吴琼 197121        26  2月  3  2025 My Documents -> /c/<USER>/Documents
+lrwxrwxrwx 1 吴琼 197121        68  2月  3  2025 NetHood -> /c/<USER>/AppData/Roaming/Microsoft/Windows/Network Shortcuts
 -rw-r--r-- 1 吴琼 197121  21233664 10月 10 19:31 NTUSER.DAT
 -rw-r--r-- 1 吴琼 197121   3145728  2月  3  2025 ntuser.dat.LOG1
 -rw-r--r-- 1 吴琼 197121   2883584  2月  3  2025 ntuser.dat.LOG2
@@ -84,16 +84,16 @@ drwxr-xr-x 1 吴琼 197121         0  8月 15  2025 outputs
 drwxr-xr-x 1 吴琼 197121         0 10月 20 18:51 Pictures
 drwxr-xr-x 1 吴琼 197121         0  5月 12 19:45 pip
 -rw-r--r-- 1 吴琼 197121  29234901  9月 24  2025 postgresql-14.11.tar.gz
-lrwxrwxrwx 1 吴琼 197121        68  2月  3  2025 PrintHood -> /c/Users/wuqiong/AppData/Roaming/Microsoft/Windows/Printer Shortcuts
+lrwxrwxrwx 1 吴琼 197121        68  2月  3  2025 PrintHood -> /c/<USER>/AppData/Roaming/Microsoft/Windows/Printer Shortcuts
 -rwxr-xr-x 1 吴琼 197121 598255880  2月 21  2025 pycharm-community-2024.3.3.exe
 drwxr-xr-x 1 吴琼 197121         0  5月 12 19:51 PycharmProjects
-lrwxrwxrwx 1 吴琼 197121        57  2月  3  2025 Recent -> /c/Users/wuqiong/AppData/Roaming/Microsoft/Windows/Recent
+lrwxrwxrwx 1 吴琼 197121        57  2月  3  2025 Recent -> /c/<USER>/AppData/Roaming/Microsoft/Windows/Recent
 drwxr-xr-x 1 吴琼 197121         0  7月  9  2025 sangfor
 drwxr-xr-x 1 吴琼 197121         0  2月  4  2025 Saved Games
 drwxr-xr-x 1 吴琼 197121         0  2月  4  2025 Searches
-lrwxrwxrwx 1 吴琼 197121        57  2月  3  2025 SendTo -> /c/Users/wuqiong/AppData/Roaming/Microsoft/Windows/SendTo
+lrwxrwxrwx 1 吴琼 197121        57  2月  3  2025 SendTo -> /c/<USER>/AppData/Roaming/Microsoft/Windows/SendTo
 drwxr-xr-x 1 吴琼 197121         0  9月 19  2023 source
-lrwxrwxrwx 1 吴琼 197121        60  2月  3  2025 Templates -> /c/Users/wuqiong/AppData/Roaming/Microsoft/Windows/Templates
+lrwxrwxrwx 1 吴琼 197121        60  2月  3  2025 Templates -> /c/<USER>/AppData/Roaming/Microsoft/Windows/Templates
 drwxr-xr-x 1 吴琼 197121         0 10月 20 18:51 Videos
 drwxr-xr-x 1 吴琼 197121         0  6月 22  2025 vscode-remote-wsl
 drwxr-xr-x 1 吴琼 197121         0 10月 23 14:47 WPS Cloud Files

@@ -133,10 +133,17 @@ def run_task(
             pypath = "/workspace/src" if env_kind == "docker" else str(repo / "src")
             verify_env = {"PYTHONPATH": pypath}
         notes_text = load_notes(repo)
+        verify_command = task.verify_command
+        if base_dir is not None and "work/venvs" in verify_command:
+            # portable dataset: verify commands reference the venv relative to
+            # the project root; resolve to an absolute path at runtime
+            verify_command = verify_command.replace(
+                "work/venvs", str((base_dir.parent / "work" / "venvs").resolve())
+            )
 
         def _verify(timeout: int) -> bool:
             _clean_for_verify(repo)
-            return env.run(task.verify_command, timeout=timeout, env=verify_env).ok
+            return env.run(verify_command, timeout=timeout, env=verify_env).ok
 
         def _verify_final(timeout: int, attempts: int = 3) -> bool:
             """Majority verdict across N clean runs: some tasks' tests are

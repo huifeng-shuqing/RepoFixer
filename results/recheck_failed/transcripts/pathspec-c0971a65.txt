@@ -152,11 +152,11 @@ assistant: I'm stuck in a loop on one command. Let me change approach and write 
        -> 输出 622 字符, 683ms
 
 === step 36 (1818ms, p20171/c117 tokens, finish=tool_calls) ===
-  [ok] bash({"command": "ls -la /c/Users/wuqiong/Documents/deepseek-harness/default-workspace/repair-agent/dataset/repos/pathspec-c0971a65/check_brackets.py 2>&1; ls -la /c/Users/wuqiong/Documents/deepseek-harnes)
+  [ok] bash({"command": "ls -la /c/<USER>/Documents/deepseek-harness/default-workspace/repair-agent/dataset/repos/pathspec-c0971a65/check_brackets.py 2>&1; ls -la /c/<USER>/Documents/deepseek-harnes)
        -> 输出 626 字符, 684ms
 
 === step 37 (981ms, p20605/c79 tokens, finish=tool_calls) ===
-  [FAIL(PolicyDenied)] bash({"command": "cd /c/Users/wuqiong/Documents/deepseek-harness/default-workspace/repair-agent && find . -maxdepth 4 -name check_brackets.py 2>/dev/null"})
+  [FAIL(PolicyDenied)] bash({"command": "cd /c/<USER>/Documents/deepseek-harness/default-workspace/repair-agent && find . -maxdepth 4 -name check_brackets.py 2>/dev/null"})
        -> 输出 119 字符, 0ms
 
 === step 38 (1532ms, p20718/c64 tokens, finish=tool_calls) ===

@@ -29,7 +29,7 @@ E      AssertionError: False is not true
 tests\test_06_gitignore.py:1157: AssertionError
 ============================== warnings summary ===============================
 work/repos_nomap/pathspec-de045811/tests/test_01_util.py: 14 warnings
-  C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\work\repos_nomap\pathspec-de045811\pathspec\util.py:158: DeprecationWarning: Pattern.match() is deprecated. Use Pattern.match_file() with a loop for similar results.
+  <USER>\Documents\deepseek-harness\default-workspace\repair-agent\work\repos_nomap\pathspec-de045811\pathspec\util.py:158: DeprecationWarning: Pattern.match() is deprecated. Use Pattern.match_file() with a loop for similar results.
     result_files = pattern.match(all_files)  # TODO: Replace with `.match_file()`.
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html

@@ -6,7 +6,7 @@ E       + [(True, 0), (True, 0)] : (['*', '!*.txt'], [CheckResult(file='a/top.tx
 tests\test_09_gitignore_ancestor_negation.py:26: AssertionError
 ============================== warnings summary ===============================
 dataset/repos/pathspec-f70a1d2f/tests/test_01_util.py: 14 warnings
-  C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\pathspec-f70a1d2f\pathspec\util.py:158: DeprecationWarning: Pattern.match() is deprecated. Use Pattern.match_file() with a loop for similar results.
+  <USER>\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\pathspec-f70a1d2f\pathspec\util.py:158: DeprecationWarning: Pattern.match() is deprecated. Use Pattern.match_file() with a loop for similar results.
     result_files = pattern.match(all_files)  # TODO: Replace with `.match_file()`.
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html

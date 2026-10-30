@@ -1,4 +1,4 @@
-/c/Users/wuqiong/Documents/deepseek-harness/default-workspace/repair-agent/dataset/repos/pathspec-e51866f2
+/c/<USER>/Documents/deepseek-harness/default-workspace/repair-agent/dataset/repos/pathspec-e51866f2
 total 230
 drwxr-xr-x 1 吴琼 197121     0 10月 26 20:27 .
 drwxr-xr-x 1 吴琼 197121     0 10月 23 16:01 ..

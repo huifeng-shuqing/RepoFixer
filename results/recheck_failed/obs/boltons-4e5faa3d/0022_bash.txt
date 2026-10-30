@@ -26,7 +26,7 @@ self = <tests.test_ioutils.TestSpooledStringIO testMethod=test_rollover_custom_d
             _spooled_flo.close()
         finally:
 >           os.rmdir(custom_dir)
-E           OSError: [WinError 145] Ŀ¼���ǿյġ�: 'C:\\Users\\wuqiong\\Documents\\deepseek-harness\\default-workspace\\repair-agent\\dataset\\repos\\boltons-4e5faa3d\\tmp_nf7pz97'
+E           OSError: [WinError 145] Ŀ¼���ǿյġ�: '<USER>\\Documents\\deepseek-harness\\default-workspace\\repair-agent\\dataset\\repos\\boltons-4e5faa3d\\tmp_nf7pz97'
 
 tests\test_ioutils.py:62: OSError
 =========================== short test summary info ===========================

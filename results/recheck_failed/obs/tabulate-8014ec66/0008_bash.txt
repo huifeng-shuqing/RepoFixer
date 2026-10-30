@@ -1,5 +1,5 @@
 ____ ERROR collecting dataset/repos/tabulate-8014ec66/test/test_output.py _____
-ImportError while importing test module 'C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\tabulate-8014ec66\test\test_output.py'.
+ImportError while importing test module '<USER>\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\tabulate-8014ec66\test\test_output.py'.
 Hint: make sure your test modules/packages have valid Python names.
 Traceback:
 C:\Python314\Lib\importlib\__init__.py:88: in import_module
@@ -9,7 +9,7 @@ test_output.py:7: in <module>
     from tabulate import SEPARATING_LINE, simple_separated_format, tabulate
 E   ModuleNotFoundError: No module named 'tabulate'
 __ ERROR collecting dataset/repos/tabulate-8014ec66/test/test_regression.py ___
-ImportError while importing test module 'C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\tabulate-8014ec66\test\test_regression.py'.
+ImportError while importing test module '<USER>\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\tabulate-8014ec66\test\test_regression.py'.
 Hint: make sure your test modules/packages have valid Python names.
 Traceback:
 C:\Python314\Lib\importlib\__init__.py:88: in import_module
@@ -19,7 +19,7 @@ test_regression.py:3: in <module>
     from tabulate import DataRow, Line, TableFormat, tabulate
 E   ModuleNotFoundError: No module named 'tabulate'
 __ ERROR collecting dataset/repos/tabulate-8014ec66/test/test_textwrapper.py __
-ImportError while importing test module 'C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\tabulate-8014ec66\test\test_textwrapper.py'.
+ImportError while importing test module '<USER>\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\tabulate-8014ec66\test\test_textwrapper.py'.
 Hint: make sure your test modules/packages have valid Python names.
 Traceback:
 C:\Python314\Lib\importlib\__init__.py:88: in import_module

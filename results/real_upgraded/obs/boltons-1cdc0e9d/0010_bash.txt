@@ -57,23 +57,23 @@ E           ZeroDivisionError: division by zero
 boltons\statsutils.py:564: ZeroDivisionError
 ============================== warnings summary ===============================
 tests/test_funcutils_fb_py3.py::test_wraps_async
-  C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\boltons-1cdc0e9d\tests\test_funcutils_fb_py3.py:236: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+  <USER>\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\boltons-1cdc0e9d\tests\test_funcutils_fb_py3.py:236: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
     assert asyncio.iscoroutinefunction(f)
 
 tests/test_funcutils_fb_py3.py::test_wraps_async
-  C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\boltons-1cdc0e9d\tests\test_funcutils_fb_py3.py:240: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+  <USER>\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\boltons-1cdc0e9d\tests\test_funcutils_fb_py3.py:240: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
     assert asyncio.iscoroutinefunction(f2)
 
 tests/test_ioutils.py::TestMultiFileReader::test_open
-  C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\boltons-1cdc0e9d\tests\test_ioutils.py:491: DeprecationWarning: codecs.open() is deprecated. Use open() instead.
+  <USER>\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\boltons-1cdc0e9d\tests\test_ioutils.py:491: DeprecationWarning: codecs.open() is deprecated. Use open() instead.
     utf8_file_str = codecs.open(CUR_FILE_PATH, encoding='utf8').read()
 
 tests/test_ioutils.py::TestMultiFileReader::test_open
-  C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\boltons-1cdc0e9d\tests\test_ioutils.py:492: DeprecationWarning: codecs.open() is deprecated. Use open() instead.
+  <USER>\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\boltons-1cdc0e9d\tests\test_ioutils.py:492: DeprecationWarning: codecs.open() is deprecated. Use open() instead.
     f1, f2 = (codecs.open(CUR_FILE_PATH, encoding='utf8'),
 
 tests/test_ioutils.py::TestMultiFileReader::test_open
-  C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\boltons-1cdc0e9d\tests\test_ioutils.py:493: DeprecationWarning: codecs.open() is deprecated. Use open() instead.
+  <USER>\Documents\deepseek-harness\default-workspace\repair-agent\dataset\repos\boltons-1cdc0e9d\tests\test_ioutils.py:493: DeprecationWarning: codecs.open() is deprecated. Use open() instead.
     codecs.open(CUR_FILE_PATH, encoding='utf8'))
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html

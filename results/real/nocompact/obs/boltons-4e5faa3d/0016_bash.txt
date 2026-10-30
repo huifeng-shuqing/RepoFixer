@@ -31,15 +31,15 @@ E                   AssertionError: None != 3
 tests\test_ioutils.py:400: AssertionError
 ============================== warnings summary ===============================
 tests/test_ioutils.py::TestMultiFileReader::test_open
-  C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\work\repos_nocompact\boltons-4e5faa3d\tests\test_ioutils.py:561: DeprecationWarning: codecs.open() is deprecated. Use open() instead.
+  <USER>\Documents\deepseek-harness\default-workspace\repair-agent\work\repos_nocompact\boltons-4e5faa3d\tests\test_ioutils.py:561: DeprecationWarning: codecs.open() is deprecated. Use open() instead.
     utf8_file_str = codecs.open(CUR_FILE_PATH, encoding='utf8').read()
 
 tests/test_ioutils.py::TestMultiFileReader::test_open
-  C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\work\repos_nocompact\boltons-4e5faa3d\tests\test_ioutils.py:562: DeprecationWarning: codecs.open() is deprecated. Use open() instead.
+  <USER>\Documents\deepseek-harness\default-workspace\repair-agent\work\repos_nocompact\boltons-4e5faa3d\tests\test_ioutils.py:562: DeprecationWarning: codecs.open() is deprecated. Use open() instead.
     f1, f2 = (codecs.open(CUR_FILE_PATH, encoding='utf8'),
 
 tests/test_ioutils.py::TestMultiFileReader::test_open
-  C:\Users\wuqiong\Documents\deepseek-harness\default-workspace\repair-agent\work\repos_nocompact\boltons-4e5faa3d\tests\test_ioutils.py:563: DeprecationWarning: codecs.open() is deprecated. Use open() instead.
+  <USER>\Documents\deepseek-harness\default-workspace\repair-agent\work\repos_nocompact\boltons-4e5faa3d\tests\test_ioutils.py:563: DeprecationWarning: codecs.open() is deprecated. Use open() instead.
     codecs.open(CUR_FILE_PATH, encoding='utf8'))
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
