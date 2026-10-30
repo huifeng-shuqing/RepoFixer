@@ -23,3 +23,4 @@ reference/
 data/tasks_failed10.jsonl
 data/tasks_reading4.jsonl
 results/*.log
+samples/calc_bug/.git/
