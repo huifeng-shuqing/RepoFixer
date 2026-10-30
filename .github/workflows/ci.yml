@@ -15,3 +15,5 @@ jobs:
           python-version: "3.12"
       - run: uv sync
       - run: uv run pytest -q
+      - name: privacy gate
+        run: python scripts/check_privacy.py
