@@ -49,17 +49,48 @@ CLI (main.py)
             └─ trace (trace.py)     # JSONL，每步 flush（崩溃安全）
 ```
 
-## 快速开始
+## 快速开始（从零到跑通）
+
+**0. 克隆与安装**（要求 Python ≥3.11）
 
 ```bash
-uv sync                                     # 安装依赖
+git clone https://github.com/huifeng-shuqing/RepoFixer.git
+cd RepoFixer
+uv sync                                     # 安装依赖（uv 可从 astral.sh 安装）
 cp .env.example .env                        # 填 DeepSeek API key（.env 已 gitignore）
-uv run pytest                               # 61 项单元测试（+1 项 Docker 需本机环境）
-uv run python scripts/smoke_local.py        # 冒烟：修复样例仓库的 bug
-uv run repofixer run "任务描述" -w <仓库路径> --env docker   # 单任务修复（Docker 沙箱）
+```
+
+**1. 验证安装**（离线，无需 API）
+
+```bash
+uv run pytest                               # 61 项单元测试（+1 项 Docker 需本机 Docker）
+```
+
+**2. 冒烟**（需 API key；修复一个自带的小样例仓库）
+
+```bash
+uv run python scripts/smoke_local.py        # 期望：5 步内修复 calc_bug 并 PASS
+```
+
+**3. 构建评测数据集**（需网络：克隆 8 个上游仓库、安装各自测试依赖、生成 29 条任务与金补丁；`dataset/repos/` 与 `work/venvs/` 被 gitignore，须本地构建）
+
+```bash
+uv run python scripts/build_dataset.py
+uv run python scripts/validate_dataset.py   # 质量门禁，期望 29/29
+```
+
+**4. 跑评测**（需 API key）
+
+```bash
 uv run repofixer eval --dataset data/tasks_real.jsonl --env local --out-dir results/run1
-uv run python scripts/show_trace.py results/run1/traces/<task_id>.jsonl   # 回放
-uv run repofixer mcp --workspace <仓库路径>   # 以 MCP server 暴露工具集（需 uv sync --extra mcp）
+uv run python scripts/show_trace.py results/run1/traces/<task_id>.jsonl   # 逐步回放
+```
+
+**5. 单任务修复 / 沙箱 / MCP / 回滚**
+
+```bash
+uv run repofixer run "任务描述" -w <仓库路径> --env docker   # 单任务修复（Docker 沙箱，可选 local）
+uv run repofixer mcp --workspace <仓库路径>   # 工具集以 MCP stdio 暴露（需 uv sync --extra mcp）
 uv run repofixer rollback <sha> -w <仓库路径> # 恢复到某步影子快照
 ```
 
