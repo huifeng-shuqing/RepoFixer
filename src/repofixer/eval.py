@@ -190,7 +190,7 @@ def run_task(
 
         try:
             return _attempt()
-        except Exception as first_err:
+        except Exception:
             # transient provider failures must not kill the whole eval run:
             # retry the task once, then record it as a categorized failure.
             time.sleep(5)
