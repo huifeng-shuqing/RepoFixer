@@ -25,3 +25,4 @@ data/tasks_reading4.jsonl
 results/*.log
 samples/calc_bug/.git/
 .coverage
+pytest-of-*/
